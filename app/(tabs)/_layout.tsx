@@ -156,6 +156,22 @@ export default function TabLayout() {
           title: 'Log Workout',
         }}
       />
+      <Tabs.Screen
+        name="select-exercise"
+        options={{
+          href: null,
+          headerShown: true,
+          title: 'Select Exercise',
+        }}
+      />
+      <Tabs.Screen
+        name="create-custom-exercise"
+        options={{
+          href: null,
+          headerShown: true,
+          title: 'Create Custom Exercise',
+        }}
+      />
     </Tabs>
   );
 }

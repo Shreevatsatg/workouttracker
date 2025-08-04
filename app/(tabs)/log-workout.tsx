@@ -7,7 +7,7 @@ import { useWorkout } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Button, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 interface Set {
   weight: string;
   reps: string;

@@ -4,8 +4,8 @@ import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { useLocalSearchParams, useRouter, useNavigation, useFocusEffect } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import React, { useState } from 'react';
 import { Alert, Button, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface Set {
@@ -15,7 +15,17 @@ interface Set {
 
 interface Exercise {
   name: string;
-  sets: Set[];
+  force?: string | null;
+  level?: string;
+  mechanic?: string | null;
+  equipment?: string;
+  primaryMuscles?: string[];
+  secondaryMuscles?: string[];
+  instructions?: string[];
+  category?: string;
+  images?: string[];
+  id?: string;
+  sets: Set[]; // This will be used for the routine's exercises
 }
 
 interface Routine {
@@ -36,54 +46,78 @@ export default function CreateRoutineScreen() {
   const [routineNameError, setRoutineNameError] = useState<string | null>(null);
   const scrollViewRef = React.useRef<ScrollView>(null);
 
+
   useFocusEffect(
     React.useCallback(() => {
       const existingRoutine: Routine | null = params.routine ? JSON.parse(params.routine as string) : null;
+      const newSelectedExercises: Exercise[] = params.selectedExercises ? JSON.parse(params.selectedExercises as string) : [];
+
       if (existingRoutine) {
         setRoutineName(existingRoutine.name);
         setExercises(existingRoutine.exercises);
         setCurrentRoutineId(existingRoutine.id);
-      } else {
-        setRoutineName('');
-        setExercises([]);
-        setCurrentRoutineId(null);
+      } else if (newSelectedExercises.length > 0) {
+        setExercises((prevExercises) => [
+          ...prevExercises,
+          ...newSelectedExercises.map((ex) => ({
+              ...ex,
+              sets: [{ weight: '', reps: '' }, { weight: '', reps: '' }], // Initialize with two empty sets
+            })),
+        ]);
+        router.setParams({ selectedExercises: undefined });
       }
-      navigation.setOptions({ title: existingRoutine ? 'Edit Routine' : 'Create Routine' });
-    }, [params.routine, navigation])
+    }, [params.routine, params.selectedExercises, router])
   );
 
-  const addExercise = () => {
-    setExercises([...exercises, { name: '', sets: [{ weight: '', reps: '' }] }]);
+  const handleExerciseChange = (id: string, name: string) => {
+    setExercises((prevExercises) =>
+      prevExercises.map((ex) => (ex.id === id ? { ...ex, name } : ex))
+    );
   };
 
-  const handleExerciseChange = (index: number, name: string) => {
-    const newExercises = [...exercises];
-    newExercises[index].name = name;
-    setExercises(newExercises);
+  const handleSetChange = (exId: string, setIndex: number, field: keyof Set, value: string) => {
+    setExercises((prevExercises) =>
+      prevExercises.map((ex) =>
+        ex.id === exId
+          ? {
+              ...ex,
+              sets: ex.sets.map((set, sIdx) =>
+                sIdx === setIndex ? { ...set, [field]: value } : set
+              ),
+            }
+          : ex
+      )
+    );
   };
 
-  const handleSetChange = (exIndex: number, setIndex: number, field: keyof Set, value: string) => {
-    const newExercises = [...exercises];
-    newExercises[exIndex].sets[setIndex][field] = value;
-    setExercises(newExercises);
+  const addSet = (exId: string) => {
+    setExercises((prevExercises) =>
+      prevExercises.map((ex) =>
+        ex.id === exId
+          ? {
+              ...ex,
+              sets: [...ex.sets, { weight: '', reps: '' }],
+            }
+          : ex
+      )
+    );
   };
 
-  const addSet = (exIndex: number) => {
-    const newExercises = [...exercises];
-    newExercises[exIndex].sets.push({ weight: '', reps: '' });
-    setExercises(newExercises);
+  const removeSet = (exId: string, setIndex: number) => {
+    setExercises((prevExercises) =>
+      prevExercises.map((ex) =>
+        ex.id === exId
+          ? {
+              ...ex,
+              sets: ex.sets.filter((_, sIdx) => sIdx !== setIndex),
+            }
+          : ex
+      )
+    );
   };
 
-  const removeSet = (exIndex: number, setIndex: number) => {
-    const newExercises = [...exercises];
-    newExercises[exIndex].sets.splice(setIndex, 1);
-    setExercises(newExercises);
-  };
-
-  const removeExercise = (exIndex: number) => {
-    const newExercises = [...exercises];
-    newExercises.splice(exIndex, 1);
-    setExercises(newExercises);
+  const removeExercise = (id: string) => {
+    setExercises((prevExercises) => prevExercises.filter((ex) => ex.id !== id));
   };
 
   const saveRoutine = () => {
@@ -107,7 +141,9 @@ export default function CreateRoutineScreen() {
   };
 
   const discardChanges = () => {
-    router.back();
+    setRoutineName('');
+    setExercises([]);
+    setRoutineNameError(null);
   };
 
   return (
@@ -126,16 +162,16 @@ export default function CreateRoutineScreen() {
         {routineNameError && <ThemedText style={styles.errorText}>{routineNameError}</ThemedText>}
 
         {exercises.map((exercise, exIndex) => (
-          <ThemedView key={exIndex} style={[styles.exerciseContainer, { borderColor: colors.tabIconDefault }]}>
+          <ThemedView key={exercise.id!} style={[styles.exerciseContainer, { borderColor: colors.tabIconDefault }]}>
             <View style={styles.exerciseHeader}>
               <TextInput
                 style={[styles.exerciseInput, { flex: 1, backgroundColor: colors.background, borderColor: colors.tabIconDefault, color: colors.text }]}
                 placeholder={`Exercise ${exIndex + 1} Name`}
                 placeholderTextColor={colors.secondary}
                 value={exercise.name}
-                onChangeText={(name) => handleExerciseChange(exIndex, name)}
+                onChangeText={(name) => handleExerciseChange(exercise.id!, name)}
               />
-              <TouchableOpacity onPress={() => removeExercise(exIndex)} style={styles.removeButton}>
+              <TouchableOpacity onPress={() => removeExercise(exercise.id!)} style={styles.removeButton}>
                   <IconSymbol name="xmark.circle" size={20} color={colors.text} />
                 </TouchableOpacity>
             </View>
@@ -149,7 +185,7 @@ export default function CreateRoutineScreen() {
                   placeholderTextColor={colors.secondary}
                   keyboardType="numeric"
                   value={set.weight}
-                  onChangeText={(val) => handleSetChange(exIndex, setIndex, 'weight', val)}
+                  onChangeText={(val) => handleSetChange(exercise.id!, setIndex, 'weight', val)}
                 />
                 <TextInput
                   style={[styles.setInput, { backgroundColor: colors.background, borderColor: colors.tabIconDefault, color: colors.text }]}
@@ -157,18 +193,21 @@ export default function CreateRoutineScreen() {
                   placeholderTextColor={colors.secondary}
                   keyboardType="numeric"
                   value={set.reps}
-                  onChangeText={(val) => handleSetChange(exIndex, setIndex, 'reps', val)}
+                  onChangeText={(val) => handleSetChange(exercise.id!, setIndex, 'reps', val)}
                 />
-                <TouchableOpacity onPress={() => removeSet(exIndex, setIndex)} style={styles.removeSetButton}>
+                <TouchableOpacity onPress={() => removeSet(exercise.id!, setIndex)} style={styles.removeSetButton}>
                   <IconSymbol name="xmark.circle" size={20} color={colors.text} />
                 </TouchableOpacity>
               </View>
             ))}
-            <Button title="Add Set" onPress={() => addSet(exIndex)} />
+            <Button title="Add Set" onPress={() => addSet(exercise.id!)} />
           </ThemedView>
         ))}
 
-        <Button title="Add Exercise" onPress={addExercise} />
+        <Button title="Add Exercise" onPress={() => router.push({
+          pathname: '/(tabs)/select-exercise',
+          params: { currentRoutineExercises: JSON.stringify(exercises) },
+        })} />
 
         <TouchableOpacity
           style={[styles.saveButton, { backgroundColor: colors.tint, marginTop: 24 }]}
@@ -251,10 +290,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
   },
+  // ...existing code...
   errorText: {
     color: 'red',
     marginBottom: 10,
     fontSize: 14,
   },
 });
-        

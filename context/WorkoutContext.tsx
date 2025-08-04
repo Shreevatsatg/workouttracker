@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
+import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
 
 interface Set {
   weight: string;
@@ -78,7 +78,6 @@ export const WorkoutProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const discardWorkout = () => {
-    console.log('Discarding workout...');
     setActiveRoutine(null);
     setWorkoutTime(0);
     setIsWorkoutRunning(false);
@@ -87,7 +86,6 @@ export const WorkoutProvider = ({ children }: { children: ReactNode }) => {
 
   const saveWorkout = () => {
     // In a real app, you would save activeRoutine, workoutTime, and loggedExercises to persistent storage
-    console.log('Workout Saved:', { activeRoutine, workoutTime, loggedExercises });
     discardWorkout(); // Clear workout state after saving
   };
 

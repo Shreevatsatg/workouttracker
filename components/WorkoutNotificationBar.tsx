@@ -12,7 +12,6 @@ export default function WorkoutNotificationBar() {
   const navigation = useNavigation();
   const pathname = usePathname();
 
-  console.log('Current Pathname:', pathname);
   if (!activeRoutine || pathname === '/log-workout' || !isWorkoutRunning) {
     return null;
   }
