@@ -1,28 +1,13 @@
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
+import { useWorkout } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { useWorkout } from '@/context/WorkoutContext';
-import { Button, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-
-interface Set {
-  weight: string;
-  reps: string;
-}
-
-interface Exercise {
-  name: string;
-  sets: Set[];
-}
-
-interface Routine {
-  name: string;
-  exercises: Exercise[];
-}
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function RoutineDetailsScreen() {
   const colorScheme = useColorScheme();
@@ -31,30 +16,6 @@ export default function RoutineDetailsScreen() {
   const params = useLocalSearchParams();
   const routine: Routine = JSON.parse(params.routine as string);
   const { startWorkout: startWorkoutContext } = useWorkout();
-import { Button, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-
-interface Set {
-  weight: string;
-  reps: string;
-}
-
-interface Exercise {
-  name: string;
-  sets: Set[];
-}
-
-interface Routine {
-  name: string;
-  exercises: Exercise[];
-}
-
-export default function RoutineDetailsScreen() {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-  const router = useRouter();
-  const params = useLocalSearchParams();
-  const routine: Routine = JSON.parse(params.routine as string);
 
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
 
@@ -67,17 +28,7 @@ export default function RoutineDetailsScreen() {
     router.push('/(tabs)/log-workout');
   };
 
-  const nextExercise = () => {
-    if (startingRoutine && currentExerciseIndex < startingRoutine.exercises.length - 1) {
-      setCurrentExerciseIndex(currentExerciseIndex + 1);
-    } else {
-      setStartingRoutine(null);
-    }
-  };
-
-  const cancelWorkout = () => {
-    setStartingRoutine(null);
-  };
+  // Remove nextExercise and cancelWorkout if not used, or implement as needed
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>

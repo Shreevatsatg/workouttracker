@@ -1,13 +1,13 @@
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useWorkout } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { Button, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
-
 interface Set {
   weight: string;
   reps: string;
@@ -63,11 +63,17 @@ export default function LogWorkoutScreen() {
     updateLoggedExercises([...loggedExercises, { name: '', sets: [], loggedSets: [{ weight: '', reps: '', loggedWeight: '', loggedReps: '', completed: false }] }]);
   };
 
+  const toggleSetCompletion = (exIndex: number, setIndex: number) => {
+    const newLoggedExercises = [...loggedExercises];
+    newLoggedExercises[exIndex].loggedSets[setIndex].completed = !newLoggedExercises[exIndex].loggedSets[setIndex].completed;
+    updateLoggedExercises(newLoggedExercises);
+  };
+
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
         <TouchableOpacity onPress={() => { saveWorkout(); router.back(); }} style={{ marginRight: 15 }}>
-          <ThemedText style={{ color: colors.tint, fontWeight: 'bold' }}>Save</ThemedText>
+          <ThemedText style={{ color: colors.tint, fontWeight: 'bold' }}>Finish</ThemedText>
         </TouchableOpacity>
       ),
     });
@@ -94,7 +100,7 @@ export default function LogWorkoutScreen() {
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <ThemedView style={styles.header}>
-        <ThemedText type="title" style={{ color: colors.tint }}>{routine.name}</ThemedText>
+        <ThemedText type="title" style={{ color: colors.tint }}>{activeRoutine && activeRoutine.name ? activeRoutine.name : 'Workout'}</ThemedText>
         <ThemedText type="subtitle" style={{ color: colors.text }}>Workout Timer: {formatTime(workoutTime)}</ThemedText>
         <View style={styles.timerControls}>
           <Button title={isWorkoutRunning ? "Pause" : "Resume"} onPress={() => isWorkoutRunning ? pauseWorkout() : resumeWorkout()} />
@@ -107,36 +113,52 @@ export default function LogWorkoutScreen() {
         {loggedExercises.length === 0 ? (
           <ThemedText style={{ color: colors.secondary }}>No exercises in this routine.</ThemedText>
         ) : (
-          loggedExercises.map((exercise, exIndex) => (
-            <ThemedView key={exIndex} style={[styles.exerciseCard, { borderColor: colors.tabIconDefault }]}>
-              <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 8 }}>{exIndex + 1}. {exercise.name}</ThemedText>
-              {exercise.loggedSets.map((set, setIndex) => (
-                <ThemedView key={setIndex} style={[styles.setRow, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
-                  <ThemedText style={{ color: colors.text }}>Set {setIndex + 1}:</ThemedText>
-                  <ThemedText style={{ color: colors.text }}>{set.weight} kg</ThemedText>
-                  <ThemedText style={{ color: colors.text }}>{set.reps} reps</ThemedText>
-                  <TextInput
-                    style={[styles.setInput, { backgroundColor: colors.background, borderColor: colors.tabIconDefault, color: colors.text }]}
-                    placeholder="Logged Weight"
-                    placeholderTextColor={colors.secondary}
-                    keyboardType="numeric"
-                    value={set.loggedWeight}
-                    onChangeText={(val) => handleLoggedSetChange(exIndex, setIndex, 'loggedWeight', val)}
-                  />
-                  <TextInput
-                    style={[styles.setInput, { backgroundColor: colors.background, borderColor: colors.tabIconDefault, color: colors.text }]}
-                    placeholder="Logged Reps"
-                    placeholderTextColor={colors.secondary}
-                    keyboardType="numeric"
-                    value={set.loggedReps}
-                    onChangeText={(val) => handleLoggedSetChange(exIndex, setIndex, 'loggedReps', val)}
-                  />
+          <>
+            {loggedExercises.map((exercise, exIndex) => (
+              <ThemedView key={exIndex} style={[styles.exerciseCard, { borderColor: colors.tabIconDefault }]}> 
+                <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 8 }}>{exIndex + 1}. {exercise.name}</ThemedText>
+                <ThemedView style={[styles.setRow, styles.headerRow]}>
+                  <ThemedText style={[styles.headerText, styles.setColumn, { color: colors.text }]}>Set</ThemedText>
+                  <ThemedText style={[styles.headerText, styles.prevColumn, { color: colors.text }]}>Prev</ThemedText>
+                  <ThemedText style={[styles.headerText, styles.kgRepsColumn, { color: colors.text }]}>kg</ThemedText>
+                  <ThemedText style={[styles.headerText, styles.kgRepsColumn, { color: colors.text }]}>Reps</ThemedText>
+                  <ThemedText style={[styles.headerText, styles.checkmarkColumn, { color: colors.text }]}></ThemedText>
                 </ThemedView>
-              ))}
-              <Button title="Add Set" onPress={() => addLoggedSet(exIndex)} />
-            </ThemedView>
-          ))
-        <Button title="Add Exercise" onPress={addLoggedExercise} />
+                {exercise.loggedSets.map((set, setIndex) => (
+                  <ThemedView key={setIndex} style={[styles.setRow, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}> 
+                    <ThemedText style={[styles.cellText, styles.setColumn, { color: colors.text }]}>{setIndex + 1}</ThemedText>
+                    <ThemedText style={[styles.cellText, styles.prevColumn, { color: colors.text }]}>-</ThemedText> {/* Placeholder for previous */}
+                    <TextInput
+                      style={[styles.setInput, styles.kgRepsColumn, { backgroundColor: colors.background, color: colors.text }]}
+                      placeholder={set.weight}
+                      placeholderTextColor={colors.secondary}
+                      keyboardType="numeric"
+                      value={set.loggedWeight}
+                      onChangeText={(val) => handleLoggedSetChange(exIndex, setIndex, 'loggedWeight', val)}
+                    />
+                    <TextInput
+                      style={[styles.setInput, styles.kgRepsColumn, { backgroundColor: colors.background, color: colors.text }]}
+                      placeholder={set.reps}
+                      placeholderTextColor={colors.secondary}
+                      keyboardType="numeric"
+                      value={set.loggedReps}
+                      onChangeText={(val) => handleLoggedSetChange(exIndex, setIndex, 'loggedReps', val)}
+                    />
+                    <TouchableOpacity style={styles.checkmarkColumn} onPress={() => toggleSetCompletion(exIndex, setIndex)}>
+                      <IconSymbol
+                        name={set.completed ? "checkmark.circle.fill" : "circle"}
+                        size={24}
+                        color={set.completed ? colors.tint : colors.secondary}
+                      />
+                    </TouchableOpacity>
+                  </ThemedView>
+                ))}
+                <Button title="Add Set" onPress={() => addLoggedSet(exIndex)} />
+              </ThemedView>
+            ))}
+            <Button title="Add Exercise" onPress={addLoggedExercise} />
+          </>
+        )}
       </ThemedView>
       <Button title="Discard Workout" onPress={() => { discardWorkout(); router.back(); }} color="#f87171" />
     </ScrollView>
@@ -168,21 +190,56 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
   },
+  headerRow: {
+    flexDirection: 'row',
+    backgroundColor: 'transparent',
+    borderBottomWidth: 1,
+    marginBottom: 4,
+  },
+  headerText: {
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
   setRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 8,
+    alignItems: 'center',
     borderRadius: 6,
     borderWidth: 1,
     marginBottom: 4,
+  },
+  setColumn: {
+    width: 40,
+    textAlign: 'center',
+  },
+  prevColumn: {
+    width: 60,
+    textAlign: 'center',
+  },
+  kgRepsColumn: {
+    flex: 1,
+    textAlign: 'center',
+  },
+  checkmarkColumn: {
+    width: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   setInput: {
     borderWidth: 1,
     borderRadius: 8,
     padding: 8,
-    flex: 1,
-    marginHorizontal: 4,
     fontSize: 14,
+  },
+  cellText: {
+    textAlign: 'center',
+  },
+  cellInput: {
+    textAlign: 'center',
+  },
+  checkmarkIcon: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   removeSetButton: {
     padding: 4,
