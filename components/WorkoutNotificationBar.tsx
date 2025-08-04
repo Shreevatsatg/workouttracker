@@ -1,9 +1,9 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import React from 'react';
-import { useWorkout } from '@/context/WorkoutContext';
-import { useNavigation, usePathname, useRouter } from 'expo-router';
 import { Colors } from '@/constants/Colors';
+import { useWorkout } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useNavigation, usePathname, useRouter } from 'expo-router';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function WorkoutNotificationBar() {
   const { activeRoutine, workoutTime, discardWorkout, resumeWorkout, isWorkoutRunning } = useWorkout();
@@ -29,6 +29,13 @@ export default function WorkoutNotificationBar() {
 
   const router = useRouter();
 
+  const handleDiscard = () => {
+    discardWorkout();
+    if (pathname !== '/(tabs)/workout') {
+      router.push('/(tabs)/workout');
+    }
+  };
+
   const handleResume = () => {
     resumeWorkout();
     router.push({
@@ -44,7 +51,7 @@ export default function WorkoutNotificationBar() {
         <Text style={[styles.timer, { color: colors.background }]}>{formatTime(workoutTime)}</Text>
       </View>
       <View style={styles.buttonContainer}>
-        <TouchableOpacity onPress={discardWorkout} style={styles.button}>
+        <TouchableOpacity onPress={handleDiscard} style={styles.button}>
           <Text style={[styles.buttonText, { color: colors.background }]}>Discard</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleResume} style={styles.button}>

@@ -7,7 +7,7 @@ import { useWorkout } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Button, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 interface Set {
   weight: string;
   reps: string;
@@ -103,8 +103,12 @@ export default function LogWorkoutScreen() {
         <ThemedText type="title" style={{ color: colors.tint }}>{activeRoutine && activeRoutine.name ? activeRoutine.name : 'Workout'}</ThemedText>
         <ThemedText type="subtitle" style={{ color: colors.text }}>Workout Timer: {formatTime(workoutTime)}</ThemedText>
         <View style={styles.timerControls}>
-          <Button title={isWorkoutRunning ? "Pause" : "Resume"} onPress={() => isWorkoutRunning ? pauseWorkout() : resumeWorkout()} />
-          <Button title="Reset" onPress={discardWorkout} />
+          <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint }]} onPress={() => isWorkoutRunning ? pauseWorkout() : resumeWorkout()}>
+            <ThemedText style={[styles.buttonText, { color: colors.background }]}>{isWorkoutRunning ? "Pause" : "Resume"}</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint }]} onPress={discardWorkout}>
+            <ThemedText style={[styles.buttonText, { color: colors.background }]}>Reset</ThemedText>
+          </TouchableOpacity>
         </View>
       </ThemedView>
 
@@ -127,7 +131,7 @@ export default function LogWorkoutScreen() {
                 {exercise.loggedSets.map((set, setIndex) => (
                   <ThemedView key={setIndex} style={[styles.setRow, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}> 
                     <ThemedText style={[styles.cellText, styles.setColumn, { color: colors.text }]}>{setIndex + 1}</ThemedText>
-                    <ThemedText style={[styles.cellText, styles.prevColumn, { color: colors.text }]}>-</ThemedText> {/* Placeholder for previous */}
+                    <ThemedText style={[styles.cellText, styles.prevColumn, { color: colors.text }]}>-</ThemedText>
                     <TextInput
                       style={[styles.setInput, styles.kgRepsColumn, { backgroundColor: colors.background, color: colors.text }]}
                       placeholder={set.weight}
@@ -153,14 +157,20 @@ export default function LogWorkoutScreen() {
                     </TouchableOpacity>
                   </ThemedView>
                 ))}
-                <Button title="Add Set" onPress={() => addLoggedSet(exIndex)} />
+                <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint, marginTop: 12 }]} onPress={() => addLoggedSet(exIndex)}>
+                    <ThemedText style={[styles.buttonText, { color: colors.background }]}>Add Set</ThemedText>
+                  </TouchableOpacity>
               </ThemedView>
             ))}
-            <Button title="Add Exercise" onPress={addLoggedExercise} />
+            <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint, marginTop: 12 }]} onPress={addLoggedExercise}>
+              <ThemedText style={[styles.buttonText, { color: colors.background }]}>Add Exercise</ThemedText>
+            </TouchableOpacity>
           </>
         )}
       </ThemedView>
-      <Button title="Discard Workout" onPress={() => { discardWorkout(); router.back(); }} color="#f87171" />
+      <TouchableOpacity style={[styles.button, { backgroundColor: "#f87171", marginTop: 24 }]} onPress={() => { discardWorkout(); }}>
+        <ThemedText style={[styles.buttonText, { color: colors.background }]}>Discard Workout</ThemedText>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -248,6 +258,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 16,
     alignItems: 'center',
+  },
+  button: {
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+    marginHorizontal: 4,
+    marginBottom: 4,
+  },
+  buttonText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
   },
   discardButton: {
     borderRadius: 8,
