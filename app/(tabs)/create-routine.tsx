@@ -33,6 +33,8 @@ export default function CreateRoutineScreen() {
   const [routineName, setRoutineName] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [currentRoutineId, setCurrentRoutineId] = useState<string | null>(null);
+  const [routineNameError, setRoutineNameError] = useState<string | null>(null);
+  const scrollViewRef = React.useRef<ScrollView>(null);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -86,9 +88,11 @@ export default function CreateRoutineScreen() {
 
   const saveRoutine = () => {
     if (!routineName.trim()) {
-      Alert.alert('Missing Routine Name', 'Please enter a name for your routine.');
+      setRoutineNameError('Routine name cannot be empty.');
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
       return;
     }
+    setRoutineNameError(null); // Clear error if name is present
 
     if (exercises.length === 0) {
       Alert.alert('No Exercises', 'Please add at least one exercise to your routine.');
@@ -107,15 +111,19 @@ export default function CreateRoutineScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView ref={scrollViewRef} style={[styles.container, { backgroundColor: colors.background }]}>
       <ThemedView style={styles.section}>
         <TextInput
-          style={[styles.input, { backgroundColor: colors.background,  color: colors.text, fontSize: 22 }]}
+          style={[styles.input, { backgroundColor: colors.background,  color: colors.text, fontSize: 22, borderColor: routineNameError ? 'red' : colors.tabIconDefault }]}
           placeholder="Routine Name"
           placeholderTextColor={colors.secondary}
           value={routineName}
-          onChangeText={setRoutineName}
+          onChangeText={(text) => {
+            setRoutineName(text);
+            if (routineNameError) setRoutineNameError(null);
+          }}
         />
+        {routineNameError && <ThemedText style={styles.errorText}>{routineNameError}</ThemedText>}
 
         {exercises.map((exercise, exIndex) => (
           <ThemedView key={exIndex} style={[styles.exerciseContainer, { borderColor: colors.tabIconDefault }]}>
@@ -165,7 +173,6 @@ export default function CreateRoutineScreen() {
         <TouchableOpacity
           style={[styles.saveButton, { backgroundColor: colors.tint, marginTop: 24 }]}
           onPress={saveRoutine}
-          disabled={!routineName.trim() || exercises.length === 0}
         >
           <ThemedText style={{ color: colors.background, fontWeight: 'bold' }}>Save Routine</ThemedText>
         </TouchableOpacity>
@@ -243,6 +250,11 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     borderWidth: 1,
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 10,
+    fontSize: 14,
   },
 });
         
