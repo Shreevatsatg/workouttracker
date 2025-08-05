@@ -9,10 +9,10 @@ import { Colors } from '@/constants/Colors';
 import { useWorkout } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, TextInput, TouchableOpacity, Vibration, View } from 'react-native';
-import { Image } from 'expo-image';
 interface Set {
   weight: string;
   reps: string;
@@ -36,6 +36,11 @@ interface Routine {
 }
 
 export default function LogWorkoutScreen() {
+  // Helper to truncate long exercise names
+  const getDisplayExerciseName = (name?: string, maxLength = 24) => {
+    if (!name) return '';
+    return name.length > maxLength ? name.slice(0, maxLength - 1) + '…' : name;
+  };
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const params = useLocalSearchParams();
@@ -261,7 +266,7 @@ export default function LogWorkoutScreen() {
                   />
                   </TouchableOpacity>
                   <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 4, fontSize: 20 }}>
-                    {exIndex + 1}. {exercise.name}
+                    {exIndex + 1}. {getDisplayExerciseName(exercise.name)}
                   </ThemedText>
                 </View>
                 <RestTimer 
