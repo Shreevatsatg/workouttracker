@@ -7,7 +7,7 @@ import { useWorkout } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Button, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 interface Set {
   weight: string;
   reps: string;
@@ -102,14 +102,6 @@ export default function LogWorkoutScreen() {
       <ThemedView style={styles.header}>
         <ThemedText type="title" style={{ color: colors.tint }}>{activeRoutine && activeRoutine.name ? activeRoutine.name : 'Workout'}</ThemedText>
         <ThemedText type="subtitle" style={{ color: colors.text }}>Workout Timer: {formatTime(workoutTime)}</ThemedText>
-        <View style={styles.timerControls}>
-          <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint }]} onPress={() => isWorkoutRunning ? pauseWorkout() : resumeWorkout()}>
-            <ThemedText style={[styles.buttonText, { color: colors.background }]}>{isWorkoutRunning ? "Pause" : "Resume"}</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint }]} onPress={discardWorkout}>
-            <ThemedText style={[styles.buttonText, { color: colors.background }]}>Reset</ThemedText>
-          </TouchableOpacity>
-        </View>
       </ThemedView>
 
       <ThemedView style={styles.section}>

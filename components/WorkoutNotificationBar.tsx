@@ -51,7 +51,7 @@ export default function WorkoutNotificationBar() {
       </View>
       <View style={styles.buttonContainer}>
         <TouchableOpacity onPress={handleDiscard} style={styles.button}>
-          <Text style={[styles.buttonText, { color: colors.background }]}>Discard</Text>
+          <Text style={[styles.buttonText, { color: 'red' }]}>Discard</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleResume} style={styles.button}>
           <Text style={[styles.buttonText, { color: colors.background }]}>Resume</Text>
