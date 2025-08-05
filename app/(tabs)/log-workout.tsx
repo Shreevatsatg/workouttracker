@@ -11,7 +11,8 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, Vibration } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, TouchableOpacity, Vibration, View } from 'react-native';
+import { Image } from 'expo-image';
 interface Set {
   weight: string;
   reps: string;
@@ -25,6 +26,8 @@ interface Exercise {
   sets: Set[];
   loggedSets: Set[];
   restTime?: number;
+  images?: string[];
+  id?: string;
 }
 
 interface Routine {
@@ -149,6 +152,13 @@ export default function LogWorkoutScreen() {
     setRestTimerSelectorVisible(true);
   };
 
+  const handleExerciseImagePress = (exercise: Exercise) => {
+    router.push({
+      pathname: '/(tabs)/exercise-details',
+      params: { exerciseId: exercise.id, exerciseName: exercise.name },
+    });
+  };
+
   const handleRestTimeSelect = (time: number) => {
     if (selectedExerciseIndex !== null) {
       const newLoggedExercises = [...loggedExercises];
@@ -219,7 +229,20 @@ export default function LogWorkoutScreen() {
           <>
             {loggedExercises.map((exercise, exIndex) => (
               <ThemedView key={exIndex} style={[styles.exerciseCard, { borderColor: colors.tabIconDefault }]}> 
-                <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 4, fontSize: 20 }}>{exIndex + 1}. {exercise.name}</ThemedText>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+<TouchableOpacity onPress={() => handleExerciseImagePress(exercise)}>
+                  <Image 
+                    source={exercise.images && exercise.images.length > 0 
+                      ? { uri: `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${exercise.images[0]}` }
+                      : require('../../assets/images/exersiseplaceholder.png')
+                    }
+                    style={styles.exerciseImage}
+                  />
+                  </TouchableOpacity>
+                  <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 4, fontSize: 20 }}>
+                    {exIndex + 1}. {exercise.name}
+                  </ThemedText>
+                </View>
                 <RestTimer 
                   restTime={exercise.restTime || 0} 
                   onPress={() => openRestTimerSelector(exIndex)} 
@@ -311,6 +334,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
+  },
+  exerciseImage: {
+    width: 50,
+    height: 50,
+    marginRight: 10,
+    borderRadius: 5,
   },
   headerRow: {
     flexDirection: 'row',

@@ -81,12 +81,21 @@ export default function SelectExerciseScreen() {
     router.push('/(tabs)/create-custom-exercise'); // Navigate to a new screen for custom exercise
   };
 
+  const handleExerciseImagePress = (exercise: Exercise) => {
+    router.push({
+      pathname: '/(tabs)/exercise-details',
+      params: { exerciseId: exercise.id, exerciseName: exercise.name },
+    });
+  };
+
   const renderExerciseItem = ({ item }: { item: Exercise }) => {
     const isSelected = selectedExercises.some((ex) => ex.id === item.id);
     const isInInitialRoutine = initialRoutineExercises.some((ex) => ex.id === item.id);
+    
+    // Use placeholder image when exercise images are not available
     const imageSource = item.images && item.images.length > 0
-      ? `../../assets/images/exercises/${item.images[0]}`
-      : null; // Fallback for exercises without images
+      ? { uri: `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${item.images[0]}` }
+      : require('../../assets/images/exersiseplaceholder.png');
 
     return (
       <TouchableOpacity
@@ -98,7 +107,9 @@ export default function SelectExerciseScreen() {
         disabled={isInInitialRoutine} // Disable if already in routine
       >
         <View style={styles.exerciseContent}>
-          {imageSource && <Image source={imageSource} style={styles.exerciseImage} />}
+          <TouchableOpacity onPress={() => handleExerciseImagePress(item)}>
+            <Image source={imageSource} style={styles.exerciseImage} />
+          </TouchableOpacity>
           <ThemedText style={{ color: colors.text, flex: 1 }}>{item.name}</ThemedText>
         </View>
       </TouchableOpacity>
