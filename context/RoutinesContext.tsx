@@ -95,19 +95,34 @@ export const RoutinesProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const moveRoutineToFolder = (routineId: string, folderId: string) => {
+  const moveRoutineToFolder = (routineId: string, targetFolderId: string) => {
     setItems(prevItems => {
-      const newItems = prevItems.map(item => {
-        if (item.type === 'routine' && item.id === routineId) {
-          return { ...item, folderId: folderId };
-        } else if (item.type === 'folder' && item.id === folderId) {
-          // Remove routine from its previous folder if it was in one
-          const updatedRoutines = item.routines.filter(r => r.id !== routineId);
-          return { ...item, routines: updatedRoutines };
+      const routineToMove = prevItems.find(item => item.id === routineId && item.type === 'routine') as Routine;
+      if (!routineToMove) return prevItems; // Routine not found
+
+      // Remove routine from its current location (either root or another folder)
+      let updatedItems = prevItems.filter(item => item.id !== routineId); // Remove from root
+
+      updatedItems = updatedItems.map(item => {
+        if (item.type === 'folder') {
+          // Remove from old folder if it was in one
+          if (routineToMove.folderId && item.id === routineToMove.folderId) {
+            return { ...item, routines: item.routines.filter(r => r.id !== routineId) };
+          }
+          // Add to new folder
+          if (item.id === targetFolderId) {
+            return { ...item, routines: [...item.routines, { ...routineToMove, folderId: targetFolderId }] };
+          }
         }
         return item;
       });
-      return newItems;
+
+      // If moving to root, add it back to the main array with folderId undefined
+      if (targetFolderId === 'root') {
+        return [...updatedItems, { ...routineToMove, folderId: undefined }];
+      }
+
+      return updatedItems;
     });
   };
 
