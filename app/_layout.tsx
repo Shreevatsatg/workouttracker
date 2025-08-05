@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { WorkoutProvider } from '@/context/WorkoutContext';
 import WorkoutNotificationBar from '@/components/WorkoutNotificationBar';
+import { RoutinesProvider } from '@/context/RoutinesContext';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -21,13 +22,15 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <WorkoutProvider>
-        <Stack initialRouteName="(tabs)">
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        </Stack>
-        <StatusBar style="auto" />
-        <WorkoutNotificationBar />
-      </WorkoutProvider>
+      <RoutinesProvider>
+        <WorkoutProvider>
+          <Stack initialRouteName="(tabs)">
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          </Stack>
+          <StatusBar style="auto" />
+          <WorkoutNotificationBar />
+        </WorkoutProvider>
+      </RoutinesProvider>
     </ThemeProvider>
   );
 }

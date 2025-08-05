@@ -75,7 +75,10 @@ export default function LogWorkoutScreen() {
   };
 
   const addLoggedExercise = () => {
-    updateLoggedExercises([...loggedExercises, { name: '', sets: [], loggedSets: [{ weight: '', reps: '', loggedWeight: '', loggedReps: '', completed: false }] }]);
+    router.push({
+      pathname: '/(tabs)/select-exercise',
+      params: { currentLoggedExercises: JSON.stringify(loggedExercises), callingPage: 'log-workout' },
+    });
   };
 
   const toggleSetCompletion = (exIndex: number, setIndex: number) => {
@@ -185,6 +188,18 @@ export default function LogWorkoutScreen() {
     }
   }, [activeRoutine, router]);
 
+  useEffect(() => {
+    if (params.selectedExercises) {
+      const newSelectedExercises = JSON.parse(params.selectedExercises as string);
+      const exercisesToAdd = newSelectedExercises.map((ex: Exercise) => ({
+        ...ex,
+        loggedSets: [{ weight: '', reps: '', loggedWeight: '', loggedReps: '', completed: false }],
+      }));
+      updateLoggedExercises([...loggedExercises, ...exercisesToAdd]);
+      router.setParams({ selectedExercises: undefined });
+    }
+  }, [params.selectedExercises]);
+
   // Clean up rest timer on unmount
   useEffect(() => {
     return () => {
@@ -224,7 +239,13 @@ export default function LogWorkoutScreen() {
       <ThemedView style={styles.section}>
         <ThemedText type="subtitle" style={{ color: colors.text, marginBottom: 16 }}>Exercises:</ThemedText>
         {loggedExercises.length === 0 ? (
-          <ThemedText style={{ color: colors.secondary }}>No exercises in this routine.</ThemedText>
+          <ThemedView style={{ alignItems: 'center' }}>
+            <ThemedText style={{ color: colors.secondary, marginBottom: 16 }}>No exercises in this routine.</ThemedText>
+            <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint, marginTop: 12, width: '100%' }]} onPress={addLoggedExercise}>
+              <IconSymbol name="plus.circle" size={20} color={colors.background} />
+              <ThemedText style={[styles.buttonText, { color: colors.background }]}>Add Exercise</ThemedText>
+            </TouchableOpacity>
+          </ThemedView>
         ) : (
           <>
             {loggedExercises.map((exercise, exIndex) => (

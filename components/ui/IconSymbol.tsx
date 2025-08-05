@@ -24,6 +24,8 @@ const MAPPING = {
   'ellipsis': 'more-vert',
   'checkmark.circle.fill': 'check-circle',
   'circle': 'radio-button-unchecked',
+  'folder.badge.plus': 'create-new-folder',
+  'plus.circle': 'add-circle-outline',
 } as IconMapping;
 
 /**

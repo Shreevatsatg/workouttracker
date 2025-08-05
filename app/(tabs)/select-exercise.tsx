@@ -67,14 +67,21 @@ export default function SelectExerciseScreen() {
   };
 
   const handleAddSelectedExercises = () => {
-    // Filter out exercises that were already in the routine initially
     const newExercisesToAdd = selectedExercises.filter(
       (ex) => !initialRoutineExercises.some((initialEx) => initialEx.id === ex.id)
     );
-    router.push({
-      pathname: '/(tabs)/create-routine',
-      params: { selectedExercises: JSON.stringify(newExercisesToAdd) },
-    });
+
+    if (params.callingPage === 'log-workout') {
+      router.push({
+        pathname: '/(tabs)/log-workout',
+        params: { selectedExercises: JSON.stringify(newExercisesToAdd) },
+      });
+    } else {
+      router.push({
+        pathname: '/(tabs)/create-routine',
+        params: { selectedExercises: JSON.stringify(newExercisesToAdd) },
+      });
+    }
   };
 
   const handleCreateCustomExercise = () => {
@@ -155,6 +162,7 @@ export default function SelectExerciseScreen() {
           onPress={handleAddSelectedExercises}
         >
           <View style={styles.floatingButtonContent}>
+            <ThemedText style={[styles.floatingButtonText, { color: colors.background }]}>Add</ThemedText>
             <ThemedText style={[styles.floatingButtonText, { color: colors.background }]}>
               {selectedExercises.filter(ex => !initialRoutineExercises.some(initialEx => initialEx.id === ex.id)).length}
             </ThemedText>
@@ -222,7 +230,7 @@ const styles = StyleSheet.create({
   },
   floatingButton: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 80,
     right: 20,
     width: 60,
     height: 60,

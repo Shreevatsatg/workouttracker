@@ -2,46 +2,37 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
+import { useWorkout } from '@/context/WorkoutContext';
+import { useRoutines, Item, Routine, Folder } from '@/context/RoutinesContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-
-interface Set {
-  weight: string;
-  reps: string;
-}
-
-interface Exercise {
-  name: string;
-  sets: Set[];
-}
-
-interface Routine {
-  id: string;
-  name: string;
-  exercises: Exercise[];
-}
+import { Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function RoutineScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { startWorkout: startWorkoutContext } = useWorkout();
+  const { items, setItems, createFolder, deleteItem, moveRoutineToFolder } = useRoutines();
 
-  const [routines, setRoutines] = useState<Routine[]>([]);
   const [menuVisible, setMenuVisible] = useState<string | null>(null);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [movingRoutine, setMovingRoutine] = useState<Routine | null>(null);
 
   useEffect(() => {
     if (params.newRoutine) {
       const newRoutine = JSON.parse(params.newRoutine as string);
-      if (newRoutine.id && routines.some(r => r.id === newRoutine.id)) {
-        setRoutines(routines.map(r => r.id === newRoutine.id ? newRoutine : r));
+      if (newRoutine.id && items.some(item => item.id === newRoutine.id)) {
+        setItems(items.map(item => item.id === newRoutine.id ? { ...newRoutine, type: 'routine' } : item));
       } else {
-        setRoutines(prevRoutines => [{ ...newRoutine, id: Date.now().toString() }, ...prevRoutines]);
+        setItems(prevItems => [{ ...newRoutine, id: Date.now().toString(), type: 'routine' }, ...prevItems]);
       }
+      router.setParams({ newRoutine: '' });
     }
-  }, [params.newRoutine]);
+  }, [params.newRoutine, items, setItems]);
 
   const openRoutineDetails = (routine: Routine) => {
     router.push({
@@ -50,9 +41,9 @@ export default function RoutineScreen() {
     });
   };
 
-  const deleteRoutine = (id: string) => {
-    setRoutines(routines.filter(r => r.id !== id));
-    setMenuVisible(null);
+  const startWorkout = (routine: Routine) => {
+    startWorkoutContext(routine);
+    router.push('/(tabs)/log-workout');
   };
 
   const editRoutine = (routine: Routine) => {
@@ -63,16 +54,41 @@ export default function RoutineScreen() {
     });
   };
 
+  const handleCreateFolder = () => {
+    if (newFolderName.trim() !== '') {
+      createFolder(newFolderName);
+      setNewFolderName('');
+      setIsCreatingFolder(false);
+    }
+  };
+
+  const handleMoveRoutineToFolder = (folderId: string) => {
+    if (movingRoutine) {
+      moveRoutineToFolder(movingRoutine.id, folderId);
+      setMovingRoutine(null);
+    }
+  };
+
+  const startEmptyWorkout = () => {
+    startWorkoutContext({
+      id: 'empty',
+      name: 'Empty Workout',
+      exercises: [],
+      type: 'routine',
+    });
+    router.push('/(tabs)/log-workout');
+  };""
+
   return (
     <Pressable onPress={() => setMenuVisible(null)} disabled={menuVisible === null} style={{ flex: 1 }}>
       <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
         <ThemedView style={[styles.section, { marginTop: 24 }]}>
           <TouchableOpacity
-            style={[styles.button, { backgroundColor: colors.tint }]}
-            onPress={() => router.push('/(tabs)/create-routine')}
+            style={[styles.button, { backgroundColor: colors.tint, marginTop: 12 }]}
+            onPress={() => startEmptyWorkout()}
           >
-            <IconSymbol name="plus.circle" size={20} color={colors.background} />
-            <ThemedText style={[styles.buttonText, { color: colors.background }]}>Create Routine</ThemedText>
+            <IconSymbol name="play.circle" size={20} color={colors.background} />
+            <ThemedText style={[styles.buttonText, { color: colors.background }]}>Start Empty Workout</ThemedText>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, { backgroundColor: colors.tint, marginTop: 12 }]}
@@ -83,36 +99,95 @@ export default function RoutineScreen() {
           </TouchableOpacity>
         </ThemedView>
 
-        {/* List of routines */}
+        {isCreatingFolder && (
+          <View style={styles.section}>
+            <TextInput
+              style={[styles.input, { color: colors.text, borderColor: colors.tabIconDefault }]}
+              placeholder="Folder Name"
+              placeholderTextColor={colors.secondary}
+              value={newFolderName}
+              onChangeText={setNewFolderName}
+            />
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: colors.tint, marginTop: 12 }]}
+              onPress={handleCreateFolder}
+            >
+              <ThemedText style={[styles.buttonText, { color: colors.background }]}>Create</ThemedText>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* List of items */}
         <ThemedView style={styles.section}>
-          <ThemedText type="title" style={{ color: colors.tint, marginBottom: 12 }}>Your Routines</ThemedText>
-          {routines.length === 0 ? (
-            <ThemedText style={{ color: colors.secondary }}>No routines yet. Create one above!</ThemedText>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <ThemedText type="title" style={{ color: colors.tint }}>Your Routines</ThemedText>
+            <View style={{ flexDirection: 'row' }}>
+              <TouchableOpacity onPress={() => setIsCreatingFolder(true)}>
+                <IconSymbol name="folder.badge.plus" size={28} color={colors.tint} />
+              </TouchableOpacity>
+              <TouchableOpacity style={{ marginLeft: 16 }} onPress={() => router.push('/(tabs)/create-routine')}>
+                <IconSymbol name="plus.circle" size={28} color={colors.tint} />
+              </TouchableOpacity>
+            </View>
+          </View>
+          {items.length === 0 ? (
+            <ThemedText style={{ color: colors.secondary }}>No items yet. Create one above!</ThemedText>
           ) : (
-            routines.map((routine, idx) => (
+            items.map((item, idx) => (
               <View key={idx} style={{ position: 'relative' }}>
-                <ThemedView style={[styles.categoryCard, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
-                  <TouchableOpacity style={{ flex: 1 }} onPress={() => openRoutineDetails(routine)}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <ThemedView style={[styles.categoryIcon, { backgroundColor: colors.tint + '20' }]}>
-                        <IconSymbol name="figure.strengthtraining.traditional" size={28} color={colors.tint} />
-                      </ThemedView>
-                      <ThemedView style={styles.categoryContent}>
-                        <ThemedText type="defaultSemiBold" style={[styles.categoryTitle, { color: colors.text }]}>{routine.name}</ThemedText>
-                        <ThemedText style={[styles.categorySubtitle, { color: colors.secondary }]}>{routine.exercises.length} exercises</ThemedText>
-                      </ThemedView>
+                {item.type === 'routine' ? (
+                  <ThemedView style={[styles.categoryCard, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <TouchableOpacity style={{ flex: 1 }} onPress={() => openRoutineDetails(item as Routine)}>
+                          <ThemedText type="defaultSemiBold" style={[styles.categoryTitle, { color: colors.text }]}>{item.name}</ThemedText>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => setMenuVisible(menuVisible === item.id ? null : item.id)} style={{ padding: 8 }}>
+                          <IconSymbol name="ellipsis" size={24} color={colors.text} />
+                        </TouchableOpacity>
+                      </View>
+                      <TouchableOpacity style={{ flex: 1 }} onPress={() => openRoutineDetails(item as Routine)}>
+                        <ThemedText style={[styles.categorySubtitle, { color: colors.secondary }]}>{(item as Routine).exercises.length} exercises</ThemedText>
+                        <ThemedText numberOfLines={2} style={[styles.exerciseList, { color: colors.secondary }]}>
+                          {(item as Routine).exercises.map(e => e.name).join(', ')}
+                        </ThemedText>
+                        <TouchableOpacity
+                          style={[styles.startButton, { backgroundColor: colors.tint }]} 
+                          onPress={() => startWorkout(item as Routine)}>
+                          <IconSymbol name="play.circle" size={20} color={colors.background} />
+                          <ThemedText style={[styles.startButtonText, { color: colors.background }]}>Start Workout</ThemedText>
+                        </TouchableOpacity>
+                      </TouchableOpacity>
                     </View>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setMenuVisible(menuVisible === routine.id ? null : routine.id)} style={{ padding: 8 }}>
-                    <IconSymbol name="ellipsis" size={24} color={colors.text} />
-                  </TouchableOpacity>
-                </ThemedView>
-                {menuVisible === routine.id && (
-                  <View style={[styles.menu, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
-                    <TouchableOpacity style={styles.menuItem} onPress={() => editRoutine(routine)}>
-                      <ThemedText style={{ color: colors.secondary }}>Edit</ThemedText>
+                  </ThemedView>
+                ) : (
+                  <ThemedView style={[styles.categoryCard, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
+                    <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push({ pathname: '/(tabs)/folder-details', params: { folderId: item.id } })}>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <ThemedText type="defaultSemiBold" style={[styles.categoryTitle, { color: colors.text }]}>{item.name}</ThemedText>
+                          <TouchableOpacity onPress={() => setMenuVisible(menuVisible === item.id ? null : item.id)} style={{ padding: 8 }}>
+                            <IconSymbol name="ellipsis" size={24} color={colors.text} />
+                          </TouchableOpacity>
+                        </View>
+                        <ThemedText style={[styles.categorySubtitle, { color: colors.secondary }]}>{(item as Folder).routines.length} routines</ThemedText>
+                      </View>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.menuItem} onPress={() => deleteRoutine(routine.id)}>
+                  </ThemedView>
+                )}
+                {menuVisible === item.id && (
+                  <View style={[styles.menu, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
+                    {item.type === 'routine' && (
+                      <>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => editRoutine(item as Routine)}>
+                          <ThemedText style={{ color: colors.secondary }}>Edit</ThemedText>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => setMovingRoutine(item as Routine)}>
+                          <ThemedText style={{ color: colors.secondary }}>Move to Folder</ThemedText>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                    <TouchableOpacity style={styles.menuItem} onPress={() => deleteItem(item.id)}>
                       <ThemedText style={{ color: colors.secondary }}>Delete</ThemedText>
                     </TouchableOpacity>
                   </View>
@@ -123,6 +198,22 @@ export default function RoutineScreen() {
         </ThemedView>
         <ThemedView style={{ height: 40 }} />
       </ScrollView>
+
+      {movingRoutine && (
+        <View style={styles.modalContainer}>
+          <ThemedView style={[styles.modalContent, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
+            <ThemedText type="subtitle" style={{ color: colors.text, marginBottom: 12 }}>Move to Folder</ThemedText>
+            {items.filter(item => item.type === 'folder').map(folder => (
+              <TouchableOpacity key={folder.id} style={styles.menuItem} onPress={() => moveRoutineToFolder(folder.id)}>
+                <ThemedText style={{ color: colors.secondary }}>{folder.name}</ThemedText>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={styles.menuItem} onPress={() => setMovingRoutine(null)}>
+              <ThemedText style={{ color: colors.secondary }}>Cancel</ThemedText>
+            </TouchableOpacity>
+          </ThemedView>
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -150,6 +241,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
   },
   categoryCard: {
     borderRadius: 12,
@@ -180,6 +277,10 @@ const styles = StyleSheet.create({
   categorySubtitle: {
     fontSize: 14,
   },
+  exerciseList: {
+    fontSize: 14,
+    marginTop: 4,
+  },
   menu: {
     position: 'absolute',
     top: 50,
@@ -191,5 +292,37 @@ const styles = StyleSheet.create({
   },
   menuItem: {
     padding: 8,
+  },
+  startButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginTop: 12,
+  },
+  startButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  modalContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  modalContent: {
+    borderRadius: 16,
+    padding: 24,
+    width: '80%',
+    alignItems: 'center',
+    borderWidth: 1,
   },
 });
