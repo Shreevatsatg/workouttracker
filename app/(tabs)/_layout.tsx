@@ -1,15 +1,30 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform } from 'react-native';
+import { Platform, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 import { HapticTab } from '@/components/HapticTab';
+import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
+import { useWorkout } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
+
+// Helper function to format time
+const formatTime = (totalSeconds: number) => {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  const pad = (num: number) => num.toString().padStart(2, '0');
+
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+};
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { workoutTime } = useWorkout();
 
   return (
     <Tabs
@@ -153,9 +168,13 @@ export default function TabLayout() {
         options={{
           href: null,
           headerShown: true,
-          title: 'Log Workout',
-        }}
-      />
+          headerTitle: () => (
+            <ThemedText type="subtitle" style={{ color: Colors[colorScheme ?? 'light'].secondary }}>
+              Workout: {formatTime(workoutTime)}
+            </ThemedText>
+          ),
+          headerTitleAlign: 'center',
+        }} />
       <Tabs.Screen
         name="select-exercise"
         options={{
