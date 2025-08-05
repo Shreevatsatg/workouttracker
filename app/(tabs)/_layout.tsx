@@ -190,6 +190,15 @@ export default function TabLayout() {
           title: 'Create Custom Exercise',
         }}
       />
+      
+      <Tabs.Screen
+        name="exercise-details"
+        options={{
+          href: null,
+          headerShown: true,
+          title: 'Exercise Details',
+        }}
+      />
     </Tabs>
   );
 }
