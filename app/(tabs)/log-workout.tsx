@@ -1,13 +1,17 @@
 
+import RestTimer from '@/components/RestTimer';
+import RestTimerNotification from '@/components/RestTimerNotification';
+import RestTimerSelector from '@/components/RestTimerSelector';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useWorkout } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ScrollView, StyleSheet, TextInput, TouchableOpacity, Vibration } from 'react-native';
 interface Set {
   weight: string;
   reps: string;
@@ -20,6 +24,7 @@ interface Exercise {
   name: string;
   sets: Set[];
   loggedSets: Set[];
+  restTime?: number;
 }
 
 interface Routine {
@@ -47,6 +52,13 @@ export default function LogWorkoutScreen() {
     updateWorkoutTime,
   } = useWorkout();
 
+  // Rest timer state
+  const [restTimerSelectorVisible, setRestTimerSelectorVisible] = useState(false);
+  const [selectedExerciseIndex, setSelectedExerciseIndex] = useState<number | null>(null);
+  const [restTimerActive, setRestTimerActive] = useState(false);
+  const [restTimerRemaining, setRestTimerRemaining] = useState(0);
+  const restTimerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const handleLoggedSetChange = (exIndex: number, setIndex: number, field: 'loggedWeight' | 'loggedReps', value: string) => {
     const newLoggedExercises = [...loggedExercises];
     newLoggedExercises[exIndex].loggedSets[setIndex][field] = value;
@@ -65,8 +77,86 @@ export default function LogWorkoutScreen() {
 
   const toggleSetCompletion = (exIndex: number, setIndex: number) => {
     const newLoggedExercises = [...loggedExercises];
-    newLoggedExercises[exIndex].loggedSets[setIndex].completed = !newLoggedExercises[exIndex].loggedSets[setIndex].completed;
+    const wasCompleted = newLoggedExercises[exIndex].loggedSets[setIndex].completed;
+    newLoggedExercises[exIndex].loggedSets[setIndex].completed = !wasCompleted;
     updateLoggedExercises(newLoggedExercises);
+
+    // Start rest timer if set was just completed and rest time is set
+    if (!wasCompleted && newLoggedExercises[exIndex].restTime && newLoggedExercises[exIndex].restTime! > 0) {
+      startRestTimer(newLoggedExercises[exIndex].restTime!);
+    }
+  };
+
+  // Rest timer functions
+  const triggerTimerEndFeedback = async () => {
+    try {
+      // Try to use Expo Haptics first (more sophisticated feedback)
+      if (Haptics.notificationAsync) {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } catch (error) {
+      // Fallback to React Native Vibration
+      try {
+        Vibration.vibrate([0, 200, 100, 200, 100, 200]); // Pattern: pause, vibrate, pause, vibrate, pause, vibrate
+      } catch (vibrationError) {
+        console.log('Vibration not supported on this device');
+      }
+    }
+  };
+
+  const startRestTimer = (seconds: number) => {
+    // Clear any existing timer first
+    if (restTimerIntervalRef.current) {
+      clearInterval(restTimerIntervalRef.current);
+      restTimerIntervalRef.current = null;
+    }
+    
+    setRestTimerActive(true);
+    setRestTimerRemaining(seconds);
+    
+    restTimerIntervalRef.current = setInterval(() => {
+      setRestTimerRemaining((prev) => {
+        if (prev <= 1) {
+          setRestTimerActive(false);
+          if (restTimerIntervalRef.current) {
+            clearInterval(restTimerIntervalRef.current);
+            restTimerIntervalRef.current = null;
+          }
+          // Trigger vibration/haptic feedback when timer ends
+          triggerTimerEndFeedback();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const adjustRestTimer = (adjustment: number) => {
+    setRestTimerRemaining((prev) => Math.max(0, prev + adjustment));
+  };
+
+  const skipRestTimer = () => {
+    setRestTimerActive(false);
+    setRestTimerRemaining(0);
+    if (restTimerIntervalRef.current) {
+      clearInterval(restTimerIntervalRef.current);
+      restTimerIntervalRef.current = null;
+    }
+  };
+
+  const openRestTimerSelector = (exerciseIndex: number) => {
+    setSelectedExerciseIndex(exerciseIndex);
+    setRestTimerSelectorVisible(true);
+  };
+
+  const handleRestTimeSelect = (time: number) => {
+    if (selectedExerciseIndex !== null) {
+      const newLoggedExercises = [...loggedExercises];
+      newLoggedExercises[selectedExerciseIndex].restTime = time;
+      updateLoggedExercises(newLoggedExercises);
+    }
+    setRestTimerSelectorVisible(false);
+    setSelectedExerciseIndex(null);
   };
 
   useEffect(() => {
@@ -85,6 +175,15 @@ export default function LogWorkoutScreen() {
     }
   }, [activeRoutine, router]);
 
+  // Clean up rest timer on unmount
+  useEffect(() => {
+    return () => {
+      if (restTimerIntervalRef.current) {
+        clearInterval(restTimerIntervalRef.current);
+      }
+    };
+  }, []);
+
   
 
   const formatTime = (totalSeconds: number) => {
@@ -98,10 +197,19 @@ export default function LogWorkoutScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ThemedView style={styles.header}>
-        <ThemedText type="title" style={{ color: colors.tint }}>{activeRoutine && activeRoutine.name ? activeRoutine.name : 'Workout'}</ThemedText>
-      </ThemedView>
+    <>
+      {/* Rest Timer Notification */}
+      <RestTimerNotification
+        visible={restTimerActive}
+        remainingTime={restTimerRemaining}
+        onAdjustTime={adjustRestTimer}
+        onSkip={skipRestTimer}
+      />
+      
+      <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+        <ThemedView style={styles.header}>
+          <ThemedText type="title" style={{ color: colors.tint }}>{activeRoutine && activeRoutine.name ? activeRoutine.name : 'Workout'}</ThemedText>
+        </ThemedView>
 
       <ThemedView style={styles.section}>
         <ThemedText type="subtitle" style={{ color: colors.text, marginBottom: 16 }}>Exercises:</ThemedText>
@@ -111,7 +219,11 @@ export default function LogWorkoutScreen() {
           <>
             {loggedExercises.map((exercise, exIndex) => (
               <ThemedView key={exIndex} style={[styles.exerciseCard, { borderColor: colors.tabIconDefault }]}> 
-                <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 12, fontSize: 20 }}>{exIndex + 1}. {exercise.name}</ThemedText>
+                <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 4, fontSize: 20 }}>{exIndex + 1}. {exercise.name}</ThemedText>
+                <RestTimer 
+                  restTime={exercise.restTime || 0} 
+                  onPress={() => openRestTimerSelector(exIndex)} 
+                />
                 <ThemedView style={[styles.setRow, styles.headerRow]}>
                   <ThemedText style={[styles.headerText, styles.setColumn, { color: colors.text }]}>Set</ThemedText>
                   <ThemedText style={[styles.headerText, styles.prevColumn, { color: colors.text }]}>Prev</ThemedText>
@@ -159,10 +271,19 @@ export default function LogWorkoutScreen() {
           </>
         )}
       </ThemedView>
-      <TouchableOpacity style={[styles.button, { backgroundColor: "#f87171", marginTop: 24 }]} onPress={() => { discardWorkout(); }}>
-        <ThemedText style={[styles.buttonText, { color: colors.background }]}>Discard Workout</ThemedText>
-      </TouchableOpacity>
-    </ScrollView>
+        <TouchableOpacity style={[styles.button, { backgroundColor: "#f87171", marginTop: 24 }]} onPress={() => { discardWorkout(); }}>
+          <ThemedText style={[styles.buttonText, { color: colors.background }]}>Discard Workout</ThemedText>
+        </TouchableOpacity>
+      </ScrollView>
+      
+      {/* Rest Timer Selector Modal */}
+      <RestTimerSelector
+        visible={restTimerSelectorVisible}
+        currentTime={selectedExerciseIndex !== null ? loggedExercises[selectedExerciseIndex]?.restTime || 0 : 0}
+        onSelect={handleRestTimeSelect}
+        onClose={() => setRestTimerSelectorVisible(false)}
+      />
+    </>
   );
 }
 

@@ -12,6 +12,7 @@ interface Exercise {
   name: string;
   sets: Set[];
   loggedSets: Set[];
+  restTime?: number; // in seconds, 0 means "off"
 }
 
 interface Routine {

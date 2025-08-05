@@ -1,7 +1,6 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { Platform } from 'react-native';
 
 import { HapticTab } from '@/components/HapticTab';
 import { ThemedText } from '@/components/ThemedText';
