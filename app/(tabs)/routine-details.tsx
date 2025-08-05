@@ -9,6 +9,22 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
+interface Set {
+  weight: string;
+  reps: string;
+}
+
+interface Exercise {
+  name: string;
+  sets: Set[];
+}
+
+interface Routine {
+  id: string;
+  name: string;
+  exercises: Exercise[];
+}
+
 export default function RoutineDetailsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -24,8 +40,8 @@ export default function RoutineDetailsScreen() {
     router.push('/(tabs)/log-workout');
   };
 
-  const editRoutine = () => {
-    router.push('/(tabs)/log-workout');
+const editRoutine = () => {
+    router.push({ pathname: '/(tabs)/create-routine', params: { routine: JSON.stringify(routine) } });
   };
 
   // Remove nextExercise and cancelWorkout if not used, or implement as needed

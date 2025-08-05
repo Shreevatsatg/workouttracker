@@ -101,7 +101,7 @@ export default function SelectExerciseScreen() {
       <TouchableOpacity
         style={[
           styles.exerciseItem,
-          { borderColor: colors.tabIconDefault, backgroundColor: isSelected ? colors.tabIconDefault + '20' : colors.background },
+          { borderColor: colors.tabIconDefault, backgroundColor: isSelected ? '#e5e5e54b' : colors.background },
         ]}
         onPress={() => toggleSelectExercise(item)}
         disabled={isInInitialRoutine} // Disable if already in routine
@@ -110,7 +110,12 @@ export default function SelectExerciseScreen() {
           <TouchableOpacity onPress={() => handleExerciseImagePress(item)}>
             <Image source={imageSource} style={styles.exerciseImage} />
           </TouchableOpacity>
-          <ThemedText style={{ color: colors.text, flex: 1 }}>{item.name}</ThemedText>
+          <View style={{ flex: 1 }}>
+            <ThemedText style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>{item.name}</ThemedText>
+            <ThemedText style={{ color: colors.secondary, fontSize: 14, marginTop: 4 }}>
+              {item.primaryMuscles.join(', ')}
+            </ThemedText>
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -119,15 +124,6 @@ export default function SelectExerciseScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.topButtons}>
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: colors.tint }]}
-          onPress={handleAddSelectedExercises}
-          disabled={selectedExercises.length === 0}
-        >
-          <ThemedText style={[styles.buttonText, { color: colors.background }]}>
-            Add Selected ({selectedExercises.length})
-          </ThemedText>
-        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.button, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
           onPress={handleCreateCustomExercise}
@@ -151,6 +147,20 @@ export default function SelectExerciseScreen() {
         keyExtractor={(item) => item.id}
         style={styles.list}
       />
+      
+      {/* Floating Add Button */}
+      {selectedExercises.filter(ex => !initialRoutineExercises.some(initialEx => initialEx.id === ex.id)).length > 0 && (
+        <TouchableOpacity
+          style={[styles.floatingButton, { backgroundColor: colors.tint }]}
+          onPress={handleAddSelectedExercises}
+        >
+          <View style={styles.floatingButtonContent}>
+            <ThemedText style={[styles.floatingButtonText, { color: colors.background }]}>
+              {selectedExercises.filter(ex => !initialRoutineExercises.some(initialEx => initialEx.id === ex.id)).length}
+            </ThemedText>
+          </View>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -209,5 +219,30 @@ const styles = StyleSheet.create({
   buttonText: {
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  floatingButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  floatingButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  floatingButtonText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginLeft: 4,
   },
 });
