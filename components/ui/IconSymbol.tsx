@@ -22,6 +22,8 @@ const MAPPING = {
   'dumbbell': 'fitness-center',
   'xmark.circle': 'close',
   'ellipsis': 'more-vert',
+  'checkmark.circle.fill': 'check-circle',
+  'circle': 'radio-button-unchecked',
 } as IconMapping;
 
 /**

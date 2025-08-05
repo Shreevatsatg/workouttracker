@@ -111,7 +111,7 @@ export default function LogWorkoutScreen() {
           <>
             {loggedExercises.map((exercise, exIndex) => (
               <ThemedView key={exIndex} style={[styles.exerciseCard, { borderColor: colors.tabIconDefault }]}> 
-                <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 8 }}>{exIndex + 1}. {exercise.name}</ThemedText>
+                <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 12, fontSize: 20 }}>{exIndex + 1}. {exercise.name}</ThemedText>
                 <ThemedView style={[styles.setRow, styles.headerRow]}>
                   <ThemedText style={[styles.headerText, styles.setColumn, { color: colors.text }]}>Set</ThemedText>
                   <ThemedText style={[styles.headerText, styles.prevColumn, { color: colors.text }]}>Prev</ThemedText>
@@ -120,11 +120,11 @@ export default function LogWorkoutScreen() {
                   <ThemedText style={[styles.headerText, styles.checkmarkColumn, { color: colors.text }]}></ThemedText>
                 </ThemedView>
                 {exercise.loggedSets.map((set, setIndex) => (
-                  <ThemedView key={setIndex} style={[styles.setRow, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}> 
+                  <ThemedView key={setIndex} style={[styles.setRow, { backgroundColor: set.completed ? colors.success : colors.background }]}> 
                     <ThemedText style={[styles.cellText, styles.setColumn, { color: colors.text }]}>{setIndex + 1}</ThemedText>
                     <ThemedText style={[styles.cellText, styles.prevColumn, { color: colors.text }]}>-</ThemedText>
                     <TextInput
-                      style={[styles.setInput, styles.kgRepsColumn, { backgroundColor: colors.background, color: colors.text }]}
+                      style={[styles.setInput, styles.kgRepsColumn, { color: colors.text }]}
                       placeholder={set.weight}
                       placeholderTextColor={colors.secondary}
                       keyboardType="numeric"
@@ -132,7 +132,7 @@ export default function LogWorkoutScreen() {
                       onChangeText={(val) => handleLoggedSetChange(exIndex, setIndex, 'loggedWeight', val)}
                     />
                     <TextInput
-                      style={[styles.setInput, styles.kgRepsColumn, { backgroundColor: colors.background, color: colors.text }]}
+                      style={[styles.setInput, styles.kgRepsColumn, { color: colors.text }]}
                       placeholder={set.reps}
                       placeholderTextColor={colors.secondary}
                       keyboardType="numeric"
@@ -149,12 +149,12 @@ export default function LogWorkoutScreen() {
                   </ThemedView>
                 ))}
                 <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint, marginTop: 12 }]} onPress={() => addLoggedSet(exIndex)}>
-                    <ThemedText style={[styles.buttonText, { color: colors.background }]}>Add Set</ThemedText>
+                    <ThemedText style={[styles.buttonText, { color: colors.background }]}>+Add Set</ThemedText>
                   </TouchableOpacity>
               </ThemedView>
             ))}
             <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint, marginTop: 12 }]} onPress={addLoggedExercise}>
-              <ThemedText style={[styles.buttonText, { color: colors.background }]}>Add Exercise</ThemedText>
+              <ThemedText style={[styles.buttonText, { color: colors.background }]}>+Add Exercise</ThemedText>
             </TouchableOpacity>
           </>
         )}
@@ -173,8 +173,8 @@ const styles = StyleSheet.create({
   header: {
     padding: 16,
     alignItems: 'center',
-    borderBottomWidth: 1,
     borderColor: '#ccc',
+    marginTop:10,
   },
   timerControls: {
     flexDirection: 'row',
@@ -226,7 +226,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   setInput: {
-    borderWidth: 1,
     borderRadius: 8,
     padding: 8,
     fontSize: 14,
@@ -252,7 +251,7 @@ const styles = StyleSheet.create({
   },
   button: {
     borderRadius: 8,
-    padding: 16,
+    padding: 6,
     alignItems: 'center',
     marginHorizontal: 4,
     marginBottom: 4,
