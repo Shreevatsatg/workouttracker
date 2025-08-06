@@ -109,34 +109,43 @@ export default function ExerciseDetailsScreen() {
 
       {/* Exercise Images */}
       <View style={styles.imageContainer}>
-        <Image 
-          source={exercise.images && exercise.images.length > 0
-            ? { uri: `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${exercise.images[currentImageIndex]}` }
-            : require('../../assets/images/exersiseplaceholder.png')
-          }
-          style={[styles.exerciseImage, { width: screenWidth - 32 }]} 
-        />
-          {exercise.images.length > 1 && (
-            <>
-              <TouchableOpacity 
-                style={[styles.imageNavButton, styles.prevButton]}
-                onPress={previousImage}
-              >
-                <IconSymbol name="chevron.left" size={20} color={colors.background} />
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.imageNavButton, styles.nextButton]}
-                onPress={nextImage}
-              >
-                <IconSymbol name="chevron.right" size={20} color={colors.background} />
-              </TouchableOpacity>
-              <View style={styles.imageIndicator}>
-                <ThemedText style={[styles.imageIndicatorText, { color: colors.background }]}>
-                  {currentImageIndex + 1} / {exercise.images.length}
-                </ThemedText>
-              </View>
-            </>
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScroll={(event) => {
+            const contentOffsetX = event.nativeEvent.contentOffset.x;
+            const index = Math.round(contentOffsetX / screenWidth);
+            setCurrentImageIndex(index);
+          }}
+          scrollEventThrottle={16}
+          snapToInterval={screenWidth}
+          decelerationRate="fast"
+          snapToAlignment="center" // Add this line
+          style={{ width: screenWidth }}
+        >
+          {exercise.images.length > 0 ? (
+            exercise.images.map((image, index) => (
+              <Image
+                key={index}
+                source={{ uri: `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${image}` }}
+                style={[styles.exerciseImage, { width: screenWidth }]} 
+              />
+            ))
+          ) : (
+            <Image
+              source={require('../../assets/images/exersiseplaceholder.png')}
+              style={[styles.exerciseImage, { width: screenWidth }]} 
+            />
           )}
+        </ScrollView>
+        {exercise.images.length > 0 && (
+          <View style={styles.imageIndicatorBelow}>
+            <ThemedText style={[styles.imageIndicatorText, { color: colors.text }]}>
+              {currentImageIndex + 1} / {exercise.images.length}
+            </ThemedText>
+          </View>
+        )}
       </View>
 
       {/* Exercise Info Cards */}
@@ -260,11 +269,10 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     marginBottom: 16,
+    marginHorizontal: 16, // Added for spacing
   },
   exerciseImage: {
     height: 250,
-    borderRadius: 12,
-    marginHorizontal: 16,
   },
   imageNavButton: {
     position: 'absolute',
@@ -283,10 +291,9 @@ const styles = StyleSheet.create({
   nextButton: {
     right: 24,
   },
-  imageIndicator: {
-    position: 'absolute',
-    bottom: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  imageIndicatorBelow: {
+    marginTop: 8,
+    backgroundColor: 'transparent',
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,

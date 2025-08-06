@@ -6,9 +6,11 @@ import { Colors } from '@/constants/Colors';
 import { useWorkout } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Image } from 'expo-image';
 
+// Define interfaces for exercise and routine structure
 interface Set {
   weight: string;
   reps: string;
@@ -25,6 +27,17 @@ interface Routine {
   exercises: Exercise[];
 }
 
+interface ExerciseDetail {
+  name: string;
+  primaryMuscles: string[];
+  secondaryMuscles: string[];
+  instructions: string[];
+  equipment: string;
+  images: string[];
+}
+
+const EXERCISES_DATA = require('@/assets/data/exercises.json');
+
 export default function RoutineDetailsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -33,18 +46,24 @@ export default function RoutineDetailsScreen() {
   const routine: Routine = JSON.parse(params.routine as string);
   const { startWorkout: startWorkoutContext } = useWorkout();
 
-  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [allExercises, setAllExercises] = useState<ExerciseDetail[]>([]);
+
+  useEffect(() => {
+    setAllExercises(EXERCISES_DATA);
+  }, []);
+
+  const getExerciseDetails = (exerciseName: string): ExerciseDetail | undefined => {
+    return allExercises.find(ex => ex.name === exerciseName);
+  };
 
   const startWorkout = () => {
     startWorkoutContext(routine);
     router.push('/(tabs)/log-workout');
   };
 
-const editRoutine = () => {
+  const editRoutine = () => {
     router.push({ pathname: '/(tabs)/create-routine', params: { routine: JSON.stringify(routine) } });
   };
-
-  // Remove nextExercise and cancelWorkout if not used, or implement as needed
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -68,18 +87,43 @@ const editRoutine = () => {
         </View>
       </ThemedView>
 
-      {routine.exercises.map((exercise, exIndex) => (
-        <ThemedView key={exIndex} style={[styles.exerciseContainer, { borderColor: colors.tabIconDefault }]}>
-          <ThemedText type="subtitle" style={{ color: colors.text, marginBottom: 8 }}>{exIndex + 1}. {exercise.name}</ThemedText>
-          {exercise.sets.map((set, setIndex) => (
-            <ThemedView key={setIndex} style={[styles.setContainer, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
-              <ThemedText style={{ color: colors.text }}>Set {setIndex + 1}</ThemedText>
-              <ThemedText style={{ color: colors.text }}>{set.weight} kg</ThemedText>
-              <ThemedText style={{ color: colors.text }}>{set.reps} reps</ThemedText>
-            </ThemedView>
-          ))}
-        </ThemedView>
-      ))}
+      {routine.exercises.map((exercise, exIndex) => {
+        const details = getExerciseDetails(exercise.name);
+        const imageUrl = details?.images && details.images.length > 0
+          ? `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${details.images[0]}`
+          : '../../assets/images/exersiseplaceholder.png';
+
+        return (
+          <ThemedView key={exIndex} style={[styles.exerciseContainer, { borderColor: colors.tabIconDefault }]}>
+            <TouchableOpacity
+              style={styles.exerciseHeader}
+              onPress={() => router.push({ pathname: '/(tabs)/exercise-details', params: { exerciseId: details?.id, exerciseName: exercise.name } })}
+            >
+              <Image
+                source={typeof imageUrl === 'string' ? { uri: imageUrl } : require('../../assets/images/exersiseplaceholder.png')}
+                style={styles.exerciseThumbnail}
+              />
+              <View>
+                <ThemedText type="subtitle" style={{ color: colors.text }}>{exIndex + 1}. {exercise.name}</ThemedText>
+                {details && details.primaryMuscles.length > 0 && (
+                  <ThemedText style={styles.muscleText}>
+                    {details.primaryMuscles.join(', ')}
+                  </ThemedText>
+                )}
+              </View>
+            </TouchableOpacity>
+
+            <ThemedText type="subtitle" style={{ color: colors.text, marginTop: 12, marginBottom: 8 }}>Sets:</ThemedText>
+            {exercise.sets.map((set, setIndex) => (
+              <ThemedView key={setIndex} style={[styles.setContainer, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
+                <ThemedText style={{ color: colors.text }}>Set {setIndex + 1}</ThemedText>
+                <ThemedText style={{ color: colors.text }}>{set.weight} kg</ThemedText>
+                <ThemedText style={{ color: colors.text }}>{set.reps} reps</ThemedText>
+              </ThemedView>
+            ))}
+          </ThemedView>
+        );
+      })}
     </ScrollView>
   );
 }
@@ -114,6 +158,22 @@ const styles = StyleSheet.create({
     padding: 12,
     marginHorizontal: 16,
     marginBottom: 16,
+  },
+  exerciseHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  exerciseThumbnail: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    marginRight: 12,
+    backgroundColor: '#f0f0f0', // Placeholder background
+  },
+  muscleText: {
+    fontSize: 14,
+    color: '#888', // Adjust color as needed
   },
   setContainer: {
     flexDirection: 'row',
