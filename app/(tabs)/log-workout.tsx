@@ -10,7 +10,7 @@ import { useWorkout } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, TextInput, TouchableOpacity, Vibration, View } from 'react-native';
 interface Set {
@@ -30,10 +30,7 @@ interface Exercise {
   id?: string;
 }
 
-interface Routine {
-  name: string;
-  exercises: Exercise[];
-}
+
 
 export default function LogWorkoutScreen() {
   // Helper to truncate long exercise names
@@ -45,19 +42,11 @@ export default function LogWorkoutScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const params = useLocalSearchParams();
   const router = useRouter();
-  const navigation = useNavigation();
   const {
     activeRoutine,
-    workoutTime,
-    isWorkoutRunning,
     loggedExercises,
-    startWorkout,
-    pauseWorkout,
-    resumeWorkout,
     discardWorkout,
-    saveWorkout,
     updateLoggedExercises,
-    updateWorkoutTime,
   } = useWorkout();
 
   // Rest timer state
@@ -105,11 +94,11 @@ export default function LogWorkoutScreen() {
       if (Haptics.notificationAsync) {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
-    } catch (error) {
+    } catch {
       // Fallback to React Native Vibration
       try {
         Vibration.vibrate([0, 200, 100, 200, 100, 200]); // Pattern: pause, vibrate, pause, vibrate, pause, vibrate
-      } catch (vibrationError) {
+      } catch {
         console.log('Vibration not supported on this device');
       }
     }
@@ -177,15 +166,7 @@ export default function LogWorkoutScreen() {
     setSelectedExerciseIndex(null);
   };
 
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity onPress={() => { saveWorkout(); router.back(); }} style={{ marginRight: 15 }}>
-          <ThemedText style={{ color: colors.tint, fontWeight: 'bold' }}>Finish</ThemedText>
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, saveWorkout, router, colors.tint]);
+  
 
   useEffect(() => {
     if (!activeRoutine && router.canGoBack()) {
@@ -203,7 +184,7 @@ export default function LogWorkoutScreen() {
       updateLoggedExercises([...loggedExercises, ...exercisesToAdd]);
       router.setParams({ selectedExercises: undefined });
     }
-  }, [params.selectedExercises]);
+  }, [params.selectedExercises, loggedExercises, router, updateLoggedExercises]);
 
   // Clean up rest timer on unmount
   useEffect(() => {
@@ -216,15 +197,7 @@ export default function LogWorkoutScreen() {
 
   
 
-  const formatTime = (totalSeconds: number) => {
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-
-    const pad = (num: number) => num.toString().padStart(2, '0');
-
-    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-  };
+  
 
   return (
     <>

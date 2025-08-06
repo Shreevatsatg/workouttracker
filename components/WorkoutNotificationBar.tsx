@@ -1,7 +1,7 @@
 import { Colors } from '@/constants/Colors';
 import { useWorkout } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { useNavigation, usePathname, useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -9,8 +9,10 @@ export default function WorkoutNotificationBar() {
   const { activeRoutine, workoutTime, discardWorkout, resumeWorkout, isWorkoutRunning } = useWorkout();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const navigation = useNavigation();
+  
   const pathname = usePathname();
+
+  const router = useRouter();
 
   if (!activeRoutine || pathname === '/log-workout' || !isWorkoutRunning) {
     return null;
@@ -25,8 +27,6 @@ export default function WorkoutNotificationBar() {
 
     return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
   };
-
-  const router = useRouter();
 
   const handleDiscard = () => {
     discardWorkout();

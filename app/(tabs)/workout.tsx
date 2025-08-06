@@ -3,7 +3,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useWorkout } from '@/context/WorkoutContext';
-import { useRoutines, Item, Routine, Folder } from '@/context/RoutinesContext';
+import { useRoutines, Routine, Folder } from '@/context/RoutinesContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -32,7 +32,7 @@ export default function RoutineScreen() {
       }
       router.setParams({ newRoutine: '' });
     }
-  }, [params.newRoutine, items, setItems]);
+  }, [params.newRoutine, items, setItems, router]);
 
   const openRoutineDetails = (routine: Routine) => {
     router.push({
@@ -62,13 +62,6 @@ export default function RoutineScreen() {
     }
   };
 
-  const handleMoveRoutineToFolder = (folderId: string) => {
-    if (movingRoutine) {
-      moveRoutineToFolder(movingRoutine.id, folderId);
-      setMovingRoutine(null);
-    }
-  };
-
   const startEmptyWorkout = () => {
     startWorkoutContext({
       id: 'empty',
@@ -77,7 +70,7 @@ export default function RoutineScreen() {
       type: 'routine',
     });
     router.push('/(tabs)/log-workout');
-  };""
+  };
 
   return (
     <Pressable onPress={() => setMenuVisible(null)} disabled={menuVisible === null} style={{ flex: 1 }}>

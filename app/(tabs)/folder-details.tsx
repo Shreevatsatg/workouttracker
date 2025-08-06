@@ -1,12 +1,11 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
+import { Folder, Routine, useRoutines } from '@/context/RoutinesContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { useRoutines, Folder, Routine } from '@/context/RoutinesContext';
+import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function FolderDetailsScreen() {
   const colorScheme = useColorScheme();

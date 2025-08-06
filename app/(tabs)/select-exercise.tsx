@@ -25,11 +25,7 @@ interface Exercise {
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 // Common muscle groups - you can expand this list based on your exercise data
-const MUSCLE_GROUPS = [
-  'abdominals', 'abductors', 'adductors', 'biceps', 'calves', 'chest', 
-  'forearms', 'glutes', 'hamstrings', 'lats', 'lower back', 'middle back',
-  'neck', 'quadriceps', 'shoulders', 'traps', 'triceps', 'upper back'
-];
+
 
 export default function SelectExerciseScreen() {
   const colorScheme = useColorScheme();

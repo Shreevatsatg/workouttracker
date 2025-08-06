@@ -4,7 +4,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Button, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -39,7 +39,6 @@ export default function CreateRoutineScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
   const params = useLocalSearchParams();
-  const navigation = useNavigation();
   const [routineName, setRoutineName] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [currentRoutineId, setCurrentRoutineId] = useState<string | null>(null);

@@ -2,7 +2,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { useRouter } from 'expo-router';
+
 import React from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useRoutines, Routine } from '@/context/RoutinesContext';
@@ -10,7 +10,6 @@ import { useRoutines, Routine } from '@/context/RoutinesContext';
 export default function ExploreRoutineScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const router = useRouter();
   const { setItems } = useRoutines();
 
   const exampleRoutines: Routine[] = [

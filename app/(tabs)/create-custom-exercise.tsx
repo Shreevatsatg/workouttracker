@@ -4,7 +4,7 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View, FlatList, Alert } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View, FlatList } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 
 export default function CreateCustomExerciseScreen() {

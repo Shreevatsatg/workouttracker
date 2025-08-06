@@ -47,17 +47,7 @@ export default function ExerciseDetailsScreen() {
     }
   }, [params.exerciseId, params.exerciseName]);
 
-  const nextImage = () => {
-    if (exercise && exercise.images.length > 1) {
-      setCurrentImageIndex((prev) => (prev + 1) % exercise.images.length);
-    }
-  };
-
-  const previousImage = () => {
-    if (exercise && exercise.images.length > 1) {
-      setCurrentImageIndex((prev) => (prev - 1 + exercise.images.length) % exercise.images.length);
-    }
-  };
+  
 
   const capitalizeWords = (str: string) => {
     return str.split(' ').map(word => 
@@ -274,23 +264,7 @@ const styles = StyleSheet.create({
   exerciseImage: {
     height: 250,
   },
-  imageNavButton: {
-    position: 'absolute',
-    top: '50%',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: -20,
-  },
-  prevButton: {
-    left: 24,
-  },
-  nextButton: {
-    right: 24,
-  },
+  
   imageIndicatorBelow: {
     marginTop: 8,
     backgroundColor: 'transparent',
