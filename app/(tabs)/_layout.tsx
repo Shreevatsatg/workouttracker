@@ -1,12 +1,13 @@
 import { Tabs } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
+import React, { useState } from 'react';
+import { Modal, Platform, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 
 import { HapticTab } from '@/components/HapticTab';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
+import { useAuth } from '@/context/AuthContext';
 import { useWorkout } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
@@ -21,9 +22,51 @@ const formatTime = (totalSeconds: number) => {
   return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
 };
 
+const WorkoutTitle = () => {
+  const { workoutTime } = useWorkout();
+  const colorScheme = useColorScheme();
+  return (
+    <ThemedText type="subtitle" style={{ color: Colors[colorScheme ?? 'light'].secondary }}>
+      Workout: {formatTime(workoutTime)}
+    </ThemedText>
+  );
+};
+
+const SettingsMenu = () => {
+  const [visible, setVisible] = useState(false);
+  const { signOut } = useAuth();
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+
+  return (
+    <View>
+      <TouchableOpacity onPress={() => setVisible(true)} style={{ marginRight: 16 }}>
+        <ThemedText style={{ fontSize: 16 }}>Settings</ThemedText>
+      </TouchableOpacity>
+      <Modal
+        transparent={true}
+        visible={visible}
+        animationType="fade"
+        onRequestClose={() => setVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={[styles.dropdown, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
+              <View style={[styles.caret, { borderBottomColor: colors.background }]} />
+              <TouchableOpacity onPress={signOut} style={styles.dropdownItem}>
+                <IconSymbol name="arrow.right.to.line" size={16} color={colors.text} style={{ marginRight: 8 }} />
+                <ThemedText>Log Out</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+    </View>
+  );
+};
+
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const { workoutTime } = useWorkout();
 
   return (
     <Tabs
@@ -116,6 +159,7 @@ export default function TabLayout() {
           ),
           headerShown: true,
           headerTitle: 'Your Profile',
+          headerRight: () => <SettingsMenu />,
           headerStyle: {
             backgroundColor: Colors[colorScheme ?? 'light'].background,
             borderBottomColor: Colors[colorScheme ?? 'light'].tabIconDefault,
@@ -167,11 +211,7 @@ export default function TabLayout() {
         options={{
           href: null,
           headerShown: true,
-          headerTitle: () => (
-            <ThemedText type="subtitle" style={{ color: Colors[colorScheme ?? 'light'].secondary }}>
-              Workout: {formatTime(workoutTime)}
-            </ThemedText>
-          ),
+          headerTitle: () => <WorkoutTitle />,
           headerTitleAlign: 'center',
         }} />
       <Tabs.Screen
@@ -210,3 +250,42 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+  },
+  dropdown: {
+    position: 'absolute',
+    right: 16,
+    top: 60, // Adjust this value to position the dropdown correctly
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 8,
+    zIndex: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  caret: {
+    position: 'absolute',
+    top: -10,
+    right: 10,
+    width: 0,
+    height: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
+    borderLeftWidth: 10,
+    borderRightWidth: 10,
+    borderBottomWidth: 10,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+  },
+});

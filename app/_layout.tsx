@@ -8,6 +8,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { WorkoutProvider } from '@/context/WorkoutContext';
 import WorkoutNotificationBar from '@/components/WorkoutNotificationBar';
 import { RoutinesProvider } from '@/context/RoutinesContext';
+import { AuthProvider } from '@/context/AuthContext';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -21,16 +22,19 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <RoutinesProvider>
-        <WorkoutProvider>
-          <Stack initialRouteName="(tabs)">
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          </Stack>
-          <StatusBar style="auto" />
-          <WorkoutNotificationBar />
-        </WorkoutProvider>
-      </RoutinesProvider>
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <RoutinesProvider>
+          <WorkoutProvider>
+            <Stack initialRouteName="(tabs)">
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="login" options={{ headerShown: false }} />
+            </Stack>
+            <StatusBar style="auto" />
+            <WorkoutNotificationBar />
+          </WorkoutProvider>
+        </RoutinesProvider>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
