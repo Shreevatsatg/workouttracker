@@ -16,6 +16,7 @@ export const Colors = {
     tabIconSelected: tintColorLight,
     secondary: '#808080',
     success: '#d4edda', // A light green for success
+    error: '#f8d7da', // A light red for error
   },
   dark: {
     text: '#f0f0f0',
@@ -26,5 +27,7 @@ export const Colors = {
     tabIconSelected: tintColorDark,
     secondary: '#808080',
     success: '#1e3a24', // A dark green for success
+    error: '#d13844ff', // A dark red for error
+
   },
 };

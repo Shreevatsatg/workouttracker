@@ -3,13 +3,50 @@ import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { supabase } from '@/utils/supabase';
 import React from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { Alert, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function SettingsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+
+  const handleDeleteAccount = async () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to delete your account and all related data? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          onPress: async () => {
+            if (!user) {
+              alert('No user logged in.');
+              return;
+            }
+
+            try {
+              const { data, error } = await supabase.functions.invoke('delete-user', {
+                method: 'POST',
+              });
+
+              if (error) {
+                throw error;
+              }
+
+              alert('Account and all related data deleted successfully.');
+              signOut();
+            } catch (error: any) {
+              alert(`Error deleting account: ${error.message}`);
+              console.error('Error deleting account:', error);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -22,6 +59,14 @@ export default function SettingsScreen() {
           onPress={signOut}
         >
           <ThemedText style={[styles.buttonText, { color: colors.background }]}>Log Out</ThemedText>
+        </TouchableOpacity>
+
+        {/* Delete Account Option */}
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: colors.error }]} // Use a distinct color for delete
+          onPress={handleDeleteAccount}
+        >
+          <ThemedText style={[styles.buttonText, { color: colors.background }]}>Delete Account</ThemedText>
         </TouchableOpacity>
       </ThemedView>
     </ScrollView>
