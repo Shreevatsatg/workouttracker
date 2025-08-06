@@ -199,6 +199,14 @@ export default function TabLayout() {
           title: 'Exercise Details',
         }}
       />
+      <Tabs.Screen
+        name="folder-details"
+        options={{
+          href: null,
+          headerShown: true,
+          title: 'Folder Details',
+        }}
+      />
     </Tabs>
   );
 }
