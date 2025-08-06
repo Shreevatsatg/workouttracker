@@ -1,3 +1,4 @@
+import FinishWorkoutButton from '@/components/FinishWorkoutButton';
 import { HapticTab } from '@/components/HapticTab';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -194,7 +195,16 @@ export default function TabLayout() {
           headerShown: true,
           headerTitle: () => <WorkoutTitle />,
           headerTitleAlign: 'center',
+          headerRight: () => <FinishWorkoutButton />,
         }} />
+      <Tabs.Screen
+        name="workout-summary"
+        options={{
+          href: null,
+          headerShown: true,
+          title: 'Workout Summary',
+        }}
+      />
       <Tabs.Screen
         name="select-exercise"
         options={{
