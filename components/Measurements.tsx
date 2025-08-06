@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { StyleSheet, ActivityIndicator, TouchableOpacity, Alert, View } from 'react-native';
+import { StyleSheet, ActivityIndicator, TouchableOpacity, View, Alert } from 'react-native';
+import ConfirmationModal from './ConfirmationModal';
 import { IconSymbol } from './ui/IconSymbol';
 import { supabase } from '@/utils/supabase';
 import { useAuth } from '@/context/AuthContext';
@@ -14,6 +15,8 @@ const Measurements = () => {
   const [measurements, setMeasurements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [menuVisible, setMenuVisible] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [measurementToDelete, setMeasurementToDelete] = useState<string | null>(null);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
@@ -35,32 +38,9 @@ const Measurements = () => {
   }, [user]);
 
   const handleDeleteMeasurement = useCallback(async (measurementId: string) => {
-    Alert.alert(
-      'Delete Measurement',
-      'Are you sure you want to delete this measurement?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          onPress: async () => {
-            const { error } = await supabase
-              .from('measurements')
-              .delete()
-              .eq('id', measurementId);
-
-            if (error) {
-              console.error('Error deleting measurement:', error);
-              Alert.alert('Error', 'Failed to delete measurement.');
-            } else {
-              setMeasurements(measurements.filter(measurement => measurement.id !== measurementId));
-              setMenuVisible(null); // Close menu after deletion
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
-  }, [measurements]);
+    setMeasurementToDelete(measurementId);
+    setShowDeleteConfirm(true);
+  }, []);
 
   useEffect(() => {
     fetchMeasurements();
@@ -70,8 +50,39 @@ const Measurements = () => {
     return <ActivityIndicator />;
   }
 
+  const confirmDeleteMeasurement = async () => {
+    if (!measurementToDelete) return;
+
+    const { error } = await supabase
+      .from('measurements')
+      .delete()
+      .eq('id', measurementToDelete);
+
+    if (error) {
+      console.error('Error deleting measurement:', error);
+      Alert.alert('Error', 'Failed to delete measurement.');
+    } else {
+      setMeasurements(measurements.filter(measurement => measurement.id !== measurementToDelete));
+      setMenuVisible(null); // Close menu after deletion
+    }
+    setShowDeleteConfirm(false);
+    setMeasurementToDelete(null);
+  };
+
   return (
     <ThemedView style={styles.container}>
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isVisible={showDeleteConfirm}
+        title="Delete Measurement"
+        message="Are you sure you want to delete this measurement? This action cannot be undone."
+        onConfirm={confirmDeleteMeasurement}
+        onCancel={() => {
+          setShowDeleteConfirm(false);
+          setMeasurementToDelete(null);
+        }}
+      />
+
       {measurements.length === 0 ? (
         <ThemedText>No measurements recorded yet.</ThemedText>
       ) : (

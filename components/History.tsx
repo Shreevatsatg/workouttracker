@@ -4,7 +4,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { supabase } from '@/utils/supabase';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, ActivityIndicator, TouchableOpacity, View, Alert } from 'react-native';
+import ConfirmationModal from './ConfirmationModal';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
 import { IconSymbol } from './ui/IconSymbol';
@@ -14,6 +15,8 @@ const History = () => {
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [menuVisible, setMenuVisible] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
@@ -35,32 +38,9 @@ const History = () => {
   }, [user]);
 
   const handleDeleteSession = useCallback(async (sessionId: string) => {
-    Alert.alert(
-      'Delete Workout',
-      'Are you sure you want to delete this workout session?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          onPress: async () => {
-            const { error } = await supabase
-              .from('workout_sessions')
-              .delete()
-              .eq('id', sessionId);
-
-            if (error) {
-              console.error('Error deleting session:', error);
-              Alert.alert('Error', 'Failed to delete workout session.');
-            } else {
-              setSessions(sessions.filter(session => session.id !== sessionId));
-              setMenuVisible(null); // Close menu after deletion
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
-  }, [sessions]);
+    setSessionToDelete(sessionId);
+    setShowDeleteConfirm(true);
+  }, []);
 
   useEffect(() => {
     fetchHistory();
@@ -70,8 +50,39 @@ const History = () => {
     return <ActivityIndicator />;
   }
 
+  const confirmDeleteSession = async () => {
+    if (!sessionToDelete) return;
+
+    const { error } = await supabase
+      .from('workout_sessions')
+      .delete()
+      .eq('id', sessionToDelete);
+
+    if (error) {
+      console.error('Error deleting session:', error);
+      Alert.alert('Error', 'Failed to delete workout session.');
+    } else {
+      setSessions(sessions.filter(session => session.id !== sessionToDelete));
+      setMenuVisible(null); // Close menu after deletion
+    }
+    setShowDeleteConfirm(false);
+    setSessionToDelete(null);
+  };
+
   return (
     <ThemedView style={styles.container}>
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isVisible={showDeleteConfirm}
+        title="Delete Workout"
+        message="Are you sure you want to delete this workout session? This action cannot be undone."
+        onConfirm={confirmDeleteSession}
+        onCancel={() => {
+          setShowDeleteConfirm(false);
+          setSessionToDelete(null);
+        }}
+      />
+
       {sessions.length === 0 ? (
         <ThemedText>No workout history yet.</ThemedText>
       ) : (

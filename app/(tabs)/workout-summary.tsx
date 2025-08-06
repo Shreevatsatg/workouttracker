@@ -1,12 +1,13 @@
+import SuccessModal from '@/components/SuccessModal';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { supabase } from '@/utils/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { supabase } from '@/utils/supabase';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 
 
@@ -37,10 +38,7 @@ export default function WorkoutSummaryScreen() {
   const workoutData = parsedWorkoutData;
   const workoutDuration = parsedWorkoutDuration;
   const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    // This useEffect is intentionally empty to prevent re-renders
-  }, []);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600);
@@ -104,7 +102,7 @@ export default function WorkoutSummaryScreen() {
           if (sessionSetError) throw sessionSetError;
         }
       }
-      alert('Workout saved successfully!');
+      setShowSuccessMessage(true);
     } catch (error: any) {
       alert(`Error saving workout: ${error.message}`);
       console.error('Error saving workout:', error);
@@ -129,6 +127,15 @@ export default function WorkoutSummaryScreen() {
         <ThemedText style={{ color: colors.secondary, marginTop: 8 }}>Duration: {formatTime(workoutDuration)}</ThemedText>
       </ThemedView>
 
+      <SuccessModal
+        isVisible={showSuccessMessage}
+        message="Workout saved successfully!"
+        onClose={() => {
+          setShowSuccessMessage(false);
+          router.replace('/(tabs)/workout');
+        }}
+      />
+
       <ThemedView style={styles.section}>
         <ThemedText type="subtitle" style={{ color: colors.text, marginBottom: 16 }}>Workout Details:</ThemedText>
         <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 8 }}>Routine: {workoutData.name}</ThemedText>
@@ -148,7 +155,6 @@ export default function WorkoutSummaryScreen() {
         style={[styles.button, { backgroundColor: colors.tint, marginTop: 24 }]}
         onPress={async () => {
           await saveWorkoutToDb();
-          router.replace('/(tabs)/workout');
         }}
         disabled={isSaving}
       >
@@ -193,5 +199,12 @@ const styles = StyleSheet.create({
   buttonText: {
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  successMessage: {
+    textAlign: 'center',
+    marginTop: 10,
+    marginBottom: 10,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

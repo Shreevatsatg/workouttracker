@@ -27,7 +27,7 @@ export default function SettingsScreen() {
             }
 
             try {
-              const { data, error } = await supabase.functions.invoke('delete-user', {
+              const { error } = await supabase.functions.invoke('delete-user', {
                 method: 'POST',
               });
 

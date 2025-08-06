@@ -1,21 +1,21 @@
 
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { IconSymbol } from '@/components/ui/IconSymbol';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { supabase } from '@/utils/supabase';
 import React, { useState } from 'react';
 import {
-  View,
-  TextInput,
-  Alert,
-  StyleSheet,
-  TouchableOpacity,
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedText } from '@/components/ThemedText';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { Colors } from '@/constants/Colors';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
@@ -35,7 +35,7 @@ const LoginScreen = () => {
     setLoading(true);
     const { error } = await supabase.auth.signUp({ email, password });
     if (error) Alert.alert('Error', error.message);
-    else Alert.alert('Success', 'Please check your email for verification!');
+    else
     setLoading(false);
   };
 

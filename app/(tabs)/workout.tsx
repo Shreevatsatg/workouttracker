@@ -9,6 +9,17 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
+interface ExerciseDetail {
+  name: string;
+  primaryMuscles: string[];
+  secondaryMuscles: string[];
+  instructions: string[];
+  equipment: string;
+  images: string[];
+}
+
+const EXERCISES_DATA = require('@/assets/data/exercises.json');
+
 export default function RoutineScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -34,6 +45,16 @@ export default function RoutineScreen() {
     }
   }, [params.newRoutine, items, setItems, router]);
 
+  const [allExercises, setAllExercises] = useState<ExerciseDetail[]>([]);
+
+  useEffect(() => {
+    setAllExercises(EXERCISES_DATA);
+  }, []);
+
+  const getExerciseDetails = (exerciseName: string): ExerciseDetail | undefined => {
+    return allExercises.find(ex => ex.name === exerciseName);
+  };
+
   const openRoutineDetails = (routine: Routine) => {
     router.push({
       pathname: '/(tabs)/routine-details',
@@ -42,7 +63,14 @@ export default function RoutineScreen() {
   };
 
   const startWorkout = (routine: Routine) => {
-    startWorkoutContext(routine);
+    const exercisesWithImages = routine.exercises.map(ex => {
+      const details = getExerciseDetails(ex.name);
+      return {
+        ...ex,
+        images: details?.images || [],
+      };
+    });
+    startWorkoutContext({ ...routine, exercises: exercisesWithImages });
     router.push('/(tabs)/log-workout');
   };
 

@@ -13,6 +13,7 @@ interface Exercise {
   sets: Set[];
   loggedSets: Set[];
   restTime?: number; // in seconds, 0 means "off"
+  images?: string[];
 }
 
 interface Routine {
@@ -66,7 +67,8 @@ export const WorkoutProvider = ({ children }: { children: ReactNode }) => {
     setIsWorkoutRunning(true);
     setLoggedExercises(routine.exercises.map(ex => ({
       ...ex,
-      loggedSets: ex.sets.map(set => ({ ...set, loggedWeight: '', loggedReps: '', completed: false }))
+      loggedSets: ex.sets.map(set => ({ ...set, loggedWeight: '', loggedReps: '', completed: false })),
+      images: ex.images || [], // Ensure images are copied
     })));
   };
 

@@ -57,7 +57,15 @@ export default function RoutineDetailsScreen() {
   };
 
   const startWorkout = () => {
-    startWorkoutContext(routine);
+    const exercisesWithImages = routine.exercises.map(ex => {
+      const details = getExerciseDetails(ex.name);
+      console.log(`Exercise Name: ${ex.name}, Details Found: ${!!details}, Images: ${details?.images}`);
+      return {
+        ...ex,
+        images: details?.images || [],
+      };
+    });
+    startWorkoutContext({ ...routine, exercises: exercisesWithImages });
     router.push('/(tabs)/log-workout');
   };
 
