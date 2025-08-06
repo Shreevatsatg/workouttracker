@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    paddingTop: 60, // Account for status bar
+    paddingTop: 20, // Account for status bar
   },
   backButton: {
     marginRight: 16,
