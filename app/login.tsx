@@ -21,29 +21,33 @@ const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
   const handleLogin = async () => {
     setLoading(true);
+    setErrorMessage(null); // Clear previous errors
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) Alert.alert('Error', error.message);
+    if (error) setErrorMessage(error.message);
     setLoading(false);
   };
 
   const handleSignUp = async () => {
     setLoading(true);
+    setErrorMessage(null); // Clear previous errors
     const { error } = await supabase.auth.signUp({ email, password });
-    if (error) Alert.alert('Error', error.message);
+    if (error) setErrorMessage(error.message);
     else
     setLoading(false);
   };
 
   const handleGoogleSignIn = async () => {
+    setErrorMessage(null); // Clear previous errors
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
     });
-    if (error) Alert.alert('Error', error.message);
+    if (error) setErrorMessage(error.message);
   };
 
   return (
@@ -67,7 +71,10 @@ const LoginScreen = () => {
             style={[styles.input, { backgroundColor: colors.background, borderColor: colors.tabIconDefault, color: colors.text }]}
             placeholder="Email"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              setErrorMessage(null); // Clear error on input change
+            }}
             autoCapitalize="none"
             keyboardType="email-address"
             placeholderTextColor={colors.tabIconDefault}
@@ -76,10 +83,14 @@ const LoginScreen = () => {
             style={[styles.input, { backgroundColor: colors.background, borderColor: colors.tabIconDefault, color: colors.text }]}
             placeholder="Password"
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(text) => {
+              setPassword(text);
+              setErrorMessage(null); // Clear error on input change
+            }}
             secureTextEntry
             placeholderTextColor={colors.tabIconDefault}
           />
+          {errorMessage && <ThemedText style={styles.errorText}>{errorMessage}</ThemedText>}
         </View>
 
         <View style={styles.buttonContainer}>
@@ -189,6 +200,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginTop: -10,
+    marginBottom: 10,
+    fontSize: 14,
   },
 });
 

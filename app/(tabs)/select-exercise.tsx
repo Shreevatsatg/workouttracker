@@ -179,9 +179,22 @@ export default function SelectExerciseScreen() {
     );
 
     if (params.callingPage === 'log-workout') {
+      const navParams: any = { selectedExercises: JSON.stringify(newExercisesToAdd) };
+      if (params.replaceIndex !== undefined) {
+        navParams.replaceIndex = params.replaceIndex;
+      }
       router.push({
         pathname: '/(tabs)/log-workout',
-        params: { selectedExercises: JSON.stringify(newExercisesToAdd) },
+        params: navParams,
+      });
+    } else if (params.callingPage === 'create-routine') {
+      const navParams: any = { selectedExercises: JSON.stringify(newExercisesToAdd) };
+      if (params.replaceIndex !== undefined) {
+        navParams.replaceIndex = params.replaceIndex;
+      }
+      router.push({
+        pathname: '/(tabs)/create-routine',
+        params: navParams,
       });
     } else {
       router.push({

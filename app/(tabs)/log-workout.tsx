@@ -4,6 +4,7 @@ import RestTimerNotification from '@/components/RestTimerNotification';
 import RestTimerSelector from '@/components/RestTimerSelector';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useWorkout } from '@/context/WorkoutContext';
@@ -149,11 +150,37 @@ export default function LogWorkoutScreen() {
     setRestTimerSelectorVisible(true);
   };
 
-  const handleExerciseImagePress = (exercise: Exercise) => {
+  
+
+  const handleExercisePress = (exercise: Exercise) => {
     router.push({
       pathname: '/(tabs)/exercise-details',
       params: { exerciseId: exercise.id, exerciseName: exercise.name },
     });
+  };
+
+  const [showDropdownForExercise, setShowDropdownForExercise] = useState<number | null>(null);
+
+  const handleExerciseOptionsPress = (index: number) => {
+    setShowDropdownForExercise(showDropdownForExercise === index ? null : index);
+  };
+
+  const deleteExercise = (index: number) => {
+    const newLoggedExercises = loggedExercises.filter((_, i) => i !== index);
+    updateLoggedExercises(newLoggedExercises);
+    setShowDropdownForExercise(null);
+  };
+
+  const replaceExercise = (index: number) => {
+    router.push({
+      pathname: '/(tabs)/select-exercise',
+      params: {
+        currentLoggedExercises: JSON.stringify(loggedExercises),
+        callingPage: 'log-workout',
+        replaceIndex: index,
+      },
+    });
+    setShowDropdownForExercise(null);
   };
 
   const handleRestTimeSelect = (time: number) => {
@@ -169,22 +196,25 @@ export default function LogWorkoutScreen() {
   
 
   useEffect(() => {
-    if (!activeRoutine && router.canGoBack()) {
-      router.back();
-    }
-  }, [activeRoutine, router]);
-
-  useEffect(() => {
     if (params.selectedExercises) {
       const newSelectedExercises = JSON.parse(params.selectedExercises as string);
       const exercisesToAdd = newSelectedExercises.map((ex: Exercise) => ({
         ...ex,
         loggedSets: [{ weight: '', reps: '', loggedWeight: '', loggedReps: '', completed: false }],
       }));
-      updateLoggedExercises([...loggedExercises, ...exercisesToAdd]);
-      router.setParams({ selectedExercises: undefined });
+
+
+      if (params.replaceIndex !== undefined && params.replaceIndex !== null) {
+        const indexToReplace = parseInt(params.replaceIndex as string, 10);
+        const updatedExercises = [...loggedExercises];
+        updatedExercises[indexToReplace] = exercisesToAdd[0]; // Assuming only one exercise is selected for replacement
+        updateLoggedExercises(updatedExercises);
+      } else {
+        updateLoggedExercises([...loggedExercises, ...exercisesToAdd]);
+      }
+      router.setParams({ selectedExercises: undefined, replaceIndex: undefined });
     }
-  }, [params.selectedExercises, loggedExercises, router, updateLoggedExercises]);
+  }, [params.selectedExercises, params.replaceIndex, loggedExercises, router, updateLoggedExercises]);
 
   // Clean up rest timer on unmount
   useEffect(() => {
@@ -228,19 +258,35 @@ export default function LogWorkoutScreen() {
           <>
             {loggedExercises.map((exercise, exIndex) => (
               <ThemedView key={exIndex} style={[styles.exerciseCard, { borderColor: colors.tabIconDefault }]}> 
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-<TouchableOpacity onPress={() => handleExerciseImagePress(exercise)}>
-                  <Image 
-                    source={exercise.images && exercise.images.length > 0 
-                      ? { uri: `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${exercise.images[0]}` }
-                      : require('../../assets/images/exersiseplaceholder.png')
-                    }
-                    style={styles.exerciseImage}
-                  />
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <TouchableOpacity onPress={() => handleExercisePress(exercise)} style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    <Image
+                      source={exercise.images && exercise.images.length > 0
+                        ? { uri: `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${exercise.images[0]}` }
+                        : require('../../assets/images/exersiseplaceholder.png')
+                      }
+                      style={styles.exerciseImage}
+                    />
+                    <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 4, fontSize: 20 }}>
+                      {exIndex + 1}. {getDisplayExerciseName(exercise.name)}
+                    </ThemedText>
                   </TouchableOpacity>
-                  <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 4, fontSize: 20 }}>
-                    {exIndex + 1}. {getDisplayExerciseName(exercise.name)}
-                  </ThemedText>
+
+                  <View>
+                    <TouchableOpacity onPress={() => handleExerciseOptionsPress(exIndex)} style={{ padding: 8 }}>
+                      <IconSymbol name="ellipsis" size={24} color={colors.text} />
+                    </TouchableOpacity>
+                    {showDropdownForExercise === exIndex && (
+                      <View style={[styles.dropdownMenu, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
+                        <TouchableOpacity onPress={() => deleteExercise(exIndex)} style={styles.dropdownItem}>
+                          <ThemedText style={{ color: colors.text }}>Delete Exercise</ThemedText>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => replaceExercise(exIndex)} style={[styles.dropdownItem, styles.lastDropdownItem]}>
+                          <ThemedText style={{ color: colors.text }}>Replace Exercise</ThemedText>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
                 </View>
                 <RestTimer 
                   restTime={exercise.restTime || 0} 
@@ -293,7 +339,7 @@ export default function LogWorkoutScreen() {
           </>
         )}
       </ThemedView>
-        <TouchableOpacity style={[styles.button, { backgroundColor: "#f87171", marginTop: 24 }]} onPress={() => { discardWorkout(); }}>
+        <TouchableOpacity style={[styles.button, { backgroundColor: "#f87171", marginTop: 24 }]} onPress={() => { discardWorkout(); router.push('/(tabs)/workout'); }}>
           <ThemedText style={[styles.buttonText, { color: colors.background }]}>Discard Workout</ThemedText>
         </TouchableOpacity>
       </ScrollView>
@@ -339,6 +385,32 @@ const styles = StyleSheet.create({
     height: 50,
     marginRight: 10,
     borderRadius: 5,
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    right: 0,
+    top: 40,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 1000,
+    width: 180, // Added a fixed width
+    flexDirection: 'column', // Explicitly set to column
+  },
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    width: '100%', // Ensure item takes full width of menu
+  },
+  lastDropdownItem: {
+    borderBottomWidth: 0,
   },
   headerRow: {
     flexDirection: 'row',

@@ -10,7 +10,7 @@ import { ThemedView } from './ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
-const Measurements = () => {
+const Measurements = ({ refresh }: { refresh?: boolean }) => {
   const { user } = useAuth();
   const [measurements, setMeasurements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +30,6 @@ const Measurements = () => {
 
       if (error) {
         console.error('Error fetching measurements:', error);
-        Alert.alert('Error', `Failed to fetch measurements: ${error.message}`);
       } else {
         setMeasurements(data);
       }
@@ -45,7 +44,7 @@ const Measurements = () => {
 
   useEffect(() => {
     fetchMeasurements();
-  }, [user, fetchMeasurements, handleDeleteMeasurement]);
+  }, [user, fetchMeasurements, handleDeleteMeasurement, refresh]);
 
   if (loading) {
     return <ActivityIndicator />;

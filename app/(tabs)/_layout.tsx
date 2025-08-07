@@ -238,6 +238,14 @@ export default function TabLayout() {
           title: 'Folder Details',
         }}
       />
+      <Tabs.Screen
+        name="measurements"
+        options={{
+          href: null,
+          headerShown: true,
+          title: 'Measurements',
+        }}
+      />
     </Tabs>
   );
 }

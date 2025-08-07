@@ -162,13 +162,6 @@ export default function WorkoutSummaryScreen() {
           {isSaving ? 'Saving...' : 'Save Workout'}
         </ThemedText>
       </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: colors.secondary, marginTop: 12 }]}
-        onPress={() => router.replace('/(tabs)/workout')}
-      >
-        <ThemedText style={[styles.buttonText, { color: colors.background }]}>Go to Workouts</ThemedText>
-      </TouchableOpacity>
     </ScrollView>
   );
 }

@@ -80,7 +80,7 @@ export default function RestTimerNotification({
       <ThemedView
         style={{
           backgroundColor: colors.tint,
-          borderRadius: 0,
+          borderRadius: 10,
           paddingVertical: 6,
           paddingHorizontal: 16,
           flexDirection: 'row',

@@ -1,75 +1,112 @@
-import AddMeasurementModal from '@/components/AddMeasurementModal';
 import History from '@/components/History';
-import Measurements from '@/components/Measurements';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { supabase } from '@/utils/supabase';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+
+interface Profile {
+  username: string;
+  full_name: string;
+  avatar_url: string;
+}
 
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { user } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('History');
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [workoutCount, setWorkoutCount] = useState<number | null>(null);
 
-  const handleMeasurementAdded = () => {
-    // You might want to refresh the measurements data here
-    // For now, we'll just close the modal
-  };
+  useEffect(() => {
+    if (user) {
+      const fetchProfileAndStats = async () => {
+        // Fetch profile
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('username, full_name, avatar_url')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+        } else if (profileData) {
+          setProfile(profileData);
+        }
+
+        // Fetch workout count
+        const { count, error: countError } = await supabase
+          .from('workout_sessions')
+          .select('id', { count: 'exact' })
+          .eq('user_id', user.id);
+
+        if (countError) {
+          console.error('Error fetching workout count:', countError);
+        } else {
+          setWorkoutCount(count);
+        }
+      };
+      fetchProfileAndStats();
+    }
+  }, [user]);
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
       {/* Profile Header */}
       <ThemedView style={styles.header}>
         <ThemedView style={styles.avatarContainer}>
-          <IconSymbol name="person.crop.circle.fill" size={100} color={colors.tint} />
+          {profile?.avatar_url ? (
+            // You would use an Image component here for the avatar_url
+            // For now, using IconSymbol as a placeholder
+            <IconSymbol name="person.crop.circle.fill" size={100} color={colors.tint} />
+          ) : (
+            <IconSymbol name="person.crop.circle.fill" size={100} color={colors.tint} />
+          )}
         </ThemedView>
         <ThemedText type="title" style={[styles.profileName, { color: colors.text }]}>
-          {user?.email || 'User'}
+          {profile?.full_name || profile?.username || user?.email || 'User'}
+        </ThemedText>
+        <ThemedText style={[styles.profileEmail, { color: colors.text }]}>
+          {user?.email}
         </ThemedText>
         <TouchableOpacity onPress={() => router.push('/(tabs)/settings')} style={styles.settingsButton}>
           <IconSymbol name="gearshape.fill" size={24} color={colors.tint} />
         </TouchableOpacity>
       </ThemedView>
 
-      {/* Tabs */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity onPress={() => setActiveTab('History')} style={[styles.tab, activeTab === 'History' && styles.activeTab, { borderColor: colors.tint }]}>
-          <ThemedText style={{ color: activeTab === 'History' ? colors.tint : colors.text }}>History</ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setActiveTab('Measurements')} style={[styles.tab, activeTab === 'Measurements' && styles.activeTab, { borderColor: colors.tint }]}>
-          <ThemedText style={{ color: activeTab === 'Measurements' ? colors.tint : colors.text }}>Measurements</ThemedText>
-        </TouchableOpacity>
-      </View>
-
-      {/* Content */}
-      {activeTab === 'History' ? <History /> : (
-        <ThemedView>
-          <Measurements />
-          <TouchableOpacity
-            style={[styles.addButton, { backgroundColor: colors.tint }]}
-            onPress={() => setIsModalVisible(true)}
-          >
-            <ThemedText style={[styles.addButtonText, { color: colors.background }]}>Add Measurement</ThemedText>
-          </TouchableOpacity>
+      {/* Statistics Section */}
+      <ThemedView style={styles.statsContainer}>
+        <ThemedView style={styles.statBox}>
+          <ThemedText type="subtitle" style={{ color: colors.text }}>Total Workouts</ThemedText>
+          <ThemedText type="title" style={{ color: colors.tint }}>{workoutCount !== null ? workoutCount : '--'}</ThemedText>
         </ThemedView>
-      )}
+        {/* Add more stats here if needed */}
+      </ThemedView>
+
+      {/* Quick Links */}
+      <ThemedView style={styles.quickLinksContainer}>
+        <TouchableOpacity
+          style={[styles.profileActionButton, { backgroundColor: colors.tint }]} // Use tint background for primary action
+          onPress={() => router.push('/(tabs)/measurements')}
+        >
+          <ThemedText style={[styles.profileActionButtonText, { color: colors.background }]}>View & Add Measurements</ThemedText>
+        </TouchableOpacity>
+      </ThemedView>
+
+      {/* History Section */}
+      <ThemedView style={styles.historySection}>
+        <ThemedText type="subtitle" style={[styles.historyTitle, { color: colors.tint }]}>Workout History</ThemedText>
+        <History />
+      </ThemedView>
 
       {/* Bottom Spacing */}
       <ThemedView style={{ height: 20 }} />
-
-      <AddMeasurementModal
-        isVisible={isModalVisible}
-        onClose={() => setIsModalVisible(false)}
-        onMeasurementAdded={handleMeasurementAdded}
-      />
     </ScrollView>
   );
 }
@@ -93,34 +130,52 @@ const styles = StyleSheet.create({
     fontSize: 24,
 
   },
+  profileEmail: {
+    fontSize: 16,
+    color: 'gray',
+    marginBottom: 16,
+  },
   settingsButton: {
     position: 'absolute',
     top: 20,
     right: 20,
     padding: 10,
   },
-  tabContainer: {
+  statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: 24,
+    marginHorizontal: 20,
+    marginBottom: 20,
   },
-  tab: {
-    paddingBottom: 8,
-    borderBottomWidth: 2,
-    borderColor: 'transparent',
-  },
-  activeTab: {
-    borderBottomWidth: 2,
-  },
-  addButton: {
-    marginTop: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 5,
+  statBox: {
     alignItems: 'center',
-    marginHorizontal: 16,
+    padding: 15,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.1)', // Example background
+    flex: 1,
+    marginHorizontal: 5,
   },
-  addButtonText: {
+  quickLinksContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  profileActionButton: {
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    flex: 1, // Make it take full width within its container
+  },
+  profileActionButtonText: {
     fontWeight: 'bold',
+    fontSize: 16,
+  },
+  historySection: {
+    paddingHorizontal: 16,
+  },
+  historyTitle: {
+    marginBottom: 10,
   },
 });

@@ -41,7 +41,7 @@ const AddMeasurementModal: React.FC<AddMeasurementModalProps> = ({ isVisible, on
       ]);
 
       if (error) {
-        Alert.alert('Error', `Failed to add measurement: ${error.message}`);
+        Alert.alert('Error', 'Failed to add measurement');
         console.error('Error adding measurement:', error);
       } else {
         onMeasurementAdded();

@@ -4,6 +4,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { Image } from 'expo-image';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Button, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
@@ -26,6 +27,7 @@ interface Exercise {
   images?: string[];
   id?: string;
   sets: Set[]; // This will be used for the routine's exercises
+  images?: string[]; // Add images property
 }
 
 interface Routine {
@@ -44,26 +46,60 @@ export default function CreateRoutineScreen() {
   const [currentRoutineId, setCurrentRoutineId] = useState<string | null>(null);
   const [routineNameError, setRoutineNameError] = useState<string | null>(null);
   const scrollViewRef = React.useRef<ScrollView>(null);
+  const [showDropdownForExercise, setShowDropdownForExercise] = useState<number | null>(null);
+
+  const handleExerciseOptionsPress = (index: number) => {
+    setShowDropdownForExercise(showDropdownForExercise === index ? null : index);
+  };
+
+  const deleteExercise = (index: number) => {
+    setExercises((prevExercises) => prevExercises.filter((_, i) => i !== index));
+    setShowDropdownForExercise(null);
+  };
+
+  const replaceExercise = (index: number) => {
+    router.push({
+      pathname: '/(tabs)/select-exercise',
+      params: {
+        currentRoutineExercises: JSON.stringify(exercises),
+        callingPage: 'create-routine',
+        replaceIndex: index,
+      },
+    });
+    setShowDropdownForExercise(null);
+  };
 
 
   useFocusEffect(
     React.useCallback(() => {
       const existingRoutine: Routine | null = params.routine ? JSON.parse(params.routine as string) : null;
       const newSelectedExercises: Exercise[] = params.selectedExercises ? JSON.parse(params.selectedExercises as string) : [];
+      const replaceIndex: number | undefined = params.replaceIndex ? parseInt(params.replaceIndex as string, 10) : undefined;
+
+      console.log('CreateRoutine: Incoming newSelectedExercises:', newSelectedExercises);
+      console.log('CreateRoutine: Incoming replaceIndex:', replaceIndex);
 
       if (existingRoutine) {
         setRoutineName(existingRoutine.name);
         setExercises(existingRoutine.exercises);
         setCurrentRoutineId(existingRoutine.id);
       } else if (newSelectedExercises.length > 0) {
-        setExercises((prevExercises) => [
-          ...prevExercises,
-          ...newSelectedExercises.map((ex) => ({
-              ...ex,
-              sets: [{ weight: '', reps: '' }, { weight: '', reps: '' }], // Initialize with two empty sets
-            })),
-        ]);
-        router.setParams({ selectedExercises: undefined });
+        setExercises((prevExercises) => {
+          const updatedExercises = [...prevExercises];
+          if (replaceIndex !== undefined && newSelectedExercises.length > 0) {
+            updatedExercises[replaceIndex] = { ...newSelectedExercises[0], sets: [{ weight: '', reps: '' }, { weight: '', reps: '' }] };
+          } else {
+            updatedExercises.push(
+              ...newSelectedExercises.map((ex) => ({
+                ...ex,
+                sets: [{ weight: '', reps: '' }, { weight: '', reps: '' }], // Initialize with two empty sets
+                images: ex.images, // Preserve images property
+              }))
+            );
+          }
+          return updatedExercises;
+        });
+        router.setParams({ selectedExercises: undefined, replaceIndex: undefined });
       }
     }, [params.routine, params.selectedExercises, router])
   );
@@ -145,6 +181,19 @@ export default function CreateRoutineScreen() {
     setRoutineNameError(null);
   };
 
+  const handleExercisePress = (exercise: Exercise) => {
+    router.push({
+      pathname: '/(tabs)/exercise-details',
+      params: { exerciseId: exercise.id, exerciseName: exercise.name },
+    });
+  };
+
+  const EXERCISES_DATA = require('@/assets/data/exercises.json');
+
+  const getExerciseDetails = (exerciseName: string): Exercise | undefined => {
+    return EXERCISES_DATA.find((ex: Exercise) => ex.name === exerciseName);
+  };
+
   return (
     <ScrollView ref={scrollViewRef} style={[styles.container, { backgroundColor: colors.background }]}>
       <ThemedView style={styles.section}>
@@ -162,17 +211,35 @@ export default function CreateRoutineScreen() {
 
         {exercises.map((exercise, exIndex) => (
           <ThemedView key={exercise.id!} style={[styles.exerciseContainer, { borderColor: colors.tabIconDefault }]}>
-            <View style={styles.exerciseHeader}>
-              <TextInput
-                style={[styles.exerciseInput, { flex: 1, backgroundColor: colors.background, borderColor: colors.tabIconDefault, color: colors.text }]}
-                placeholder={`Exercise ${exIndex + 1} Name`}
-                placeholderTextColor={colors.secondary}
-                value={exercise.name}
-                onChangeText={(name) => handleExerciseChange(exercise.id!, name)}
-              />
-              <TouchableOpacity onPress={() => removeExercise(exercise.id!)} style={styles.removeButton}>
-                  <IconSymbol name="xmark.circle" size={20} color={colors.text} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <TouchableOpacity onPress={() => handleExercisePress(exercise)} style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <Image
+                  source={exercise.images && exercise.images.length > 0
+                    ? { uri: `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${exercise.images[0]}` }
+                    : require('../../assets/images/exersiseplaceholder.png')
+                  }
+                  style={styles.exerciseImage}
+                />
+                <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 4, fontSize: 20 }}>
+                  {exIndex + 1}. {exercise.name}
+                </ThemedText>
+              </TouchableOpacity>
+
+              <View>
+                <TouchableOpacity onPress={() => handleExerciseOptionsPress(exIndex)} style={{ padding: 8 }}>
+                  <IconSymbol name="ellipsis" size={24} color={colors.text} />
                 </TouchableOpacity>
+                {showDropdownForExercise === exIndex && (
+                  <View style={[styles.dropdownMenu, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
+                    <TouchableOpacity onPress={() => deleteExercise(exIndex)} style={styles.dropdownItem}>
+                      <ThemedText style={{ color: colors.text }}>Delete Exercise</ThemedText>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => replaceExercise(exIndex)} style={[styles.dropdownItem, styles.lastDropdownItem]}>
+                      <ThemedText style={{ color: colors.text }}>Replace Exercise</ThemedText>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
             </View>
 
             {exercise.sets.map((set, setIndex) => (
@@ -268,8 +335,40 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
   },
+  exerciseImage: {
+    width: 50,
+    height: 50,
+    marginRight: 10,
+    borderRadius: 5,
+  },
   removeButton: {
     padding: 8,
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    right: 0,
+    top: 40,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 1000,
+    width: 180,
+    flexDirection: 'column',
+  },
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    width: '100%',
+  },
+  lastDropdownItem: {
+    borderBottomWidth: 0,
   },
   setContainer: {
     flexDirection: 'row',

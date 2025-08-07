@@ -19,6 +19,8 @@ interface Set {
 interface Exercise {
   name: string;
   sets: Set[];
+  images?: string[]; // Add images property
+  id?: string; // Add id property
 }
 
 interface Routine {
@@ -70,7 +72,18 @@ export default function RoutineDetailsScreen() {
   };
 
   const editRoutine = () => {
-    router.push({ pathname: '/(tabs)/create-routine', params: { routine: JSON.stringify(routine) } });
+    const routineWithDetails = {
+      ...routine,
+      exercises: routine.exercises.map(ex => {
+        const details = getExerciseDetails(ex.name);
+        return {
+          ...ex,
+          id: details?.id, // Include id
+          images: details?.images || [], // Include images
+        };
+      }),
+    };
+    router.push({ pathname: '/(tabs)/create-routine', params: { routine: JSON.stringify(routineWithDetails) } });
   };
 
   return (

@@ -1,4 +1,5 @@
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/utils/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { router } from 'expo-router';
@@ -10,6 +11,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  forceSignOutAndClearStorage: () => Promise<void>; // Re-added for robustness
 }
 
 // Create the context
@@ -41,7 +43,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       setLoading(false);
 
-
       // Redirect based on auth state
       if (event === 'SIGNED_IN') {
         router.replace('/(tabs)/workout');
@@ -56,11 +57,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Error during sign out:', error);
+      // If session is missing, force clear local storage and redirect
+      if (error.message === 'Auth session missing!') {
+        await AsyncStorage.clear();
+        setUser(null);
+        setSession(null);
+        router.replace('/login');
+      }
+    }
+  };
+
+  // Function to force sign out and clear local storage
+  const forceSignOutAndClearStorage = async () => {
+    try {
+      await AsyncStorage.clear(); // Clear all AsyncStorage data
+      setUser(null);
+      setSession(null);
+      router.replace('/login');
+    } catch (e) {
+      console.error('Error clearing AsyncStorage:', e);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signOut, forceSignOutAndClearStorage }}>
       {children}
     </AuthContext.Provider>
   );
