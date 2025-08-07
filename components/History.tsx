@@ -30,6 +30,7 @@ const History = () => {
 
       if (error) {
         console.error('Error fetching workout history:', error);
+        Alert.alert('Error', `Failed to fetch workout history: ${error.message}`);
       } else {
         setSessions(data);
       }

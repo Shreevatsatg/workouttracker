@@ -41,6 +41,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       setLoading(false);
 
+
       // Redirect based on auth state
       if (event === 'SIGNED_IN') {
         router.replace('/(tabs)/workout');

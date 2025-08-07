@@ -30,6 +30,7 @@ const Measurements = () => {
 
       if (error) {
         console.error('Error fetching measurements:', error);
+        Alert.alert('Error', `Failed to fetch measurements: ${error.message}`);
       } else {
         setMeasurements(data);
       }

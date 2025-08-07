@@ -84,7 +84,7 @@ const LoginScreen = () => {
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint }]} onPress={handleLogin} disabled={loading}>
-            <ThemedText style={styles.buttonText}>Sign In</ThemedText>
+            <ThemedText style={[styles.buttonText, { color: colors.background }]}>Sign In</ThemedText>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.button, styles.signUpButton]} onPress={handleSignUp} disabled={loading}>
             <ThemedText style={[styles.buttonText, { color: colors.tint }]}>Sign Up</ThemedText>

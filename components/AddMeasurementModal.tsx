@@ -1,13 +1,13 @@
 
-import React, { useState } from 'react';
-import { TextInput, StyleSheet, Alert, Dimensions, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
-import { IconSymbol } from './ui/IconSymbol';
-import { supabase } from '@/utils/supabase';
+import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { supabase } from '@/utils/supabase';
+import React, { useState } from 'react';
+import { Alert, Dimensions, KeyboardAvoidingView, Platform, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { IconSymbol } from './ui/IconSymbol';
 
 interface AddMeasurementModalProps {
   isVisible: boolean;
@@ -41,7 +41,7 @@ const AddMeasurementModal: React.FC<AddMeasurementModalProps> = ({ isVisible, on
       ]);
 
       if (error) {
-        Alert.alert('Error', 'Failed to add measurement');
+        Alert.alert('Error', `Failed to add measurement: ${error.message}`);
         console.error('Error adding measurement:', error);
       } else {
         onMeasurementAdded();
@@ -86,7 +86,7 @@ const AddMeasurementModal: React.FC<AddMeasurementModalProps> = ({ isVisible, on
           onChangeText={setUnit}
         />
         <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.tint }]} onPress={handleAddMeasurement}>
-          <ThemedText style={styles.addButtonText}>Add Measurement</ThemedText>
+          <ThemedText style={[styles.addButtonText, { color: colors.background }]}>Add Measurement</ThemedText>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.cancelButton, { borderColor: colors.secondary }]} onPress={onClose}>
           <ThemedText style={[styles.cancelButtonText, { color: colors.secondary }]}>Cancel</ThemedText>
@@ -136,7 +136,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   addButtonText: {
-    color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
   },
