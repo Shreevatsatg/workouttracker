@@ -4,6 +4,7 @@ import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { supabase } from '@/utils/supabase';
+import Constants from 'expo-constants';
 import React from 'react';
 import { Alert, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 
@@ -53,9 +54,7 @@ export default function SettingsScreen() {
       <ThemedView style={styles.section}>
         <ThemedText type="title" style={{ color: colors.tint, marginBottom: 24 }}>Settings</ThemedText>
 
-        <ThemedText style={{ color: colors.text, marginBottom: 10 }}>
-          Runtime Version: {Constants.expoConfig?.runtimeVersion}
-        </ThemedText>
+        
 
         {/* Logout Option */}
         <TouchableOpacity
@@ -72,6 +71,12 @@ export default function SettingsScreen() {
         >
           <ThemedText style={[styles.buttonText, { color: colors.background }]}>Delete Account</ThemedText>
         </TouchableOpacity>
+      </ThemedView>
+    {/* App Version */}
+    <ThemedView>
+        <ThemedText style={{ textAlign: 'center', marginTop: 20, color: colors.secondary }}>
+          Version: {Constants.expoConfig?.version}
+        </ThemedText>
       </ThemedView>
     </ScrollView>
   );
