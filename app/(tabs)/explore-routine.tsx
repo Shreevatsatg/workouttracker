@@ -3,14 +3,15 @@ import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
-import React from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { useRoutines, Routine } from '@/context/RoutinesContext';
+import { Routine, useRoutines } from '@/context/RoutinesContext';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function ExploreRoutineScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { setItems } = useRoutines();
+  const [addedRoutineIds, setAddedRoutineIds] = useState<string[]>([]);
 
   const exampleRoutines: Routine[] = [
     {
@@ -80,10 +81,13 @@ export default function ExploreRoutineScreen() {
       // Check if routine already exists to prevent duplicates
       const exists = prevItems.some(item => item.id === routine.id);
       if (exists) {
-        Alert.alert('Routine Exists', `${routine.name} is already in your routines.`);
+        // Optionally, provide visual feedback that it already exists, e.g., by briefly changing button text
         return prevItems;
       }
-      Alert.alert('Routine Added', `${routine.name} has been added to your routines!`);
+      setAddedRoutineIds(prev => [...prev, routine.id]);
+      setTimeout(() => {
+        setAddedRoutineIds(prev => prev.filter(id => id !== routine.id));
+      }, 2000); // Show "Routine Added" for 2 seconds
       return [...prevItems, { ...routine, id: Date.now().toString() }]; // Assign a new unique ID
     });
   };
@@ -104,7 +108,9 @@ export default function ExploreRoutineScreen() {
               style={[styles.addButton, { backgroundColor: colors.tint }]}
               onPress={() => handleAddRoutine(routine)}
             >
-              <ThemedText style={styles.addButtonText}>Add to Your Routines</ThemedText>
+              <ThemedText style={[styles.addButtonText, { color: colors.background }]}>
+                {addedRoutineIds.includes(routine.id) ? 'Routine Added !' : 'Add to Your Routines'}
+              </ThemedText>
             </TouchableOpacity>
           </ThemedView>
         ))}
@@ -143,7 +149,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   addButtonText: {
-    color: '#fff',
     fontWeight: 'bold',
   },
 });

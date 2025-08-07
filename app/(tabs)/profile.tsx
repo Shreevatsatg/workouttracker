@@ -1,6 +1,6 @@
+import AddMeasurementModal from '@/components/AddMeasurementModal';
 import History from '@/components/History';
 import Measurements from '@/components/Measurements';
-import AddMeasurementModal from '@/components/AddMeasurementModal';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -57,7 +57,7 @@ export default function ProfileScreen() {
             style={[styles.addButton, { backgroundColor: colors.tint }]}
             onPress={() => setIsModalVisible(true)}
           >
-            <ThemedText style={styles.addButtonText}>Add Measurement</ThemedText>
+            <ThemedText style={[styles.addButtonText, { color: colors.background }]}>Add Measurement</ThemedText>
           </TouchableOpacity>
         </ThemedView>
       )}
@@ -121,7 +121,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   addButtonText: {
-    color: '#fff',
     fontWeight: 'bold',
   },
 });

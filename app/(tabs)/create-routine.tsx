@@ -203,24 +203,33 @@ export default function CreateRoutineScreen() {
           </ThemedView>
         ))}
 
-        <Button title="Add Exercise" onPress={() => router.push({
-          pathname: '/(tabs)/select-exercise',
-          params: { currentRoutineExercises: JSON.stringify(exercises) },
-        })} />
-
         <TouchableOpacity
-          style={[styles.saveButton, { backgroundColor: colors.tint, marginTop: 24 }]}
-          onPress={saveRoutine}
+          style={[styles.addExerciseButton, { backgroundColor: colors.tint, marginTop: 12, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 15, alignItems: 'center' }]}
+          onPress={() => router.push({
+            pathname: '/(tabs)/select-exercise',
+            params: { currentRoutineExercises: JSON.stringify(exercises) },
+          })}
         >
-          <ThemedText style={{ color: colors.background, fontWeight: 'bold' }}>Save Routine</ThemedText>
+          <ThemedText style={{ color: colors.background, fontWeight: 'bold' }}>Add Exercise</ThemedText>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.discardButton, { borderColor: "red", marginTop: 12 }]}
-          onPress={discardChanges}
-        >
-          <ThemedText style={{ color: "red", fontWeight: 'bold' }}>Discard Changes</ThemedText>
-        </TouchableOpacity>
+        {exercises.length > 0 && (
+          <>
+            <TouchableOpacity
+              style={[styles.saveButton, { backgroundColor: colors.tint, marginTop: 24 }]}
+              onPress={saveRoutine}
+            >
+              <ThemedText style={{ color: colors.background, fontWeight: 'bold' }}>Save Routine</ThemedText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.discardButton, { borderColor: "red", marginTop: 12 }]}
+              onPress={discardChanges}
+            >
+              <ThemedText style={{ color: "red", fontWeight: 'bold' }}>Discard Changes</ThemedText>
+            </TouchableOpacity>
+          </>
+        )}
       </ThemedView>
     </ScrollView>
   );
@@ -289,7 +298,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
   },
-  // ...existing code...
   errorText: {
     color: 'red',
     marginBottom: 10,
