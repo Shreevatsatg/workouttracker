@@ -47,6 +47,12 @@
       "supabaseUrl": "https://yaupadcxrzfdktuouilv.supabase.co",
       "supabaseKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhdXBhZGN4cnpmZGt0dW91aWx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzMTU4NjUsImV4cCI6MjA2OTg5MTg2NX0.tFYMNG5yE6Kbm_JZpFQgK3y6BWs8_EUSuvQ2iGuZjts"
     },
-    "owner": "shreevatsatg"
+    "owner": "shreevatsatg",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/ddecd2d3-8322-4ec0-8318-f6213f7a0444"
+    }
   }
 }

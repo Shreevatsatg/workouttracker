@@ -53,6 +53,10 @@ export default function SettingsScreen() {
       <ThemedView style={styles.section}>
         <ThemedText type="title" style={{ color: colors.tint, marginBottom: 24 }}>Settings</ThemedText>
 
+        <ThemedText style={{ color: colors.text, marginBottom: 10 }}>
+          Runtime Version: {Constants.expoConfig?.runtimeVersion}
+        </ThemedText>
+
         {/* Logout Option */}
         <TouchableOpacity
           style={[styles.button, { backgroundColor: colors.tint }]} // Use a distinct color for logout
