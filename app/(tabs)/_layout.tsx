@@ -294,7 +294,6 @@ export default function TabLayout() {
           ),
         }}
       />
-      />
 
       <Tabs.Screen
         name="explore-routine"
@@ -333,7 +332,6 @@ export default function TabLayout() {
           ),
         }}
       />
-      />
       
       <Tabs.Screen
         name="routine-details"
@@ -371,7 +369,6 @@ export default function TabLayout() {
             </TouchableOpacity>
           ),
         }}
-      />
       />
       
       <Tabs.Screen
@@ -568,7 +565,6 @@ export default function TabLayout() {
             </TouchableOpacity>
           ),
         }}
-      />
       />
     </Tabs>
   );

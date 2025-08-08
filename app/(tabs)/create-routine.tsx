@@ -76,8 +76,6 @@ export default function CreateRoutineScreen() {
       const newSelectedExercises: Exercise[] = params.selectedExercises ? JSON.parse(params.selectedExercises as string) : [];
       const replaceIndex: number | undefined = params.replaceIndex ? parseInt(params.replaceIndex as string, 10) : undefined;
 
-      console.log('CreateRoutine: Incoming newSelectedExercises:', newSelectedExercises);
-      console.log('CreateRoutine: Incoming replaceIndex:', replaceIndex);
 
       if (existingRoutine) {
         setRoutineName(existingRoutine.name);
