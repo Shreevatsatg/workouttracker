@@ -18,6 +18,7 @@ const MAPPING = {
   'paperplane.fill': 'send',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
+  'chevron.backward': 'arrow-back',
   'person.crop.circle.fill': 'account-circle',
   'dumbbell': 'fitness-center',
   'xmark.circle': 'close',

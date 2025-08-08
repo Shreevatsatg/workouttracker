@@ -152,6 +152,11 @@ export default function TabLayout() {
           href: null,
           headerShown: true,
           title: 'Settings',
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.replace('/(tabs)/profile')} style={{ marginLeft: 16 }}>
+              <IconSymbol size={28} name="chevron.backward" color={Colors[colorScheme ?? 'light'].text} />
+            </TouchableOpacity>
+          ),
         }}
       />
 
