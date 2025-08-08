@@ -2,11 +2,12 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
+import { Folder, Routine, useRoutines } from '@/context/RoutinesContext';
 import { useWorkout } from '@/context/WorkoutContext';
-import { useRoutines, Routine, Folder } from '@/context/RoutinesContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface ExerciseDetail {
@@ -102,8 +103,8 @@ export default function RoutineScreen() {
 
   return (
     <Pressable onPress={() => setMenuVisible(null)} disabled={menuVisible === null} style={{ flex: 1 }}>
-      <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
-        <ThemedView style={[styles.section, { marginTop: 24 }]}>
+      <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]} showsVerticalScrollIndicator={false}>
+        <ThemedView lightColor="transparent" darkColor="transparent" style={[styles.section, { marginTop: 24 }]}>
           <TouchableOpacity
             style={[styles.button, { backgroundColor: colors.tint, marginTop: 12 }]}
             onPress={() => startEmptyWorkout()}
@@ -139,7 +140,7 @@ export default function RoutineScreen() {
         )}
 
         {/* List of items */}
-        <ThemedView style={styles.section}>
+        <ThemedView lightColor="transparent" darkColor="transparent" style={styles.section}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <ThemedText type="title" style={{ color: colors.tint }}>Your Routines</ThemedText>
             <View style={{ flexDirection: 'row' }}>
@@ -157,7 +158,7 @@ export default function RoutineScreen() {
             items.map((item, idx) => (
               <View key={idx} style={{ position: 'relative' }}>
                 {item.type === 'routine' ? (
-                  <ThemedView style={[styles.categoryCard, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
+                  <ThemedView style={[styles.categoryCard, { backgroundColor: 'transparent', borderColor: colors.tabIconDefault }]}>
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <TouchableOpacity style={{ flex: 1 }} onPress={() => openRoutineDetails(item as Routine)}>
@@ -182,7 +183,7 @@ export default function RoutineScreen() {
                     </View>
                   </ThemedView>
                 ) : (
-                  <ThemedView style={[styles.categoryCard, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
+                  <ThemedView style={[styles.categoryCard, { backgroundColor: 'transparent', borderColor: colors.tabIconDefault }]}>
                     <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push({ pathname: '/(tabs)/folder-details', params: { folderId: item.id } })}>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -280,6 +281,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
     borderWidth: 1,
+    backgroundColor: 'transparent',
   },
   categoryIcon: {
     width: 48,

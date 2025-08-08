@@ -2,10 +2,10 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View, FlatList } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import { FlatList, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function CreateCustomExerciseScreen() {
   const colorScheme = useColorScheme();
@@ -57,7 +57,7 @@ export default function CreateCustomExerciseScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <ThemedView style={styles.section}>
         <ThemedText type="title" style={{ color: colors.tint, marginBottom: 24 }}>Create Custom Exercise</ThemedText>
 

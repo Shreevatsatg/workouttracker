@@ -358,7 +358,7 @@ export default function SelectExerciseScreen() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
       {/* Enhanced Create Custom Exercise Button */}
       <TouchableOpacity
         style={[styles.createButton, { backgroundColor: colors.tint, borderColor: colors.tint }]}

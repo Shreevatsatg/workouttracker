@@ -18,7 +18,7 @@ export default function MeasurementsScreen() {
   };
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <ThemedText type="title" style={[styles.title, { color: colors.tint }]}>Your Measurements</ThemedText>
         <Measurements refresh={refreshMeasurements} />

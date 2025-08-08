@@ -1,3 +1,4 @@
+import AppBackground from '@/components/AppBackground';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -5,10 +6,10 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { AuthProvider } from '@/context/AuthContext';
+import { RoutinesProvider } from '@/context/RoutinesContext';
 import { WorkoutProvider } from '@/context/WorkoutContext';
 import WorkoutNotificationBar from '@/components/WorkoutNotificationBar';
-import { RoutinesProvider } from '@/context/RoutinesContext';
-import { AuthProvider } from '@/context/AuthContext';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -17,7 +18,6 @@ export default function RootLayout() {
   });
 
   if (!loaded) {
-    // Async font loading only occurs in development.
     return null;
   }
 
@@ -26,12 +26,20 @@ export default function RootLayout() {
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <RoutinesProvider>
           <WorkoutProvider>
-            <Stack initialRouteName="(tabs)">
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="login" options={{ headerShown: false }} />
-            </Stack>
-            <StatusBar style="auto" />
-            <WorkoutNotificationBar />
+            <AppBackground>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: 'transparent' },
+                }}
+              >
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="login" />
+                <Stack.Screen name="welcome" />
+              </Stack>
+              <StatusBar style="auto" />
+              <WorkoutNotificationBar />
+            </AppBackground>
           </WorkoutProvider>
         </RoutinesProvider>
       </ThemeProvider>

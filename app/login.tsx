@@ -8,13 +8,12 @@ import { supabase } from '@/utils/supabase';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 
 const LoginScreen = () => {
@@ -35,11 +34,23 @@ const LoginScreen = () => {
 
   const handleSignUp = async () => {
     setLoading(true);
-    setErrorMessage(null); // Clear previous errors
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) setErrorMessage(error.message);
-    else
-    setLoading(false);
+    setErrorMessage(null);
+    try {
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        if (error.message === 'User already registered') {
+          // If user exists, try to log them in
+          const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+          if (signInError) {
+            setErrorMessage(signInError.message);
+          }
+        } else {
+          setErrorMessage(error.message);
+        }
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleSignIn = async () => {
@@ -51,7 +62,7 @@ const LoginScreen = () => {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView lightColor="transparent" darkColor="transparent" style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -68,7 +79,7 @@ const LoginScreen = () => {
 
         <View style={styles.inputContainer}>
           <TextInput
-            style={[styles.input, { backgroundColor: colors.background, borderColor: colors.tabIconDefault, color: colors.text }]}
+            style={[styles.input, { backgroundColor: 'transparent', borderColor: colors.tabIconDefault, color: colors.text }]}
             placeholder="Email"
             value={email}
             onChangeText={(text) => {
@@ -80,7 +91,7 @@ const LoginScreen = () => {
             placeholderTextColor={colors.tabIconDefault}
           />
           <TextInput
-            style={[styles.input, { backgroundColor: colors.background, borderColor: colors.tabIconDefault, color: colors.text }]}
+            style={[styles.input, { backgroundColor: 'transparent', borderColor: colors.tabIconDefault, color: colors.text }]}
             placeholder="Password"
             value={password}
             onChangeText={(text) => {
@@ -155,6 +166,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 16,
     fontSize: 16,
+    backgroundColor: 'transparent', // Set background to transparent here
   },
   buttonContainer: {
     marginTop: 16,

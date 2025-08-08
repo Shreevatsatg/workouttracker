@@ -83,7 +83,7 @@ export default function ExerciseDetailsScreen() {
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]}>
       {/* Header */}
       <ThemedView style={styles.header}>
         <TouchableOpacity 

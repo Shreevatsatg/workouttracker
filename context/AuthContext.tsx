@@ -1,95 +1,112 @@
 
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/utils/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { router } from 'expo-router';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
-// Define the shape of the context
+interface Profile {
+  full_name: string | null;
+  avatar_url: string | null;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  profile: Profile | null;
   loading: boolean;
   signOut: () => Promise<void>;
-  forceSignOutAndClearStorage: () => Promise<void>; // Re-added for robustness
+  refreshProfile: () => Promise<void>;
 }
 
-// Create the context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Create the provider component
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchAndSetProfile = useCallback(async (user: User) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // Ignore no rows found error
+      console.error('Error fetching profile:', error);
+      setProfile(null);
+    } else {
+      setProfile(data);
+    }
+    return data;
+  }, []);
+
   useEffect(() => {
-    const fetchSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        setUser(session?.user ?? null);
-      } catch (error) {
-        console.error('Error fetching session:', error);
-      } finally {
-        setLoading(false);
+    const processSession = async (session: Session | null) => {
+      if (session?.user) {
+        const currentProfile = await fetchAndSetProfile(session.user);
+        if (currentProfile?.full_name) {
+          router.replace('/(tabs)/workout');
+        } else {
+          router.replace('/welcome');
+        }
+      } else {
+        setProfile(null);
+        router.replace('/login');
       }
     };
 
-    fetchSession();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
+    // Handle initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      setLoading(false);
-
-      // Redirect based on auth state
-      if (event === 'SIGNED_IN') {
-        router.replace('/(tabs)/workout');
-      } else if (event === 'SIGNED_OUT') {
-        router.replace('/login');
-      }
+      setSession(session);
+      processSession(session).finally(() => setLoading(false));
     });
+
+    // Listen for auth state changes
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setUser(session?.user ?? null);
+        setSession(session);
+        // Only redirect on explicit sign-in or sign-out
+        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+          await processSession(session);
+        }
+      }
+    );
 
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchAndSetProfile]);
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Error during sign out:', error);
-      // If session is missing, force clear local storage and redirect
-      if (error.message === 'Auth session missing!') {
-        await AsyncStorage.clear();
-        setUser(null);
-        setSession(null);
-        router.replace('/login');
+    await supabase.auth.signOut();
+    // The onAuthStateChange listener will handle the redirect
+  };
+
+  const refreshProfile = useCallback(async () => {
+    if (user) {
+      const updatedProfile = await fetchAndSetProfile(user);
+      // Re-evaluate navigation after profile refresh
+      if (updatedProfile?.full_name) {
+        router.replace('/(tabs)/workout');
+      } else {
+        router.replace('/welcome');
       }
     }
-  };
-
-  // Function to force sign out and clear local storage
-  const forceSignOutAndClearStorage = async () => {
-    try {
-      await AsyncStorage.clear(); // Clear all AsyncStorage data
-      setUser(null);
-      setSession(null);
-      router.replace('/login');
-    } catch (e) {
-      console.error('Error clearing AsyncStorage:', e);
-    }
-  };
+  }, [user, fetchAndSetProfile]);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut, forceSignOutAndClearStorage }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Create a custom hook to use the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -97,3 +114,4 @@ export const useAuth = () => {
   }
   return context;
 };
+

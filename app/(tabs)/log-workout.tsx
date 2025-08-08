@@ -239,7 +239,7 @@ export default function LogWorkoutScreen() {
         onSkip={skipRestTimer}
       />
       
-      <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+      <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]}>
         <ThemedView style={styles.header}>
           <ThemedText type="title" style={{ color: colors.tint }}>{activeRoutine && activeRoutine.name ? activeRoutine.name : 'Workout'}</ThemedText>
         </ThemedView>

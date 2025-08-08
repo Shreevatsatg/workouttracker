@@ -23,7 +23,7 @@ export default function ExploreRoutineDetailsScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <ThemedView style={styles.section}>
         <ThemedText type="title" style={{ color: colors.tint, marginBottom: 8 }}>{routine.name}</ThemedText>
         <ThemedText style={{ color: colors.text, marginBottom: 16 }}>{routine.description}</ThemedText>

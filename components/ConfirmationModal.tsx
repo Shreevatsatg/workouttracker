@@ -1,9 +1,9 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
-import { ThemedText } from './ThemedText';
-import { ThemedView } from './ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Dimensions, StyleSheet, TouchableOpacity } from 'react-native';
+import { ThemedText } from './ThemedText';
+import { ThemedView } from './ThemedView';
 
 interface ConfirmationModalProps {
   isVisible: boolean;

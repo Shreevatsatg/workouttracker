@@ -120,7 +120,7 @@ export default function WorkoutSummaryScreen() {
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <ThemedView style={styles.header}>
         <ThemedText type="title" style={{ color: colors.tint, marginBottom: 12 }}>Congratulations!</ThemedText>
         <ThemedText type="subtitle" style={{ color: colors.text }}>You completed your workout!</ThemedText>

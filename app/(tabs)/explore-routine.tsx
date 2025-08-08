@@ -93,7 +93,7 @@ export default function ExploreRoutineScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <ThemedView style={styles.section}>
         <ThemedText type="title" style={{ color: colors.tint, marginBottom: 12 }}>Explore Routines</ThemedText>
         {exampleRoutines.map((routine) => (

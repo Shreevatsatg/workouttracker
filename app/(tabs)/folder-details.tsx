@@ -19,7 +19,7 @@ export default function FolderDetailsScreen() {
 
   if (!folder) {
     return (
-      <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
+      <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
         <ThemedText>Folder not found!</ThemedText>
       </ThemedView>
     );

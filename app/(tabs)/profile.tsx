@@ -10,56 +10,35 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 
-interface Profile {
-  username: string;
-  full_name: string;
-  avatar_url: string;
-}
-
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const router = useRouter();
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [workoutCount, setWorkoutCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (user) {
-      const fetchProfileAndStats = async () => {
-        // Fetch profile
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('username, full_name, avatar_url')
-          .eq('id', user.id)
-          .single();
-
-        if (profileError) {
-          console.error('Error fetching profile:', profileError);
-        } else if (profileData) {
-          setProfile(profileData);
-        }
-
-        // Fetch workout count
-        const { count, error: countError } = await supabase
+      const fetchWorkoutCount = async () => {
+        const { count, error } = await supabase
           .from('workout_sessions')
           .select('id', { count: 'exact' })
           .eq('user_id', user.id);
 
-        if (countError) {
-          console.error('Error fetching workout count:', countError);
+        if (error) {
+          console.error('Error fetching workout count:', error);
         } else {
           setWorkoutCount(count);
         }
       };
-      fetchProfileAndStats();
+      fetchWorkoutCount();
     }
   }, [user]);
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
+    <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]} showsVerticalScrollIndicator={false}>
       {/* Profile Header */}
-      <ThemedView style={styles.header}>
+      <ThemedView lightColor="transparent" darkColor="transparent" style={styles.header}>
         <ThemedView style={styles.avatarContainer}>
           {profile?.avatar_url ? (
             // You would use an Image component here for the avatar_url
@@ -70,10 +49,7 @@ export default function ProfileScreen() {
           )}
         </ThemedView>
         <ThemedText type="title" style={[styles.profileName, { color: colors.text }]}>
-          {profile?.full_name || profile?.username || user?.email || 'User'}
-        </ThemedText>
-        <ThemedText style={[styles.profileEmail, { color: colors.text }]}>
-          {user?.email}
+          {profile?.full_name || 'User'}
         </ThemedText>
         <TouchableOpacity onPress={() => router.push('/(tabs)/settings')} style={styles.settingsButton}>
           <IconSymbol name="gearshape.fill" size={24} color={colors.tint} />
@@ -81,7 +57,7 @@ export default function ProfileScreen() {
       </ThemedView>
 
       {/* Statistics Section */}
-      <ThemedView style={styles.statsContainer}>
+      <ThemedView lightColor="transparent" darkColor="transparent" style={styles.statsContainer}>
         <ThemedView style={styles.statBox}>
           <ThemedText type="subtitle" style={{ color: colors.text }}>Total Workouts</ThemedText>
           <ThemedText type="title" style={{ color: colors.tint }}>{workoutCount !== null ? workoutCount : '--'}</ThemedText>
@@ -90,7 +66,7 @@ export default function ProfileScreen() {
       </ThemedView>
 
       {/* Quick Links */}
-      <ThemedView style={styles.quickLinksContainer}>
+      <ThemedView lightColor="transparent" darkColor="transparent" style={styles.quickLinksContainer}>
         <TouchableOpacity
           style={[styles.profileActionButton, { backgroundColor: colors.tint }]} // Use tint background for primary action
           onPress={() => router.push('/(tabs)/measurements')}
@@ -100,13 +76,13 @@ export default function ProfileScreen() {
       </ThemedView>
 
       {/* History Section */}
-      <ThemedView style={styles.historySection}>
+      <ThemedView lightColor="transparent" darkColor="transparent" style={styles.historySection}>
         <ThemedText type="subtitle" style={[styles.historyTitle, { color: colors.tint }]}>Workout History</ThemedText>
         <History />
       </ThemedView>
 
       {/* Bottom Spacing */}
-      <ThemedView style={{ height: 20 }} />
+      <ThemedView lightColor="transparent" darkColor="transparent" style={{ height: 20 }} />
     </ScrollView>
   );
 }

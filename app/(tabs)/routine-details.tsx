@@ -5,10 +5,10 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useWorkout } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Image } from 'expo-image';
 
 // Define interfaces for exercise and routine structure
 interface Set {
@@ -87,7 +87,7 @@ export default function RoutineDetailsScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <ThemedView style={styles.section}>
         <ThemedText type="title" style={{ color: colors.tint, marginBottom: 12 }}>{routine.name}</ThemedText>
         <View style={styles.buttonContainer}>

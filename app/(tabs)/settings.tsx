@@ -50,8 +50,8 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ThemedView style={styles.section}>
+    <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]} showsVerticalScrollIndicator={false}>
+      <ThemedView lightColor="transparent" darkColor="transparent" style={styles.section}>
         <ThemedText type="title" style={{ color: colors.tint, marginBottom: 24 }}>Settings</ThemedText>
 
         
@@ -73,7 +73,7 @@ export default function SettingsScreen() {
         </TouchableOpacity>
       </ThemedView>
     {/* App Version */}
-    <ThemedView>
+    <ThemedView lightColor="transparent" darkColor="transparent">
         <ThemedText style={{ textAlign: 'center', marginTop: 20, color: colors.secondary }}>
           Version: {Constants.expoConfig?.version}
         </ThemedText>

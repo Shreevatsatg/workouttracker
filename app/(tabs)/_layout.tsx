@@ -2,13 +2,12 @@ import FinishWorkoutButton from '@/components/FinishWorkoutButton';
 import { HapticTab } from '@/components/HapticTab';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useWorkout } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Tabs, router } from 'expo-router';
 import React from 'react';
-import { Platform, TouchableOpacity } from 'react-native';
+import { Platform, TouchableOpacity, View } from 'react-native';
 
 // Helper function to format time
 const formatTime = (totalSeconds: number) => {
@@ -25,90 +24,139 @@ const WorkoutTitle = () => {
   const { workoutTime } = useWorkout();
   const colorScheme = useColorScheme();
   return (
-    <ThemedText type="subtitle" style={{ color: Colors[colorScheme ?? 'light'].secondary }}>
-      Workout: {formatTime(workoutTime)}
-    </ThemedText>
+    <View style={{ 
+      backgroundColor: 'rgba(156, 163, 175, 0.1)', 
+      paddingHorizontal: 12, 
+      paddingVertical: 6, 
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: 'rgba(156, 163, 175, 0.2)'
+    }}>
+      <ThemedText type="subtitle" style={{ 
+        color: Colors[colorScheme ?? 'light'].text,
+        fontSize: 16,
+        fontWeight: '600'
+      }}>
+        Workout: {formatTime(workoutTime)}
+      </ThemedText>
+    </View>
   );
 };
 
-
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  
+  // Modern color palette
+  const modernColors = {
+    light: {
+      background: '#F8FAFC',
+      surface: '#FFFFFF',
+      surfaceSecondary: '#F1F5F9',
+      border: '#E2E8F0',
+      text: '#1E293B',
+      textSecondary: '#64748B',
+      accent: '#3B82F6',
+      accentSecondary: '#6366F1',
+    },
+    dark: {
+      background: '#0F172A',
+      surface: '#1E293B',
+      surfaceSecondary: '#334155',
+      border: '#475569',
+      text: '#F8FAFC',
+      textSecondary: '#94A3B8',
+      accent: '#60A5FA',
+      accentSecondary: '#818CF8',
+    }
+  };
+
+  const colors = modernColors[colorScheme ?? 'light'];
 
   return (
     <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        tabBarInactiveTintColor: Colors[colorScheme ?? 'light'].tabIconDefault,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: {
-          backgroundColor: Colors[colorScheme ?? 'light'].background,
-          borderTopColor: Colors[colorScheme ?? 'light'].tabIconDefault,
-          borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 80 : 60, // Better height for tab bar
-          paddingBottom: Platform.OS === 'ios' ? 20 : 10,
-          paddingTop: 3,
-          ...Platform.select({
-            ios: {
-              position: 'absolute',
-              backgroundColor: 'rgba(0, 0, 0, 0.95)', // Semi-transparent on iOS
-              backdropFilter: 'blur(20px)',
-            },
-            default: {
-              elevation: 8,
-              shadowColor: '#000',
-              shadowOpacity: 0.3,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: -4 },
-            },
-          }),
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
-          marginTop: 4,
-          color: Colors[colorScheme ?? 'light'].secondary,
-        },
-        // Enhanced header styling
-        headerStyle: {
-          backgroundColor: Colors[colorScheme ?? 'light'].background,
-          borderBottomColor: Colors[colorScheme ?? 'light'].tabIconDefault,
-          borderBottomWidth: 1,
-          elevation: 0,
-          shadowOpacity: 0,
-        },
-        headerTitleStyle: {
-          color: Colors[colorScheme ?? 'light'].secondary,
-          fontSize: 18,
-          fontWeight: '700',
-        },
-        headerTitleAlign: 'center',
-      }}>
+        screenOptions={{
+          tabBarActiveTintColor: colors.accent,
+          tabBarInactiveTintColor: colors.textSecondary,
+          headerShown: false,
+          tabBarButton: HapticTab,
+          tabBarStyle: {
+            backgroundColor: colors.surface,
+            borderTopWidth: 1,
+            borderTopColor: colors.border,
+            height: Platform.OS === 'ios' ? 100 : 80,
+            paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+            paddingTop: 12,
+            position: 'absolute',
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: 0.05,
+            shadowRadius: 8,
+            elevation: 8,
+          },
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '600',
+            marginTop: 4,
+            marginBottom: 2,
+          },
+          tabBarIconStyle: {
+            marginTop: 8,
+            marginBottom: 0,
+          },
+          headerStyle: {
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
+          headerTitleStyle: {
+            color: colors.text,
+            fontSize: 18,
+            fontWeight: '700',
+            letterSpacing: -0.2,
+          },
+          headerTitleAlign: 'center',
+          sceneContainerStyle: {
+            backgroundColor: 'transparent',
+          },
+        }}>
 
       <Tabs.Screen
         name="workout"
         options={{
           title: 'Workout',
           tabBarIcon: ({ color, focused }) => (
-            <IconSymbol 
-              size={28} 
-              name="dumbbell" 
-              color={color} 
-            />
+            <View style={{
+              padding: 4,
+              borderRadius: 10,
+              backgroundColor: focused ? `${colors.accent}15` : 'transparent',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: 32,
+              minWidth: 32,
+            }}>
+              <IconSymbol 
+                size={22} 
+                name="dumbbell" 
+                color={color} 
+              />
+            </View>
           ),
           headerShown: true,
           headerTitle: 'Your Workout',
           headerStyle: {
-            backgroundColor: Colors[colorScheme ?? 'light'].background,
-            borderBottomColor: Colors[colorScheme ?? 'light'].tabIconDefault,
+            backgroundColor: colors.background,
             borderBottomWidth: 1,
-          },
-          headerTitleStyle: {
-            color: Colors[colorScheme ?? 'light'].secondary,
-            fontSize: 20,
-            fontWeight: '700',
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
           },
         }}
       />
@@ -118,31 +166,56 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <IconSymbol 
-              size={28} 
-              name="person.crop.circle.fill" 
-              color={color} 
-            />
+            <View style={{
+              padding: 4,
+              borderRadius: 10,
+              backgroundColor: focused ? `${colors.accent}15` : 'transparent',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: 32,
+              minWidth: 32,
+            }}>
+              <IconSymbol 
+                size={22} 
+                name="person.crop.circle.fill" 
+                color={color} 
+              />
+            </View>
           ),
           headerShown: true,
           headerTitle: 'Your Profile',
+          headerStyle: {
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
           headerRight: () => (
-            <TouchableOpacity onPress={() => router.push('/(tabs)/settings')} style={{ marginRight: 16 }}>
-              <ThemedText style={{ color: Colors[colorScheme ?? 'light'].secondary }}>
+            <TouchableOpacity 
+              onPress={() => router.push('/(tabs)/settings')} 
+              style={{ 
+                marginRight: 16,
+                backgroundColor: colors.surfaceSecondary,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <ThemedText style={{ 
+                color: colors.text,
+                fontSize: 14,
+                fontWeight: '600'
+              }}>
                 Settings
               </ThemedText>
             </TouchableOpacity>
           ),
-          headerStyle: {
-            backgroundColor: Colors[colorScheme ?? 'light'].background,
-            borderBottomColor: Colors[colorScheme ?? 'light'].tabIconDefault,
-            borderBottomWidth: 1,
-          },
-          headerTitleStyle: {
-            color: Colors[colorScheme ?? 'light'].secondary,
-            fontSize: 20,
-            fontWeight: '700',
-          },
         }}
       />
 
@@ -152,9 +225,33 @@ export default function TabLayout() {
           href: null,
           headerShown: true,
           title: 'Settings',
+          headerStyle: {
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
           headerLeft: () => (
-            <TouchableOpacity onPress={() => router.replace('/(tabs)/profile')} style={{ marginLeft: 16 }}>
-              <IconSymbol size={28} name="chevron.backward" color={Colors[colorScheme ?? 'light'].text} />
+            <TouchableOpacity 
+              onPress={() => router.replace('/(tabs)/profile')} 
+              style={{ 
+                marginLeft: 16,
+                padding: 8,
+                borderRadius: 12,
+                backgroundColor: colors.surfaceSecondary,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <IconSymbol 
+                size={20} 
+                name="chevron.backward" 
+                color={colors.text} 
+              />
             </TouchableOpacity>
           ),
         }}
@@ -166,7 +263,37 @@ export default function TabLayout() {
           href: null,
           headerShown: true,
           title: 'Create Routine',
+          headerStyle: {
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.back()} 
+              style={{ 
+                marginLeft: 16,
+                padding: 8,
+                borderRadius: 12,
+                backgroundColor: colors.surfaceSecondary,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <IconSymbol 
+                size={20} 
+                name="chevron.backward" 
+                color={colors.text} 
+              />
+            </TouchableOpacity>
+          ),
         }}
+      />
       />
 
       <Tabs.Screen
@@ -175,24 +302,97 @@ export default function TabLayout() {
           href: null,
           headerShown: true,
           title: 'Explore Routines',
-         }}
+          headerStyle: {
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.back()} 
+              style={{ 
+                marginLeft: 16,
+                padding: 8,
+                borderRadius: 12,
+                backgroundColor: colors.surfaceSecondary,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <IconSymbol 
+                size={20} 
+                name="chevron.backward" 
+                color={colors.text} 
+              />
+            </TouchableOpacity>
+          ),
+        }}
       />
+      />
+      
       <Tabs.Screen
         name="routine-details"
         options={{ 
           href: null,
           headerShown: true,
           title: 'Routine Details',
-         }}
+          headerStyle: {
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.back()} 
+              style={{ 
+                marginLeft: 16,
+                padding: 8,
+                borderRadius: 12,
+                backgroundColor: colors.surfaceSecondary,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <IconSymbol 
+                size={20} 
+                name="chevron.backward" 
+                color={colors.text} 
+              />
+            </TouchableOpacity>
+          ),
+        }}
       />
+      />
+      
       <Tabs.Screen
         name="explore-routine-details"
         options={{ 
           href: null,
           headerShown: true,
           title: 'Explore Routine Details',
-         }}
+          headerStyle: {
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
+        }}
       />
+      
       <Tabs.Screen
         name="log-workout"
         options={{
@@ -200,30 +400,97 @@ export default function TabLayout() {
           headerShown: true,
           headerTitle: () => <WorkoutTitle />,
           headerTitleAlign: 'center',
-          headerRight: () => <FinishWorkoutButton />,
-        }} />
+          headerStyle: {
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
+          headerRight: () => (
+            <View style={{ marginRight: 16 }}>
+              <FinishWorkoutButton />
+            </View>
+          ),
+        }} 
+      />
+      
       <Tabs.Screen
         name="workout-summary"
         options={{
           href: null,
           headerShown: true,
           title: 'Workout Summary',
+          headerStyle: {
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
         }}
       />
+      
       <Tabs.Screen
         name="select-exercise"
         options={{
           href: null,
           headerShown: true,
           title: 'Select Exercise',
+          headerStyle: {
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.back()} 
+              style={{ 
+                marginLeft: 16,
+                padding: 8,
+                borderRadius: 12,
+                backgroundColor: colors.surfaceSecondary,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <IconSymbol 
+                size={20} 
+                name="chevron.backward" 
+                color={colors.text} 
+              />
+            </TouchableOpacity>
+          ),
         }}
       />
+      
       <Tabs.Screen
         name="create-custom-exercise"
         options={{
           href: null,
           headerShown: true,
           title: 'Create Custom Exercise',
+          headerStyle: {
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
         }}
       />
       
@@ -233,26 +500,76 @@ export default function TabLayout() {
           href: null,
           headerShown: true,
           title: 'Exercise Details',
+          headerStyle: {
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
         }}
       />
+      
       <Tabs.Screen
         name="folder-details"
         options={{
           href: null,
           headerShown: true,
           title: 'Folder Details',
+          headerStyle: {
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
         }}
       />
+      
       <Tabs.Screen
         name="measurements"
         options={{
           href: null,
           headerShown: true,
           title: 'Measurements',
+          headerStyle: {
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.back()} 
+              style={{ 
+                marginLeft: 16,
+                padding: 8,
+                borderRadius: 12,
+                backgroundColor: colors.surfaceSecondary,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <IconSymbol 
+                size={20} 
+                name="chevron.backward" 
+                color={colors.text} 
+              />
+            </TouchableOpacity>
+          ),
         }}
+      />
       />
     </Tabs>
   );
 }
-
-
