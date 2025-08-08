@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { supabase } from '@/utils/supabase';
 import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, ActivityIndicator, TouchableOpacity, View, Alert } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity, View } from 'react-native';
 import ConfirmationModal from './ConfirmationModal';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
@@ -70,7 +70,7 @@ const History = () => {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={styles.container } lightColor="transparent" darkColor="transparent">
       {/* Confirmation Modal */}
       <ConfirmationModal
         isVisible={showDeleteConfirm}
@@ -84,7 +84,7 @@ const History = () => {
       />
 
       {sessions.length === 0 ? (
-        <ThemedText>No workout history yet.</ThemedText>
+        <ThemedText style={{ backgroundColor: 'transparent' }}>No workout history yet.</ThemedText>
       ) : (
         sessions.map((session) => (
           <ThemedView key={session.id} style={[styles.item, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>

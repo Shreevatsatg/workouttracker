@@ -140,7 +140,7 @@ export default function RoutineScreen() {
 
         {/* List of items */}
         <ThemedView lightColor="transparent" darkColor="transparent" style={styles.section}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <ThemedText type="title" style={{ color: colors.tint }}>Your Routines</ThemedText>
             <View style={{ flexDirection: 'row' }}>
               <TouchableOpacity onPress={() => setIsCreatingFolder(true)}>
@@ -157,7 +157,7 @@ export default function RoutineScreen() {
             items.map((item, idx) => (
               <View key={idx} style={{ position: 'relative' }}>
                 {item.type === 'routine' ? (
-                  <ThemedView style={[styles.categoryCard, { backgroundColor: 'transparent', borderColor: colors.tabIconDefault }]}>
+                  <ThemedView style={[styles.categoryCard, { backgroundColor: 'transparent', borderColor: colors.text }]}>
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <TouchableOpacity style={{ flex: 1 }} onPress={() => openRoutineDetails(item as Routine)}>
@@ -167,7 +167,7 @@ export default function RoutineScreen() {
                           <IconSymbol name="ellipsis" size={24} color={colors.text} />
                         </TouchableOpacity>
                       </View>
-                      <TouchableOpacity style={{ flex: 1 }} onPress={() => openRoutineDetails(item as Routine)}>
+                      <TouchableOpacity style={{ flex: 1, backgroundColor: 'transparent' }} onPress={() => openRoutineDetails(item as Routine)}>
                         <ThemedText style={[styles.categorySubtitle, { color: colors.secondary }]}>{(item as Routine).exercises.length} exercises</ThemedText>
                         <ThemedText numberOfLines={2} style={[styles.exerciseList, { color: colors.secondary }]}>
                           {(item as Routine).exercises.map(e => e.name).join(', ')}
@@ -182,7 +182,7 @@ export default function RoutineScreen() {
                     </View>
                   </ThemedView>
                 ) : (
-                  <ThemedView style={[styles.categoryCard, { backgroundColor: 'transparent', borderColor: colors.tabIconDefault }]}>
+                  <ThemedView style={[styles.categoryCard, { backgroundColor: 'transparent', borderColor: colors.text }]}>
                     <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push({ pathname: '/(tabs)/folder-details', params: { folderId: item.id } })}>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', backgroundColor: 'transparent' }}>
@@ -197,7 +197,7 @@ export default function RoutineScreen() {
                   </ThemedView>
                 )}
                 {menuVisible === item.id && (
-                  <View style={[styles.menu, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
+                  <View style={[styles.menu, { backgroundColor: colors.background, borderColor: colors.text }]}>
                     {item.type === 'routine' && (
                       <>
                         <TouchableOpacity style={styles.menuItem} onPress={() => editRoutine(item as Routine)}>
@@ -269,15 +269,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   categoryCard: {
-    borderRadius: 12,
+    borderRadius: 18,
     padding: 16,
     marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
     borderWidth: 1,
     backgroundColor: 'transparent',
   },

@@ -240,14 +240,14 @@ export default function LogWorkoutScreen() {
       />
       
       <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]}>
-        <ThemedView style={styles.header}>
+        <ThemedView style={[styles.header ,{backgroundColor:'transparent'}]}>
           <ThemedText type="title" style={{ color: colors.tint }}>{activeRoutine && activeRoutine.name ? activeRoutine.name : 'Workout'}</ThemedText>
         </ThemedView>
 
-      <ThemedView style={styles.section}>
+      <ThemedView style={[styles.section, { backgroundColor: 'transparent' }]}>
         <ThemedText type="subtitle" style={{ color: colors.text, marginBottom: 16 }}>Exercises:</ThemedText>
         {loggedExercises.length === 0 ? (
-          <ThemedView style={{ alignItems: 'center' }}>
+          <ThemedView style={{ alignItems: 'center', backgroundColor: 'transparent' }}>
             <ThemedText style={{ color: colors.secondary, marginBottom: 16 }}>No exercises in this routine.</ThemedText>
             <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint, marginTop: 12, width: '100%' }]} onPress={addLoggedExercise}>
               <IconSymbol name="plus.circle" size={20} color={colors.background} />
@@ -257,7 +257,7 @@ export default function LogWorkoutScreen() {
         ) : (
           <>
             {loggedExercises.map((exercise, exIndex) => (
-              <ThemedView key={exIndex} style={[styles.exerciseCard, { borderColor: colors.tabIconDefault }]}> 
+              <ThemedView key={exIndex} style={[styles.exerciseCard,{backgroundColor:'transparent'}, { borderColor: colors.tabIconDefault }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   <TouchableOpacity onPress={() => handleExercisePress(exercise)} style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                     <Image
@@ -292,7 +292,7 @@ export default function LogWorkoutScreen() {
                   restTime={exercise.restTime || 0} 
                   onPress={() => openRestTimerSelector(exIndex)} 
                 />
-                <ThemedView style={[styles.setRow, styles.headerRow]}>
+                <ThemedView style={[ styles.headerRow]}>
                   <ThemedText style={[styles.headerText, styles.setColumn, { color: colors.text }]}>Set</ThemedText>
                   <ThemedText style={[styles.headerText, styles.prevColumn, { color: colors.text }]}>Prev</ThemedText>
                   <ThemedText style={[styles.headerText, styles.kgRepsColumn, { color: colors.text }]}>kg</ThemedText>
@@ -322,8 +322,8 @@ export default function LogWorkoutScreen() {
                     <TouchableOpacity style={styles.checkmarkColumn} onPress={() => toggleSetCompletion(exIndex, setIndex)}>
                       <IconSymbol
                         name={set.completed ? "checkmark.circle.fill" : "circle"}
-                        size={24}
-                        color={set.completed ? colors.tint : colors.secondary}
+                        size={28}
+                        color={set.completed ? colors.tint : colors.tint}
                       />
                     </TouchableOpacity>
                   </ThemedView>
@@ -415,7 +415,6 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     backgroundColor: 'transparent',
-    borderBottomWidth: 1,
     marginBottom: 4,
   },
   headerText: {

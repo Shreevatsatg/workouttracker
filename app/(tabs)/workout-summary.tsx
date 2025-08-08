@@ -121,7 +121,7 @@ export default function WorkoutSummaryScreen() {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]}>
-      <ThemedView style={styles.header}>
+      <ThemedView style={[styles.header, { backgroundColor: 'transparent' }]}>
         <ThemedText type="title" style={{ color: colors.tint, marginBottom: 12 }}>Congratulations!</ThemedText>
         <ThemedText type="subtitle" style={{ color: colors.text }}>You completed your workout!</ThemedText>
         <ThemedText style={{ color: colors.secondary, marginTop: 8 }}>Duration: {formatTime(workoutDuration)}</ThemedText>
@@ -136,7 +136,7 @@ export default function WorkoutSummaryScreen() {
         }}
       />
 
-      <ThemedView style={styles.section}>
+      <ThemedView style={[styles.section, { backgroundColor: 'transparent' }]}>
         <ThemedText type="subtitle" style={{ color: colors.text, marginBottom: 16 }}>Workout Details:</ThemedText>
         <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 8 }}>Routine: {workoutData.name}</ThemedText>
         {workoutData.exercises && workoutData.exercises.map((exercise, exIndex) => (
