@@ -118,13 +118,14 @@ export default function LogWorkoutScreen() {
     restTimerIntervalRef.current = setInterval(() => {
       setRestTimerRemaining((prev) => {
         if (prev <= 1) {
-          setRestTimerActive(false);
           if (restTimerIntervalRef.current) {
             clearInterval(restTimerIntervalRef.current);
             restTimerIntervalRef.current = null;
           }
           // Trigger vibration/haptic feedback when timer ends
           triggerTimerEndFeedback();
+          // Hide the timer after 1 second
+          setTimeout(() => setRestTimerActive(false), 1000);
           return 0;
         }
         return prev - 1;
