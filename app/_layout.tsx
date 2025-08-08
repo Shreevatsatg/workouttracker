@@ -23,7 +23,10 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <ThemeProvider value={colorScheme === 'dark' ? 
+        { ...DarkTheme, colors: { ...DarkTheme.colors, background: 'transparent' } } : 
+        { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent' } }
+      }>
         <RoutinesProvider>
           <WorkoutProvider>
             <AppBackground>
