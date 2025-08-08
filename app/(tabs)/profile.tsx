@@ -100,6 +100,7 @@ const styles = StyleSheet.create({
   avatarContainer: {
     position: 'relative',
     marginBottom: 16,
+    borderRadius: 50,
   },
   profileName: {
     marginBottom: 4,

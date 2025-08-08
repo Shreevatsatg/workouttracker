@@ -371,24 +371,6 @@ export default function TabLayout() {
         }}
       />
       
-      <Tabs.Screen
-        name="explore-routine-details"
-        options={{ 
-          href: null,
-          headerShown: true,
-          title: 'Explore Routine Details',
-          headerStyle: {
-            backgroundColor: colors.background,
-            borderBottomWidth: 1,
-            borderBottomColor: colors.border,
-            elevation: 0,
-            shadowColor: '#000000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 2,
-          },
-        }}
-      />
       
       <Tabs.Screen
         name="log-workout"

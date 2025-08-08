@@ -185,7 +185,7 @@ export default function RoutineScreen() {
                   <ThemedView style={[styles.categoryCard, { backgroundColor: 'transparent', borderColor: colors.tabIconDefault }]}>
                     <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push({ pathname: '/(tabs)/folder-details', params: { folderId: item.id } })}>
                       <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', backgroundColor: 'transparent' }}>
                           <ThemedText type="defaultSemiBold" style={[styles.categoryTitle, { color: colors.text }]}>{item.name}</ThemedText>
                           <TouchableOpacity onPress={() => setMenuVisible(menuVisible === item.id ? null : item.id)} style={{ padding: 8 }}>
                             <IconSymbol name="ellipsis" size={24} color={colors.text} />
@@ -217,7 +217,6 @@ export default function RoutineScreen() {
             ))
           )}
         </ThemedView>
-        <ThemedView style={{ height: 40 }} />
       </ScrollView>
 
       {movingRoutine && (

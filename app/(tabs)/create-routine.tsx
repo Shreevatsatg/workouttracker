@@ -194,7 +194,7 @@ export default function CreateRoutineScreen() {
 
   return (
     <ScrollView ref={scrollViewRef} style={[styles.container, { backgroundColor: 'transparent' }]}>
-      <ThemedView style={styles.section}>
+      <ThemedView style={[styles.section, { backgroundColor: 'transparent' }]}>
         <TextInput
           style={[styles.input, { backgroundColor: colors.background,  color: colors.text, fontSize: 22, borderColor: routineNameError ? 'red' : colors.tabIconDefault }]}
           placeholder="Routine Name"
