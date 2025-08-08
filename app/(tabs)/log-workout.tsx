@@ -340,7 +340,7 @@ export default function LogWorkoutScreen() {
           </>
         )}
       </ThemedView>
-        <TouchableOpacity style={[styles.button, { backgroundColor: "#f87171", marginTop: 24 }]} onPress={() => { discardWorkout(); router.push('/(tabs)/workout'); }}>
+        <TouchableOpacity style={[styles.button, { backgroundColor: "#f87171", marginTop: 10 }]} onPress={() => { discardWorkout(); router.push('/(tabs)/workout'); }}>
           <ThemedText style={[styles.buttonText, { color: colors.background }]}>Discard Workout</ThemedText>
         </TouchableOpacity>
       </ScrollView>
@@ -359,6 +359,7 @@ export default function LogWorkoutScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    marginBottom: 70,
   },
   header: {
     padding: 16,

@@ -30,9 +30,6 @@ export default function WorkoutNotificationBar() {
 
   const handleDiscard = () => {
     discardWorkout();
-    if (pathname !== '/(tabs)/workout') {
-      router.push('/(tabs)/workout');
-    }
   };
 
   const handleResume = () => {
