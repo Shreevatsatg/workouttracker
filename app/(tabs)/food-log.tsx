@@ -5,8 +5,16 @@ import { Colors } from '@/constants/Colors';
 import { useFood } from '@/context/FoodContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  SectionList,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 interface FoodEntry {
   id: string;
@@ -17,6 +25,7 @@ interface FoodEntry {
   unit: string;
   logged_at: string;
   created_at: string;
+  meal_type: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks';
 }
 
 interface ProductDetails {
@@ -31,116 +40,111 @@ interface ProductDetails {
   serving_size: string;
 }
 
-const FoodEntryItem: React.FC<{ entry: FoodEntry }> = ({ entry }) => {
+const FoodEntryItem: React.FC<{
+  entry: FoodEntry;
+  onPress: () => void;
+  onLongPress: () => void;
+}> = ({ entry, onPress, onLongPress }) => {
   const { getFoodDetails } = useFood();
   const [details, setDetails] = useState<ProductDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
   useEffect(() => {
     const fetchDetails = async () => {
-      try {
-        const productDetails = await getFoodDetails(entry.product_id);
-        setDetails(productDetails);
-      } catch (error) {
-        console.error('Failed to fetch product details:', error);
-      } finally {
-        setIsLoading(false);
-      }
+      const productDetails = await getFoodDetails(entry.product_id);
+      setDetails(productDetails);
     };
     fetchDetails();
   }, [entry.product_id]);
 
-  const calculateMacrosForEntry = () => {
-    if (!details || !details.nutriments) return { proteins: 0, carbohydrates: 0, fats: 0 };
-
-    const { proteins_100g, carbohydrates_100g, fat_100g } = details.nutriments;
-    const scaleFactor = entry.quantity / 100; // Assuming unit is 'g' or 'ml' and 100g/ml data
-
-    return {
-      proteins: proteins_100g * scaleFactor,
-      carbohydrates: carbohydrates_100g * scaleFactor,
-      fats: fat_100g * scaleFactor,
-    };
-  };
-
-  const macros = calculateMacrosForEntry();
-  const loggedDate = new Date(entry.logged_at);
-  const timeString = loggedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const dateString = loggedDate.toLocaleDateString();
+  const totalCalories = useMemo(() => {
+    if (!details?.nutriments) return 0;
+    const { proteins_100g = 0, carbohydrates_100g = 0, fat_100g = 0 } = details.nutriments;
+    const scale = entry.quantity / 100;
+    return proteins_100g * 4 * scale + carbohydrates_100g * 4 * scale + fat_100g * 9 * scale;
+  }, [details, entry.quantity]);
 
   return (
-    <ThemedView style={[styles.foodEntryItem, { 
-      backgroundColor: colors.surfaceSecondary, 
-      borderColor: colors.border,
-      shadowColor: colorScheme === 'dark' ? '#000' : '#000',
-    }]}>
-      <View style={styles.entryHeader}>
-        <ThemedText style={[styles.foodEntryName, { color: colors.text }]}>
-          {entry.product_name}
-        </ThemedText>
-        <ThemedText style={[styles.timeStamp, { color: colors.textSecondary }]}>
-          {timeString}
-        </ThemedText>
-      </View>
-      
-      <View style={styles.entryDetails}>
-        <ThemedText style={[styles.quantityText, { color: colors.textSecondary }]}>
+    <TouchableOpacity onPress={onPress} onLongPress={onLongPress} style={[styles.foodEntryItem, { backgroundColor: colors.surface }]}>
+      <View>
+        <ThemedText style={styles.foodEntryName}>{entry.product_name}</ThemedText>
+        <ThemedText style={styles.foodEntryServing}>
           {entry.quantity} {entry.unit}
         </ThemedText>
-        <ThemedText style={[styles.dateText, { color: colors.textSecondary }]}>
-          {dateString}
-        </ThemedText>
       </View>
-      
-      {!isLoading && details && details.nutriments && (
-        <View style={[styles.macrosContainer, { backgroundColor: colors.surface }]}>
-          <View style={styles.macroItem}>
-            <ThemedText style={[styles.macroLabel, { color: colors.textSecondary }]}>Protein</ThemedText>
-            <ThemedText style={[styles.macroValue, { color: colors.accent }]}>
-              {macros.proteins.toFixed(1)}g
-            </ThemedText>
-          </View>
-          <View style={styles.macroItem}>
-            <ThemedText style={[styles.macroLabel, { color: colors.textSecondary }]}>Carbs</ThemedText>
-            <ThemedText style={[styles.macroValue, { color: colors.accent }]}>
-              {macros.carbohydrates.toFixed(1)}g
-            </ThemedText>
-          </View>
-          <View style={styles.macroItem}>
-            <ThemedText style={[styles.macroLabel, { color: colors.textSecondary }]}>Fat</ThemedText>
-            <ThemedText style={[styles.macroValue, { color: colors.accent }]}>
-              {macros.fats.toFixed(1)}g
-            </ThemedText>
-          </View>
-        </View>
-      )}
-      
-      {isLoading && (
-        <View style={styles.loadingContainer}>
-          <ThemedText style={[styles.loadingText, { color: colors.textSecondary }]}>
-            Loading nutrition info...
-          </ThemedText>
-        </View>
-      )}
-    </ThemedView>
+      <ThemedText style={styles.foodEntryCalories}>{totalCalories.toFixed(0)} kcal</ThemedText>
+    </TouchableOpacity>
   );
 };
 
-const MacroCard: React.FC<{ 
-  title: string; 
-  value: number; 
-  unit: string; 
-  icon: string;
+const SectionHeader: React.FC<{
+  title: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks';
+  data: FoodEntry[];
+  colors: any;
+}> = ({ title, data, colors }) => {
+  const { getFoodDetails } = useFood();
+  const [totalCalories, setTotalCalories] = useState(0);
+
+  // Create a stable dependency to prevent infinite loops
+  const dependency = data.map((e) => `${e.id}-${e.quantity}`).join(',');
+
+  useEffect(() => {
+    const calculateTotalCalories = async () => {
+      let sum = 0;
+      for (const entry of data) {
+        const details = await getFoodDetails(entry.product_id);
+        if (details?.nutriments) {
+          const { proteins_100g = 0, carbohydrates_100g = 0, fat_100g = 0 } =
+            details.nutriments;
+          const scale = entry.quantity / 100;
+          sum +=
+            proteins_100g * 4 * scale +
+            carbohydrates_100g * 4 * scale +
+            fat_100g * 9 * scale;
+        }
+      }
+      setTotalCalories(sum);
+    };
+    calculateTotalCalories();
+  }, [dependency]);
+
+  return (
+    <View style={styles.sectionHeader}>
+      <ThemedText style={styles.sectionTitle}>{title}</ThemedText>
+      <ThemedText style={styles.sectionCalories}>{totalCalories.toFixed(0)} kcal</ThemedText>
+      <TouchableOpacity
+        onPress={() =>
+          router.push({
+            pathname: '/(tabs)/add-food',
+            params: { mealType: title },
+          })
+        }
+      >
+        <IconSymbol name="plus.circle.fill" size={24} color={colors.accent} />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const MacroCard: React.FC<{
+  title: string;
+  value: number;
+  unit: string;
+  icon: any;
   color: string;
   backgroundColor: string;
-}> = ({ title, value, unit, icon, color, backgroundColor }) => (
+  isLoading: boolean;
+}> = ({ title, value, unit, icon, color, backgroundColor, isLoading }) => (
   <View style={[styles.macroCard, { backgroundColor }]}>
     <IconSymbol name={icon} size={20} color={color} />
-    <ThemedText style={[styles.macroCardValue, { color }]}>
-      {value.toFixed(1)}{unit}
-    </ThemedText>
+    {isLoading ? (
+      <ActivityIndicator size="small" color={color} style={{ marginTop: 8, marginBottom: 4 }} />
+    ) : (
+      <ThemedText style={[styles.macroCardValue, { color }]}>
+        {value.toFixed(1)}{unit}
+      </ThemedText>
+    )}
     <ThemedText style={[styles.macroCardTitle, { color }]}>
       {title}
     </ThemedText>
@@ -148,12 +152,22 @@ const MacroCard: React.FC<{
 );
 
 export default function FoodLogScreen() {
-  const { foodEntries, fetchFoodEntries, calculateDailyMacros } = useFood();
+  const {
+    foodEntries,
+    fetchFoodEntries,
+    calculateDailyMacros,
+    updateFoodEntryMealType,
+    deleteFoodEntry,
+    getFoodDetails,
+  } = useFood();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
   const [dailyMacros, setDailyMacros] = useState({ proteins: 0, carbohydrates: 0, fats: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const [isCalculatingMacros, setIsCalculatingMacros] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<FoodEntry | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -168,95 +182,189 @@ export default function FoodLogScreen() {
 
   useEffect(() => {
     const getMacros = async () => {
+      setIsCalculatingMacros(true);
       const macros = await calculateDailyMacros();
       setDailyMacros(macros);
+      setIsCalculatingMacros(false);
     };
     getMacros();
   }, [foodEntries]);
 
+  const handleLongPress = (entry: FoodEntry) => {
+    setSelectedEntry(entry);
+    setModalVisible(true);
+  };
+
+  const handleMove = (mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks') => {
+    if (selectedEntry) {
+      updateFoodEntryMealType(selectedEntry.id, mealType);
+    }
+    setModalVisible(false);
+  };
+
+  const handleDelete = () => {
+    if (selectedEntry) {
+      Alert.alert('Delete Food Entry', 'Are you sure you want to delete this entry?', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteFoodEntry(selectedEntry.id),
+        },
+      ]);
+    }
+    setModalVisible(false);
+  };
+
+  const handlePressItem = async (entry: FoodEntry) => {
+    const details = await getFoodDetails(entry.product_id);
+    if (details) {
+      const { proteins_100g = 0, carbohydrates_100g = 0, fat_100g = 0 } = details.nutriments;
+      const scale = entry.quantity / 100;
+      const totalCalories =
+        proteins_100g * 4 * scale + carbohydrates_100g * 4 * scale + fat_100g * 9 * scale;
+
+      router.push({
+        pathname: '/(tabs)/food-details',
+        params: {
+          name: entry.product_name,
+          calories: totalCalories.toFixed(0),
+          protein: (proteins_100g * scale).toFixed(1),
+          carbs: (carbohydrates_100g * scale).toFixed(1),
+          fat: (fat_100g * scale).toFixed(1),
+          servingSize: `${entry.quantity} ${entry.unit}`,
+        },
+      });
+    }
+  };
+
+  const sections = useMemo(() => {
+    const mealTypes: ('Breakfast' | 'Lunch' | 'Dinner' | 'Snacks')[] = [
+      'Breakfast',
+      'Lunch',
+      'Dinner',
+      'Snacks',
+    ];
+    return mealTypes.map((mealType) => ({
+      title: mealType,
+      data: foodEntries.filter((entry) => entry.meal_type === mealType),
+    }));
+  }, [foodEntries]);
+
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <IconSymbol name="utensils" size={64} color={colors.tint} />
+      <IconSymbol name="fork.knife" size={64} color={colors.tint} />
       <ThemedText style={[styles.emptyStateTitle, { color: colors.text }]}>
         No food entries yet
       </ThemedText>
       <ThemedText style={[styles.emptyStateText, { color: colors.tint }]}>
-        Start tracking your nutrition by adding your first meal
+        Log your first meal to get started.
       </ThemedText>
     </View>
   );
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
-      {/* Header */}
       <View style={styles.header}>
-        <ThemedText type="title" style={[styles.title, { color: colors.text }]}>
-          Food Log
-        </ThemedText>
         <ThemedText style={[styles.subtitle, { color: colors.tint }]}>
           Track your daily nutrition
         </ThemedText>
       </View>
 
-      {/* Daily Macros Summary */}
       <View style={styles.macrosSummary}>
         <ThemedText style={[styles.summaryTitle, { color: colors.text }]}>
-          Today's Nutrition
+          Today’s Nutrition
         </ThemedText>
         <View style={styles.macroCardsContainer}>
           <MacroCard
             title="Protein"
             value={dailyMacros.proteins}
             unit="g"
-            icon="zap"
+            icon="bolt.fill"
             color="#FF6B6B"
             backgroundColor={`${colors.surface}dd`}
+            isLoading={isCalculatingMacros}
+            
           />
           <MacroCard
             title="Carbs"
             value={dailyMacros.carbohydrates}
             unit="g"
-            icon="battery"
+            icon="flame.fill"
             color="#4ECDC4"
             backgroundColor={`${colors.surface}dd`}
+            isLoading={isCalculatingMacros}
           />
           <MacroCard
             title="Fat"
             value={dailyMacros.fats}
             unit="g"
-            icon="droplet"
+            icon="drop.fill"
             color="#45B7D1"
             backgroundColor={`${colors.surface}dd`}
+            isLoading={isCalculatingMacros}
           />
         </View>
       </View>
 
-      {/* Add Food Button */}
-      <TouchableOpacity
-        style={[styles.addButton, { 
-          backgroundColor: colors.text,
-          shadowColor: colors.accent,
-        }]}
-        onPress={() => router.push('/(tabs)/add-food')}
-        activeOpacity={0.8}
-      >
-        <IconSymbol name="plus" size={20} color="white" />
-        <ThemedText style={[styles.addButtonText, { color: colors.background }]}>Add Food</ThemedText>
-      </TouchableOpacity>
-
-      {/* Food Entries List */}
-      <FlatList
-        data={foodEntries}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <FoodEntryItem entry={item} />}
-        style={styles.foodList}
-        contentContainerStyle={[
-          styles.foodListContent,
-          foodEntries.length === 0 && styles.foodListEmpty
-        ]}
+        renderItem={({ item }) => (
+          <FoodEntryItem
+            entry={item}
+            onPress={() => handlePressItem(item)}
+            onLongPress={() => handleLongPress(item)}
+          />
+        )}
+        renderSectionHeader={({ section: { title, data } }) => (
+          <SectionHeader title={title} data={data} colors={colors} />
+        )}
+        renderSectionFooter={({ section: { title } }) => (
+          <TouchableOpacity
+            style={[styles.addFoodButton, { backgroundColor: colors.accent }]}
+            onPress={() =>
+              router.push({
+                pathname: '/(tabs)/add-food',
+                params: { mealType: title },
+              })
+            }
+          >
+            <IconSymbol name="plus" size={20} color="white" />
+            <ThemedText style={styles.addFoodButtonText}>Add Food</ThemedText>
+          </TouchableOpacity>
+        )}
         ListEmptyComponent={!isLoading ? renderEmptyState : null}
         showsVerticalScrollIndicator={false}
       />
+
+      <Modal animationType="slide" transparent={true} visible={modalVisible}>
+        <View style={styles.modalContainer}>
+          <View style={[styles.modalView, { backgroundColor: colors.surface }]}>
+            <ThemedText style={styles.modalText}>Move to...</ThemedText>
+            {['Breakfast', 'Lunch', 'Dinner', 'Snacks'].map((mealType) => (
+              <TouchableOpacity
+                key={mealType}
+                style={styles.modalButton}
+                onPress={() =>
+                  handleMove(mealType as 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks')
+                }
+              >
+                <ThemedText>{mealType}</ThemedText>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              style={[styles.modalButton, { marginTop: 20 }]}
+              onPress={handleDelete}
+            >
+              <ThemedText style={{ color: 'red' }}>Delete</ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalButton} onPress={() => setModalVisible(false)}>
+              <ThemedText>Cancel</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -278,24 +386,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     opacity: 0.7,
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 16,
-    marginBottom: 24,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  addButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
   },
   macrosSummary: {
     marginBottom: 24,
@@ -340,71 +430,55 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   foodEntryItem: {
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  entryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
+    alignItems: 'center',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
   },
   foodEntryName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    flex: 1,
-    marginRight: 12,
   },
-  timeStamp: {
-    fontSize: 12,
-    fontWeight: '500',
+  foodEntryServing: {
+    fontSize: 14,
+    opacity: 0.7,
   },
-  entryDetails: {
+  foodEntryCalories: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 5,
+    marginTop: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
-  quantityText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  dateText: {
-    fontSize: 12,
-  },
-  macrosContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginTop: 8,
-  },
-  macroItem: {
-    alignItems: 'center',
-  },
-  macroLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  macroValue: {
-    fontSize: 14,
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
   },
-  loadingContainer: {
-    paddingVertical: 12,
-    alignItems: 'center',
+  sectionCalories: {
+    fontSize: 16,
   },
-  loadingText: {
-    fontSize: 12,
-    fontStyle: 'italic',
+  addFoodButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginTop: 10,
+  },
+  addFoodButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
   emptyState: {
     alignItems: 'center',
@@ -422,5 +496,36 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 32,
     lineHeight: 24,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalView: {
+    margin: 20,
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  modalButton: {
+    padding: 10,
+    width: 200,
+    alignItems: 'center',
   },
 });

@@ -4,7 +4,7 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useFood } from '@/context/FoodContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -15,20 +15,28 @@ interface Product {
   image_small_url: string;
 }
 
+interface RecentFood {
+  id: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit: string;
+}
+
 const ProductItem: React.FC<{ 
   product: Product; 
   onSelect: (product: Product) => void;
   isSelected: boolean;
   colors: any;
 }> = ({ product, onSelect, isSelected, colors }) => (
-  <TouchableOpacity 
+  <TouchableOpacity
     style={[
-      styles.resultItem, 
-      { 
-        backgroundColor: isSelected ? `${colors.accent}20` : colors.surfaceSecondary, 
+      styles.resultItem,
+      {
+        backgroundColor: isSelected ? `${colors.accent}20` : colors.surfaceSecondary,
         borderColor: isSelected ? colors.accent : colors.border,
         borderWidth: isSelected ? 2 : 1,
-      }
+      },
     ]}
     onPress={() => onSelect(product)}
     activeOpacity={0.8}
@@ -44,10 +52,28 @@ const ProductItem: React.FC<{
           </ThemedText>
         )}
       </View>
-      {isSelected && (
-        <IconSymbol name="check-circle" size={24} color={colors.accent} />
-      )}
+      {isSelected && <IconSymbol name="checkmark.circle" size={24} color={colors.accent} />}
     </View>
+  </TouchableOpacity>
+);
+
+const RecentFoodItem: React.FC<{
+  item: RecentFood;
+  onSelect: (item: RecentFood) => void;
+  colors: any;
+}> = ({ item, onSelect, colors }) => (
+  <TouchableOpacity
+    style={[styles.recentItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
+    onPress={() => onSelect(item)}
+    activeOpacity={0.7}
+  >
+    <View style={styles.recentItemContent}>
+      <ThemedText style={[styles.recentItemName, { color: colors.text }]}>{item.product_name}</ThemedText>
+      <ThemedText style={[styles.recentItemDetails, { color: colors.textSecondary }]}>
+        {item.quantity} {item.unit}
+      </ThemedText>
+    </View>
+    <IconSymbol name="arrow.up.left" size={16} color={colors.textSecondary} />
   </TouchableOpacity>
 );
 
@@ -89,17 +115,48 @@ const UnitSelector: React.FC<{
 };
 
 export default function AddFoodScreen() {
-  const { searchFood, addFoodEntry } = useFood();
+  const { searchFood, addFoodEntry, fetchRecentFoods, getFoodDetails } = useFood();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const params = useLocalSearchParams();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [recentFoods, setRecentFoods] = useState<RecentFood[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState('100');
   const [unit, setUnit] = useState('g');
   const [isAdding, setIsAdding] = useState(false);
+
+  useEffect(() => {
+    if (params.barcode) {
+      handleScannedBarcode(params.barcode as string);
+    }
+    loadRecentFoods();
+  }, [params]);
+
+  const handleScannedBarcode = async (barcode: string) => {
+    setLoading(true);
+    const productDetails = await getFoodDetails(barcode);
+    if (productDetails) {
+      setSelectedProduct({
+        id: barcode,
+        product_name: productDetails.product_name,
+        brands: productDetails.brands,
+        image_small_url: productDetails.image_small_url,
+      });
+      setQuantity(productDetails.serving_size?.match(/\d+/)?.[0] || '100');
+    } else {
+      Alert.alert('Not Found', 'Product not found for this barcode.');
+    }
+    setLoading(false);
+  };
+
+  const loadRecentFoods = async () => {
+    const recents = await fetchRecentFoods();
+    setRecentFoods(recents);
+  };
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
@@ -140,7 +197,8 @@ export default function AddFoodScreen() {
         selectedProduct.id,
         selectedProduct.product_name,
         quantityNum,
-        unit
+        unit,
+        params.mealType as 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks'
       );
       router.back();
     } catch (error) {
@@ -151,20 +209,50 @@ export default function AddFoodScreen() {
     }
   };
 
-  const renderEmptySearch = () => (
-    <View style={styles.emptyState}>
-      <IconSymbol name="search" size={64} color={colors.textSecondary} />
-      <ThemedText style={[styles.emptyStateTitle, { color: colors.text }]}>
-        {searchQuery.length <= 2 ? 'Start typing to search' : 'No results found'}
-      </ThemedText>
-      <ThemedText style={[styles.emptyStateText, { color: colors.textSecondary }]}>
-        {searchQuery.length <= 2 
-          ? 'Enter at least 3 characters to search for food items'
-          : 'Try searching with different keywords'
-        }
-      </ThemedText>
-    </View>
-  );
+  const handleSelectRecent = (item: RecentFood) => {
+    setSelectedProduct({
+      id: item.product_id,
+      product_name: item.product_name,
+      brands: '',
+      image_small_url: '',
+    });
+    setQuantity(String(item.quantity));
+    setUnit(item.unit);
+  };
+
+  const renderEmptySearch = () => {
+    if (searchQuery.length > 0) {
+      return (
+        <View style={styles.emptyState}>
+          <IconSymbol name="magnifyingglass" size={64} color={colors.textSecondary} />
+          <ThemedText style={[styles.emptyStateTitle, { color: colors.text }]}>No results found</ThemedText>
+          <ThemedText style={[styles.emptyStateText, { color: colors.textSecondary }]}>
+            Try searching with different keywords
+          </ThemedText>
+        </View>
+      );
+    }
+
+    return (
+      <View>
+        <ThemedText style={[styles.recentTitle, { color: colors.text }]}>Recently Added</ThemedText>
+        <FlatList
+          data={recentFoods}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <RecentFoodItem item={item} onSelect={handleSelectRecent} colors={colors} />}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyState}>
+              <IconSymbol name="clock" size={64} color={colors.textSecondary} />
+              <ThemedText style={[styles.emptyStateTitle, { color: colors.text }]}>No Recent Foods</ThemedText>
+              <ThemedText style={[styles.emptyStateText, { color: colors.textSecondary }]}>
+                Your recently added foods will appear here.
+              </ThemedText>
+            </View>
+          )}
+        />
+      </View>
+    );
+  };
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
@@ -176,7 +264,7 @@ export default function AddFoodScreen() {
             onPress={() => router.back()}
             activeOpacity={0.7}
           >
-            <IconSymbol name="arrow-left" size={20} color={colors.text} />
+            <IconSymbol name="arrow.left" size={20} color={colors.text} />
           </TouchableOpacity>
           <ThemedText type="title" style={[styles.title, { color: colors.text }]}>
             Add Food
@@ -190,7 +278,7 @@ export default function AddFoodScreen() {
 
       {/* Search Input */}
       <View style={styles.searchContainer}>
-        <IconSymbol name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
+        <IconSymbol name="magnifyingglass" size={20} color={colors.textSecondary} style={styles.searchIcon} />
         <TextInput
           style={[styles.searchInput, { 
             backgroundColor: colors.surface, 
@@ -204,12 +292,26 @@ export default function AddFoodScreen() {
           autoCapitalize="none"
           autoCorrect={false}
         />
+        <TouchableOpacity
+          style={[styles.barcodeButton, { backgroundColor: colors.surface }]}
+          onPress={() => router.push('/(tabs)/barcode-scanner')}
+          activeOpacity={0.7}
+        >
+          <IconSymbol name="barcode.viewfinder" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.scanButton, { backgroundColor: colors.accent }]}
+          onPress={() => router.push('/(tabs)/barcode-scanner')}
+        >
+          <IconSymbol name="camera" size={20} color="white" />
+          <ThemedText style={styles.scanButtonText}>Scan Barcode</ThemedText>
+        </TouchableOpacity>
         {searchQuery.length > 0 && (
           <TouchableOpacity
             style={styles.clearButton}
             onPress={() => setSearchQuery('')}
           >
-            <IconSymbol name="x" size={18} color={colors.textSecondary} />
+            <IconSymbol name="xmark.circle.fill" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         )}
       </View>
@@ -237,7 +339,7 @@ export default function AddFoodScreen() {
           style={styles.resultsList}
           contentContainerStyle={[
             styles.resultsListContent,
-            searchResults.length === 0 && styles.resultsListEmpty
+            searchResults.length === 0 && recentFoods.length === 0 && styles.resultsListEmpty,
           ]}
           ListEmptyComponent={!loading ? renderEmptySearch : null}
           showsVerticalScrollIndicator={false}
@@ -250,7 +352,7 @@ export default function AddFoodScreen() {
           <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedProduct(null)}>
             <ThemedText style={styles.closeButtonText}>X</ThemedText>
           </TouchableOpacity>
-          <ThemedText type="subtitle" style={styles.selectedProductTitle}>Selected: {selectedProduct.product_name}</ThemedText>
+          <ThemedText type="subtitle" style={styles.selectedProductName}>Selected: {selectedProduct.product_name}</ThemedText>
           <ThemedText style={styles.selectedProductBrand}>{selectedProduct.brands}</ThemedText>
           
           <View style={styles.inputSection}>
@@ -310,6 +412,32 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
+  recentTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  recentItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 10,
+  },
+  recentItemContent: {
+    flex: 1,
+  },
+  recentItemName: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  recentItemDetails: {
+    fontSize: 14,
+    opacity: 0.8,
+    marginTop: 4,
+  },
   header: {
     marginBottom: 24,
   },
@@ -350,9 +478,32 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 50,
     borderRadius: 16,
-    paddingHorizontal: 48,
+    paddingLeft: 48,
+    paddingRight: 80,
     fontSize: 16,
     borderWidth: 1,
+  },
+  barcodeButton: {
+    position: 'absolute',
+    right: 48,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scanButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginLeft: 10,
+  },
+  scanButtonText: {
+    color: 'white',
+    marginLeft: 5,
+    fontWeight: 'bold',
   },
   clearButton: {
     position: 'absolute',
@@ -431,7 +582,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 4,
   },
   selectedHeader: {
     flexDirection: 'row',
@@ -505,7 +655,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 8,
   },
   addButtonText: {
     color: 'white',

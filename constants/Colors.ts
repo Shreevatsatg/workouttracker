@@ -14,10 +14,15 @@ export const Colors = {
     icon: '#000000',
     tabIconDefault: '#cccccc',
     tabIconSelected: tintColorLight,
-        secondary: '#ee7e07ff',
-    success: '#d4edda', // A light green for success
-    error: '#f8d7da', // A light red for error
-    appBackground: '#F8FAFC', // Minimal light background
+    secondary: '#ee7e07ff',
+    success: '#d4edda',
+    error: '#f8d7da',
+    appBackground: '#F8FAFC',
+    surface: '#ffffff',
+    surfaceSecondary: '#f8f8f8',
+    border: '#e0e0e0',
+    accent: '#ee7e07ff',
+    textSecondary: '#6c757d',
   },
   dark: {
     text: '#f0f0f0',
@@ -27,8 +32,13 @@ export const Colors = {
     tabIconDefault: '#cccccc',
     tabIconSelected: tintColorDark,
     secondary: '#ee7e07ff',
-    success: '#1e3a24', // A dark green for success
-    error: '#d13844ff', // A dark red for error
-    appBackground: '#0F172A', // Minimal dark background
+    success: '#1e3a24',
+    error: '#d13844ff',
+    appBackground: '#0F172A',
+    surface: '#1c1c1e',
+    surfaceSecondary: '#2c2c2e',
+    border: '#3a3a3c',
+    accent: '#ee7e07ff',
+    textSecondary: '#8e8e93',
   },
 };

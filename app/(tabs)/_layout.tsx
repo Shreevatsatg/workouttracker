@@ -600,6 +600,60 @@ export default function TabLayout() {
           },
         }}
       />
+      <Tabs.Screen
+        name="barcode-scanner"
+        options={{
+          href: null,
+          headerShown: true,
+          title: 'Barcode Scanner',
+          headerStyle: {
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
+        }}
+      />
+      <Tabs.Screen
+        name="manual-food-entry"
+        options={{
+          href: null,
+          headerShown: true,
+          title: 'Manual Food Entry',
+          headerStyle: {
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
+        }}
+      />
+      <Tabs.Screen
+        name="food-details"
+        options={{
+          href: null,
+          headerShown: true,
+          title: 'Food Details',
+          headerStyle: {
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
+        }}
+      />
     </Tabs>
 
   );
