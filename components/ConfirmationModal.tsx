@@ -11,11 +11,13 @@ interface ConfirmationModalProps {
   message: string;
   onConfirm: () => void;
   onCancel: () => void;
+  confirmButtonText?: string;
+  cancelButtonText?: string;
 }
 
 const { width } = Dimensions.get('window');
 
-const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isVisible, title, message, onConfirm, onCancel }) => {
+const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isVisible, title, message, onConfirm, onCancel, confirmButtonText, cancelButtonText }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current; // Initial scale for pop-in effect
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -51,10 +53,10 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isVisible, title,
         <ThemedText style={[styles.modalMessage, { color: colors.text }]}>{message}</ThemedText>
         <ThemedView style={styles.buttonContainer}>
           <TouchableOpacity style={[styles.button, styles.cancelButton, { borderColor: colors.secondary }]} onPress={onCancel}>
-            <ThemedText style={[styles.buttonText, { color: colors.secondary }]}>Cancel</ThemedText>
+            <ThemedText style={[styles.buttonText, { color: colors.secondary }]}>{cancelButtonText || 'Cancel'}</ThemedText>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.button, styles.confirmButton, { backgroundColor: colors.error }]} onPress={onConfirm}>
-            <ThemedText style={[styles.buttonText, { color: colors.background }]}>Delete</ThemedText>
+            <ThemedText style={[styles.buttonText, { color: colors.background }]}>{confirmButtonText || 'Delete'}</ThemedText>
           </TouchableOpacity>
         </ThemedView>
       </Animated.View>

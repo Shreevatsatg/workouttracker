@@ -3,15 +3,15 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack, router, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
 import { useEffect } from 'react';
+import 'react-native-reanimated';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+import WorkoutNotificationBar from '@/components/WorkoutNotificationBar';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { FoodProvider } from '@/context/FoodContext';
 import { RoutinesProvider } from '@/context/RoutinesContext';
 import { WorkoutProvider } from '@/context/WorkoutContext';
-import { FoodProvider } from '@/context/FoodContext';
-import WorkoutNotificationBar from '@/components/WorkoutNotificationBar';
+import { useColorScheme } from '@/hooks/useColorScheme';
 
 // This hook protects the routes and handles redirection
 function useProtectedRoute() {
@@ -23,11 +23,10 @@ function useProtectedRoute() {
 
     const inTabsGroup = segments[0] === '(tabs)';
 
-    if (session && !inTabsGroup) {
-      // User is signed in but not in the main app area, redirect them.
+    // Prevent unnecessary navigation if already on the target screen
+    if (session && !inTabsGroup && segments[0] !== 'login' && segments[0] !== 'welcome') {
       router.replace('/(tabs)/workout');
-    } else if (!session) {
-      // User is not signed in, redirect to the login screen.
+    } else if (!session && segments[0] !== 'login') {
       router.replace('/login');
     }
   }, [session, loading, segments]);

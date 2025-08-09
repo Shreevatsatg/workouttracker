@@ -4,8 +4,8 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useFood } from '@/context/FoodContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface Product {
@@ -128,17 +128,25 @@ export default function AddFoodScreen() {
   const [quantity, setQuantity] = useState('100');
   const [unit, setUnit] = useState('g');
   const [isAdding, setIsAdding] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+  // Use refs to store the latest values without causing re-renders
+  const getFoodDetailsRef = useRef(getFoodDetails);
+  const fetchRecentFoodsRef = useRef(fetchRecentFoods);
+  
+  // Update refs when dependencies change
+  useEffect(() => {
+    getFoodDetailsRef.current = getFoodDetails;
+  }, [getFoodDetails]);
 
   useEffect(() => {
-    if (params.barcode) {
-      handleScannedBarcode(params.barcode as string);
-    }
-    loadRecentFoods();
-  }, [params]);
+    fetchRecentFoodsRef.current = fetchRecentFoods;
+  }, [fetchRecentFoods]);
 
-  const handleScannedBarcode = async (barcode: string) => {
+  // Stable version of handleScannedBarcode
+  const handleScannedBarcode = useCallback(async (barcode: string) => {
     setLoading(true);
-    const productDetails = await getFoodDetails(barcode);
+    const productDetails = await getFoodDetailsRef.current(barcode);
     if (productDetails) {
       setSelectedProduct({
         id: barcode,
@@ -151,12 +159,34 @@ export default function AddFoodScreen() {
       Alert.alert('Not Found', 'Product not found for this barcode.');
     }
     setLoading(false);
-  };
+  }, []); // No dependencies needed since we use refs
 
-  const loadRecentFoods = async () => {
-    const recents = await fetchRecentFoods();
+  // Stable version of loadRecentFoods
+  const loadRecentFoods = useCallback(async () => {
+    const recents = await fetchRecentFoodsRef.current();
     setRecentFoods(recents);
-  };
+  }, []); // No dependencies needed since we use refs
+
+  useFocusEffect(
+    useCallback(() => {
+      // Reset state when the component is focused
+      setSelectedProduct(null);
+      setQuantity('100');
+      setUnit('g');
+      setSearchQuery('');
+      setSearchResults([]);
+
+      if (params.barcode) {
+        handleScannedBarcode(params.barcode as string);
+      }
+      loadRecentFoods();
+
+      return () => {
+        // Cleanup function if needed when the screen loses focus
+        // For now, no specific cleanup is required for these states
+      };
+    }, [params.barcode, handleScannedBarcode, loadRecentFoods]) // Only params.barcode changes, functions are stable
+  );
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
@@ -177,7 +207,7 @@ export default function AddFoodScreen() {
     }, 500);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
+  }, [searchQuery, searchFood]);
 
   const handleAddFood = async () => {
     if (!selectedProduct || !quantity || !unit) {
@@ -200,7 +230,11 @@ export default function AddFoodScreen() {
         unit,
         params.mealType as 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks'
       );
-      router.back();
+      setShowSuccessMessage(true);
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+        router.push('/(tabs)/food-log');
+      }, 1500); // Show success message for 1.5 seconds
     } catch (error) {
       console.error('Failed to add food:', error);
       Alert.alert('Error', 'Failed to add food entry. Please try again.');
@@ -239,7 +273,9 @@ export default function AddFoodScreen() {
         <FlatList
           data={recentFoods}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <RecentFoodItem item={item} onSelect={handleSelectRecent} colors={colors} />}
+          renderItem={({ item }) => (
+            <RecentFoodItem item={item} onSelect={handleSelectRecent} colors={colors} />
+          )}
           ListEmptyComponent={() => (
             <View style={styles.emptyState}>
               <IconSymbol name="clock" size={64} color={colors.textSecondary} />
@@ -260,8 +296,8 @@ export default function AddFoodScreen() {
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity
-            style={[styles.backButton, { backgroundColor: colors.surface }]}
-            onPress={() => router.back()}
+            style={[styles.backButton, { backgroundColor: 'transparent' }]}
+            onPress={() => router.push('/(tabs)/food-log')}
             activeOpacity={0.7}
           >
             <IconSymbol name="arrow.left" size={20} color={colors.text} />
@@ -394,6 +430,8 @@ export default function AddFoodScreen() {
           >
             {isAdding ? (
               <ActivityIndicator color="white" />
+            ) : showSuccessMessage ? (
+              <ThemedText style={styles.addButtonText}>Food Added!</ThemedText>
             ) : (
               <>
                 <IconSymbol name="plus" size={20} color="white" />
@@ -410,7 +448,8 @@ export default function AddFoodScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
   recentTitle: {
     fontSize: 18,
@@ -439,13 +478,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   header: {
-    marginBottom: 24,
+    marginBottom: 14,
   },
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
   },
   backButton: {
     width: 40,
@@ -478,8 +516,8 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 50,
     borderRadius: 16,
-    paddingLeft: 48,
-    paddingRight: 80,
+    paddingLeft: 10,
+    paddingRight: 10,
     fontSize: 16,
     borderWidth: 1,
   },

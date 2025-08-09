@@ -40,6 +40,26 @@ export default function WorkoutSummaryScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
+  const totalVolume = useMemo(() => {
+    if (!workoutData || !Array.isArray(workoutData.exercises)) return 0;
+    return workoutData.exercises.reduce((acc: number, exercise: any) => {
+      if (!exercise || !Array.isArray(exercise.loggedSets)) return acc;
+      return acc + exercise.loggedSets.reduce((setAcc: number, set: any) => {
+        if (set && set.completed) {
+          return setAcc + (Number(set.loggedWeight || set.weight || 0) * Number(set.loggedReps || set.reps || 0));
+        }
+        return setAcc;
+      }, 0);
+    }, 0);
+  }, [workoutData]);
+
+  const completedExercisesCount = useMemo(() => {
+    if (!workoutData || !Array.isArray(workoutData.exercises)) return 0;
+    return workoutData.exercises.filter((exercise: any) =>
+      exercise && Array.isArray(exercise.loggedSets) && exercise.loggedSets.some((set: any) => set && set.completed)
+    ).length;
+  }, [workoutData]);
+
   const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -62,44 +82,39 @@ export default function WorkoutSummaryScreen() {
         .from('workout_sessions')
         .insert({
           user_id: user.id,
-          routine_id: workoutData.id !== 'empty' ? workoutData.id : null, // Link to routine if not empty
-          started_at: new Date(Date.now() - workoutDuration * 1000).toISOString(), // Approximate start time
-          ended_at: new Date().toISOString(),
-          notes: `Duration: ${formatTime(workoutDuration)}`,
+          routine_name: workoutData.name,
+          duration: workoutDuration,
+          completed_at: new Date().toISOString(),
         })
         .select();
 
       if (sessionError) throw sessionError;
 
+      if (!sessionData || sessionData.length === 0) {
+        throw new Error("Failed to retrieve session ID after saving workout.");
+      }
       const sessionId = sessionData[0].id;
 
       // Save session exercises and sets
-      for (const exercise of workoutData) {
-        const { data: sessionExerciseData, error: sessionExerciseError } = await supabase
-          .from('session_exercises')
-          .insert({
-            session_id: sessionId,
-            exercise_name: exercise.name,
-            order: 0, // You might want to add an order property to your Exercise interface
-          })
-          .select();
+      if (Array.isArray(workoutData.exercises)) {
+        for (const exercise of workoutData.exercises) {
+          if (exercise && Array.isArray(exercise.loggedSets)) {
+            for (const set of exercise.loggedSets) {
+              if (set && set.completed) {
+                const { error: sessionSetError } = await supabase
+                  .from('session_sets')
+                  .insert({
+                    session_id: sessionId,
+                    exercise_name: exercise.name,
+                    weight: Number(set.loggedWeight || set.weight || 0),
+                    reps: Number(set.loggedReps || set.reps || 0),
+                    completed_at: new Date().toISOString(),
+                  });
 
-        if (sessionExerciseError) throw sessionExerciseError;
-
-        const sessionExerciseId = sessionExerciseData[0].id;
-
-        for (const set of exercise.loggedSets) {
-          const { error: sessionSetError } = await supabase
-            .from('session_sets')
-            .insert({
-              session_exercise_id: sessionExerciseId,
-              weight: set.loggedWeight || set.weight,
-              reps: set.loggedReps || set.reps,
-              order: 0, // You might want to add an order property to your Set interface
-              completed_at: set.completed ? new Date().toISOString() : null,
-            });
-          
-          if (sessionSetError) throw sessionSetError;
+                if (sessionSetError) throw sessionSetError;
+              }
+            }
+          }
         }
       }
       setShowSuccessMessage(true);
@@ -125,6 +140,8 @@ export default function WorkoutSummaryScreen() {
         <ThemedText type="title" style={{ color: colors.tint, marginBottom: 12 }}>Congratulations!</ThemedText>
         <ThemedText type="subtitle" style={{ color: colors.text }}>You completed your workout!</ThemedText>
         <ThemedText style={{ color: colors.secondary, marginTop: 8 }}>Duration: {formatTime(workoutDuration)}</ThemedText>
+        <ThemedText style={{ color: colors.secondary, marginTop: 4 }}>Total Exercises: {completedExercisesCount}</ThemedText>
+        <ThemedText style={{ color: colors.secondary, marginTop: 4 }}>Total Volume: {totalVolume} kg</ThemedText>
       </ThemedView>
 
       <SuccessModal
@@ -139,12 +156,12 @@ export default function WorkoutSummaryScreen() {
       <ThemedView style={[styles.section, { backgroundColor: 'transparent' }]}>
         <ThemedText type="subtitle" style={{ color: colors.text, marginBottom: 16 }}>Workout Details:</ThemedText>
         <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 8 }}>Routine: {workoutData.name}</ThemedText>
-        {workoutData.exercises && workoutData.exercises.map((exercise, exIndex) => (
+        {Array.isArray(workoutData.exercises) && workoutData.exercises.map((exercise: any, exIndex: number) => (
           <View key={exIndex} style={[styles.exerciseCard, { borderColor: colors.tabIconDefault }]}>
             <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 4 }}>{exercise.name}</ThemedText>
-            {exercise.loggedSets.map((set, setIndex) => (
+            {Array.isArray(exercise.loggedSets) && exercise.loggedSets.map((set: any, setIndex: number) => (
               <ThemedText key={setIndex} style={{ color: colors.secondary }}>
-                Set {setIndex + 1}: {set.loggedWeight || set.weight} {set.loggedWeight ? 'kg' : ''} x {set.loggedReps || set.reps} reps {set.completed ? '(Completed)' : ''}
+                Set {setIndex + 1}: {set.loggedWeight || set.weight}kg x {set.loggedReps || set.reps} reps {set.completed ? '(Completed)' : ''}
               </ThemedText>
             ))}
           </View>

@@ -77,7 +77,15 @@ export default function BarcodeScannerScreen() {
         }}
       />
       <View style={styles.overlay}>
-        <View style={styles.viewfinder} />
+        <View style={styles.unfocusedContainer} />
+        <View style={styles.middleContainer}>
+          <View style={styles.unfocusedContainer} />
+          <View style={styles.viewfinder} />
+          <View style={styles.unfocusedContainer} />
+        </View>
+        <View style={styles.unfocusedContainer} />
+      </View>
+      <View style={styles.instructionsContainer}>
         <ThemedText style={styles.instructions}>Align barcode within the frame to scan</ThemedText>
       </View>
       {loading && (
@@ -86,8 +94,8 @@ export default function BarcodeScannerScreen() {
           <ThemedText style={styles.loadingText}>Searching for product...</ThemedText>
         </View>
       )}
-      <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
-        <IconSymbol name="xmark" size={24} color="white" />
+      <TouchableOpacity style={styles.closeButton} onPress={() => router.push('/(tabs)/add-food')}>
+        <IconSymbol name="arrow.left" size={24} color="white" />
       </TouchableOpacity>
     </View>
   );
@@ -105,20 +113,31 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  unfocusedContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+  middleContainer: {
+    flexDirection: 'row',
+    height: '40%',
   },
   viewfinder: {
     width: '80%',
-    height: '40%',
-    borderRadius: 20,
-    borderWidth: 2,
+    height: '100%',
     borderColor: 'white',
-    opacity: 0.5,
+    borderWidth: 2,
+  },
+  instructionsContainer: {
+    position: 'absolute',
+    bottom: 50,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
   },
   instructions: {
     color: 'white',
-    marginTop: 20,
     fontSize: 16,
     backgroundColor: 'rgba(0,0,0,0.5)',
     paddingHorizontal: 10,
@@ -137,6 +156,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
+    color: 'white',
     top: 50,
     left: 20,
     padding: 10,

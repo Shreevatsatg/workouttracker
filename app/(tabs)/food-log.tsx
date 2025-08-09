@@ -1,3 +1,4 @@
+import FoodEntryModal from '@/components/FoodEntryModal';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -9,10 +10,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Modal,
   SectionList,
   StyleSheet,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 
@@ -43,8 +44,11 @@ interface ProductDetails {
 const FoodEntryItem: React.FC<{
   entry: FoodEntry;
   onPress: () => void;
-  onLongPress: () => void;
-}> = ({ entry, onPress, onLongPress }) => {
+  onToggleDropdown: () => void;
+  isDropdownOpen: boolean;
+  onMove: (mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks') => void;
+  onDelete: () => void;
+}> = ({ entry, onPress, onToggleDropdown, isDropdownOpen, onMove, onDelete }) => {
   const { getFoodDetails } = useFood();
   const [details, setDetails] = useState<ProductDetails | null>(null);
   const colorScheme = useColorScheme();
@@ -56,7 +60,7 @@ const FoodEntryItem: React.FC<{
       setDetails(productDetails);
     };
     fetchDetails();
-  }, [entry.product_id]);
+  }, [entry.product_id, getFoodDetails]);
 
   const totalCalories = useMemo(() => {
     if (!details?.nutriments) return 0;
@@ -66,14 +70,45 @@ const FoodEntryItem: React.FC<{
   }, [details, entry.quantity]);
 
   return (
-    <TouchableOpacity onPress={onPress} onLongPress={onLongPress} style={[styles.foodEntryItem, { backgroundColor: colors.surface }]}>
-      <View>
+    <TouchableOpacity 
+      onPress={onPress} 
+      style={[
+        styles.foodEntryItem, 
+        { 
+          backgroundColor: colors.surface,
+          zIndex: isDropdownOpen ? 1000 : 1, // Ensure the active item is on top
+        }
+      ]}
+    >
+      <View style={{ flex: 1 }}>
         <ThemedText style={styles.foodEntryName}>{entry.product_name}</ThemedText>
         <ThemedText style={styles.foodEntryServing}>
           {entry.quantity} {entry.unit}
         </ThemedText>
       </View>
       <ThemedText style={styles.foodEntryCalories}>{totalCalories.toFixed(0)} kcal</ThemedText>
+      <View>
+        <TouchableOpacity onPress={onToggleDropdown} style={{ padding: 8 }}>
+          <IconSymbol name="ellipsis" size={20} color={colors.text} />
+        </TouchableOpacity>
+        {isDropdownOpen && (
+          <View style={[styles.dropdownMenu, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <ThemedText style={styles.dropdownTitle}>Move to...</ThemedText>
+            {['Breakfast', 'Lunch', 'Dinner', 'Snacks'].map((mealType) => (
+              <TouchableOpacity
+                key={mealType}
+                style={styles.dropdownItem}
+                onPress={() => onMove(mealType as 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks')}
+              >
+                <ThemedText style={{ color: colors.text }}>{mealType}</ThemedText>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={[styles.dropdownItem, styles.deleteButton]} onPress={onDelete}>
+              <ThemedText style={{ color: 'red' }}>Delete</ThemedText>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
     </TouchableOpacity>
   );
 };
@@ -159,15 +194,22 @@ export default function FoodLogScreen() {
     updateFoodEntryMealType,
     deleteFoodEntry,
     getFoodDetails,
+    updateFoodEntry,
   } = useFood();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
-  const [dailyMacros, setDailyMacros] = useState({ proteins: 0, carbohydrates: 0, fats: 0 });
+  const [dailyMacros, setDailyMacros] = useState({
+    proteins: 0,
+    carbohydrates: 0,
+    fats: 0,
+    calories: 0,
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isCalculatingMacros, setIsCalculatingMacros] = useState(true);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<FoodEntry | null>(null);
+  const [openDropdownEntryId, setOpenDropdownEntryId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -184,22 +226,23 @@ export default function FoodLogScreen() {
     const getMacros = async () => {
       setIsCalculatingMacros(true);
       const macros = await calculateDailyMacros();
-      setDailyMacros(macros);
+      const totalCalories = macros.proteins * 4 + macros.carbohydrates * 4 + macros.fats * 9;
+      setDailyMacros({ ...macros, calories: totalCalories });
       setIsCalculatingMacros(false);
     };
     getMacros();
   }, [foodEntries]);
 
-  const handleLongPress = (entry: FoodEntry) => {
+  const handleToggleDropdown = (entry: FoodEntry) => {
     setSelectedEntry(entry);
-    setModalVisible(true);
+    setOpenDropdownEntryId(openDropdownEntryId === entry.id ? null : entry.id);
   };
 
   const handleMove = (mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks') => {
     if (selectedEntry) {
       updateFoodEntryMealType(selectedEntry.id, mealType);
     }
-    setModalVisible(false);
+    setOpenDropdownEntryId(null); // Close dropdown
   };
 
   const handleDelete = () => {
@@ -213,28 +256,32 @@ export default function FoodLogScreen() {
         },
       ]);
     }
-    setModalVisible(false);
+    setOpenDropdownEntryId(null); // Close dropdown
   };
 
   const handlePressItem = async (entry: FoodEntry) => {
     const details = await getFoodDetails(entry.product_id);
     if (details) {
-      const { proteins_100g = 0, carbohydrates_100g = 0, fat_100g = 0 } = details.nutriments;
-      const scale = entry.quantity / 100;
-      const totalCalories =
-        proteins_100g * 4 * scale + carbohydrates_100g * 4 * scale + fat_100g * 9 * scale;
-
+      const totalCalories = details.nutriments.proteins_100g * 4 + details.nutriments.carbohydrates_100g * 4 + details.nutriments.fat_100g * 9;
       router.push({
         pathname: '/(tabs)/food-details',
         params: {
           name: entry.product_name,
           calories: totalCalories.toFixed(0),
-          protein: (proteins_100g * scale).toFixed(1),
-          carbs: (carbohydrates_100g * scale).toFixed(1),
-          fat: (fat_100g * scale).toFixed(1),
-          servingSize: `${entry.quantity} ${entry.unit}`,
+          protein: details.nutriments.proteins_100g.toFixed(1),
+          carbs: details.nutriments.carbohydrates_100g.toFixed(1),
+          fat: details.nutriments.fat_100g.toFixed(1),
+          servingSize: details.serving_size,
         },
       });
+    } else {
+      Alert.alert('Error', 'Could not fetch food details.');
+    }
+  };
+
+  const handleSaveFoodEntry = (quantity: number, unit: string) => {
+    if (selectedEntry) {
+      updateFoodEntry(selectedEntry.id, { ...selectedEntry, quantity, unit });
     }
   };
 
@@ -265,106 +312,98 @@ export default function FoodLogScreen() {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
-      <View style={styles.header}>
-        <ThemedText style={[styles.subtitle, { color: colors.tint }]}>
-          Track your daily nutrition
-        </ThemedText>
-      </View>
-
-      <View style={styles.macrosSummary}>
-        <ThemedText style={[styles.summaryTitle, { color: colors.text }]}>
-          Today’s Nutrition
-        </ThemedText>
-        <View style={styles.macroCardsContainer}>
-          <MacroCard
-            title="Protein"
-            value={dailyMacros.proteins}
-            unit="g"
-            icon="bolt.fill"
-            color="#FF6B6B"
-            backgroundColor={`${colors.surface}dd`}
-            isLoading={isCalculatingMacros}
-            
-          />
-          <MacroCard
-            title="Carbs"
-            value={dailyMacros.carbohydrates}
-            unit="g"
-            icon="flame.fill"
-            color="#4ECDC4"
-            backgroundColor={`${colors.surface}dd`}
-            isLoading={isCalculatingMacros}
-          />
-          <MacroCard
-            title="Fat"
-            value={dailyMacros.fats}
-            unit="g"
-            icon="drop.fill"
-            color="#45B7D1"
-            backgroundColor={`${colors.surface}dd`}
-            isLoading={isCalculatingMacros}
-          />
-        </View>
-      </View>
-
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <FoodEntryItem
-            entry={item}
-            onPress={() => handlePressItem(item)}
-            onLongPress={() => handleLongPress(item)}
-          />
-        )}
-        renderSectionHeader={({ section: { title, data } }) => (
-          <SectionHeader title={title} data={data} colors={colors} />
-        )}
-        renderSectionFooter={({ section: { title } }) => (
-          <TouchableOpacity
-            style={[styles.addFoodButton, { backgroundColor: colors.accent }]}
-            onPress={() =>
-              router.push({
-                pathname: '/(tabs)/add-food',
-                params: { mealType: title },
-              })
+      <TouchableWithoutFeedback onPress={() => setOpenDropdownEntryId(null)} disabled={!openDropdownEntryId}>
+        <View style={{ flex: 1 }}>
+          <SectionList
+            contentContainerStyle={{ paddingHorizontal: 17, paddingVertical: 20 }}
+            sections={sections}
+            keyExtractor={(item) => item.id}
+            ListHeaderComponent={
+              <View style={[styles.macrosSummary, { borderBottomColor: colors.border, borderBottomWidth: 1, paddingBottom: 8, paddingTop: 20 }]}>
+                <ThemedText style={[styles.summaryTitle, { color: colors.text }]}>
+                  Today’s Nutrition
+                </ThemedText>
+                <View style={[styles.macroCardsContainer, { height: 80 }]}>
+                  <MacroCard
+                    title="Calories"
+                    value={dailyMacros.calories}
+                    unit="k"
+                    icon="flame.fill"
+                    color="#FF9F43"
+                    backgroundColor={`${colors.surface}dd`}
+                    isLoading={isCalculatingMacros}
+                  />
+                  <MacroCard
+                    title="Protein"
+                    value={dailyMacros.proteins}
+                    unit="g"
+                    icon="bolt.fill"
+                    color="#FF6B6B"
+                    backgroundColor={`${colors.surface}dd`}
+                    isLoading={isCalculatingMacros}
+                  />
+                  <MacroCard
+                    title="Carbs"
+                    value={dailyMacros.carbohydrates}
+                    unit="g"
+                    icon="flame.fill"
+                    color="#4ECDC4"
+                    backgroundColor={`${colors.surface}dd`}
+                    isLoading={isCalculatingMacros}
+                  />
+                  <MacroCard
+                    title="Fat"
+                    value={dailyMacros.fats}
+                    unit="g"
+                    icon="drop.fill"
+                    color="#45B7D1"
+                    backgroundColor={`${colors.surface}dd`}
+                    isLoading={isCalculatingMacros}
+                  />
+                </View>
+              </View>
             }
-          >
-            <IconSymbol name="plus" size={20} color="white" />
-            <ThemedText style={styles.addFoodButtonText}>Add Food</ThemedText>
-          </TouchableOpacity>
-        )}
-        ListEmptyComponent={!isLoading ? renderEmptyState : null}
-        showsVerticalScrollIndicator={false}
-      />
-
-      <Modal animationType="slide" transparent={true} visible={modalVisible}>
-        <View style={styles.modalContainer}>
-          <View style={[styles.modalView, { backgroundColor: colors.surface }]}>
-            <ThemedText style={styles.modalText}>Move to...</ThemedText>
-            {['Breakfast', 'Lunch', 'Dinner', 'Snacks'].map((mealType) => (
+            renderItem={({ item }) => (
+              <FoodEntryItem
+                entry={item}
+                onPress={() => handlePressItem(item)}
+                onToggleDropdown={() => handleToggleDropdown(item)}
+                isDropdownOpen={openDropdownEntryId === item.id}
+                onMove={handleMove}
+                onDelete={handleDelete}
+              />
+            )}
+            renderSectionHeader={({ section: { title, data } }) => (
+              <SectionHeader title={title} data={data} colors={colors} />
+            )}
+            renderSectionFooter={({ section: { title } }) => (
               <TouchableOpacity
-                key={mealType}
-                style={styles.modalButton}
+                style={[styles.addFoodButton, { backgroundColor: colors.accent }]}
                 onPress={() =>
-                  handleMove(mealType as 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks')
+                  router.push({
+                    pathname: '/(tabs)/add-food',
+                    params: { mealType: title },
+                  })
                 }
               >
-                <ThemedText>{mealType}</ThemedText>
+                <IconSymbol name="plus" size={20} color="white" />
+                <ThemedText style={styles.addFoodButtonText}>Add Food</ThemedText>
               </TouchableOpacity>
-            ))}
-            <TouchableOpacity
-              style={[styles.modalButton, { marginTop: 20 }]}
-              onPress={handleDelete}
-            >
-              <ThemedText style={{ color: 'red' }}>Delete</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.modalButton} onPress={() => setModalVisible(false)}>
-              <ThemedText>Cancel</ThemedText>
-            </TouchableOpacity>
-          </View>
+            )}
+            ListEmptyComponent={!isLoading ? renderEmptyState : null}
+            showsVerticalScrollIndicator={false}
+          />
         </View>
-      </Modal>
+      </TouchableWithoutFeedback>
+
+      {selectedEntry && editModalVisible && ( // Only render if editModalVisible is true
+        <FoodEntryModal
+          visible={editModalVisible}
+          onClose={() => setEditModalVisible(false)}
+          entry={selectedEntry}
+          onSave={handleSaveFoodEntry}
+        />
+      )}
     </ThemedView>
   );
 }
@@ -372,20 +411,6 @@ export default function FoodLogScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-  },
-  header: {
-    marginBottom: 24,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    opacity: 0.7,
   },
   macrosSummary: {
     marginBottom: 24,
@@ -398,24 +423,24 @@ const styles = StyleSheet.create({
   macroCardsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: 8,
   },
   macroCard: {
     flex: 1,
-    padding: 16,
+    padding: 10,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 100,
+    minHeight: 80,
   },
   macroCardValue: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginTop: 8,
-    marginBottom: 4,
+    marginTop: 6,
+    marginBottom: 2,
   },
   macroCardTitle: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '500',
     opacity: 0.8,
   },
@@ -497,35 +522,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     lineHeight: 24,
   },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+  dropdownMenu: {
+    position: 'absolute',
+    right: 0,
+    top: 40, // Adjust as needed to position below the ellipsis
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingVertical: 5,
+    zIndex: 999, // Increased zIndex to ensure it appears on top
+    minWidth: 150,
   },
-  modalView: {
-    margin: 20,
-    borderRadius: 20,
-    padding: 35,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalText: {
-    marginBottom: 15,
-    textAlign: 'center',
-    fontSize: 18,
+  dropdownTitle: {
+    fontSize: 14,
     fontWeight: 'bold',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    opacity: 0.7,
   },
-  modalButton: {
-    padding: 10,
-    width: 200,
-    alignItems: 'center',
+  dropdownItem: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+  },
+  deleteButton: {
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    marginTop: 5,
+    paddingTop: 8,
   },
 });

@@ -44,6 +44,7 @@ interface FoodContextType {
   addManualFood: (foodData: Omit<ProductDetails, 'image_small_url'>) => Promise<void>;
   updateFoodEntryMealType: (entryId: string, meal_type: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks') => Promise<void>;
   deleteFoodEntry: (entryId: string) => Promise<void>;
+  updateFoodEntry: (entryId: string, updates: Partial<FoodEntry>) => Promise<void>;
 }
 
 const FoodContext = createContext<FoodContextType | undefined>(undefined);
@@ -99,7 +100,7 @@ export const FoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
       Alert.alert('Error', 'Could not add food entry.');
     } else {
       fetchFoodEntries(); // Refresh list after adding
-      Alert.alert('Success', 'Food entry added!');
+      // Removed Alert.alert('Success', 'Food entry added!'); as per user request
     }
   };
 
@@ -120,14 +121,32 @@ export const FoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .from('food_entries')
       .select('*')
       .order('logged_at', { ascending: false })
-      .limit(10);
+      .limit(100); // Fetch more entries to ensure enough unique items
 
     if (error) {
       console.error('Error fetching recent foods:', error);
       Alert.alert('Error', 'Could not fetch recent foods.');
       return [];
     }
-    return data || [];
+
+    if (!data) {
+      return [];
+    }
+
+    // Deduplicate by product_id, keeping the most recent entry
+    const uniqueFoodsMap = new Map<string, FoodEntry>();
+    for (const entry of data) {
+      if (!uniqueFoodsMap.has(entry.product_id) || new Date(entry.logged_at) > new Date(uniqueFoodsMap.get(entry.product_id)!.logged_at)) {
+        uniqueFoodsMap.set(entry.product_id, entry);
+      }
+    }
+
+    // Convert map values back to an array and sort by logged_at
+    const uniqueFoods = Array.from(uniqueFoodsMap.values()).sort((a, b) =>
+      new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime()
+    );
+
+    return uniqueFoods.slice(0, 10); // Return top 10 unique recent foods
   };
 
   const searchByBarcode = async (barcode: string) => {
@@ -182,6 +201,16 @@ export const FoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) {
       console.error('Error deleting food entry:', error);
       Alert.alert('Error', 'Could not delete food entry.');
+    } else {
+      fetchFoodEntries();
+    }
+  };
+
+  const updateFoodEntry = async (entryId: string, updates: Partial<FoodEntry>) => {
+    const { error } = await supabase.from('food_entries').update(updates).eq('id', entryId);
+    if (error) {
+      console.error('Error updating food entry:', error);
+      Alert.alert('Error', 'Could not update food entry.');
     } else {
       fetchFoodEntries();
     }
@@ -291,6 +320,7 @@ export const FoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
       addManualFood,
       updateFoodEntryMealType,
       deleteFoodEntry,
+      updateFoodEntry,
     }}>
       {children}
     </FoodContext.Provider>
