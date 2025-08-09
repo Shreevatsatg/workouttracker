@@ -10,6 +10,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { RoutinesProvider } from '@/context/RoutinesContext';
 import { WorkoutProvider } from '@/context/WorkoutContext';
+import { FoodProvider } from '@/context/FoodContext';
 import WorkoutNotificationBar from '@/components/WorkoutNotificationBar';
 
 // This hook protects the routes and handles redirection
@@ -71,13 +72,15 @@ export default function RootLayout() {
           : { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent' } }
         }
       >
-        <RoutinesProvider>
-          <WorkoutProvider>
-            <AppBackground>
-              <RootLayoutNav />
-            </AppBackground>
-          </WorkoutProvider>
-        </RoutinesProvider>
+        <FoodProvider>
+          <RoutinesProvider>
+            <WorkoutProvider>
+              <AppBackground>
+                <RootLayoutNav />
+              </AppBackground>
+            </WorkoutProvider>
+          </RoutinesProvider>
+        </FoodProvider>
       </ThemeProvider>
     </AuthProvider>
   );

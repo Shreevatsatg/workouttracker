@@ -85,7 +85,6 @@ export default function TabLayout() {
             borderTopColor: colors.border,
             height: Platform.OS === 'ios' ? 70 : 70,
             paddingBottom: Platform.OS === 'ios' ? 30 : 20,
-            position: 'absolute',
             shadowColor: '#000000',
             shadowOffset: { width: 0, height: -2 },
             shadowOpacity: 0.05,
@@ -547,6 +546,61 @@ export default function TabLayout() {
           ),
         }}
       />
+
+      <Tabs.Screen
+        name="food-log"
+        options={{
+          title: 'Food',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{
+              padding: 4,
+              borderRadius: 10,
+              backgroundColor: focused ? `${colors.accent}15` : 'transparent',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: 32,
+              minWidth: 32,
+            }}>
+              <IconSymbol 
+                size={22} 
+                name="fork.knife" 
+                color={color} 
+              />
+            </View>
+          ),
+          headerShown: true,
+          headerTitle: 'Food Log',
+          headerStyle: {
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
+        }}
+      />
+      <Tabs.Screen
+        name="add-food"
+        options={{
+          href: null,
+          headerShown: true,
+          title: 'Add Food',
+          headerStyle: {
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
+        }}
+      />
     </Tabs>
+
   );
 }

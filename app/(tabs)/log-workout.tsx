@@ -359,7 +359,6 @@ export default function LogWorkoutScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginBottom: 70,
   },
   header: {
     padding: 16,

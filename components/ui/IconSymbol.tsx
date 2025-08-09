@@ -1,7 +1,7 @@
 // Fallback for using MaterialIcons on Android and web.
 
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolWeight, SymbolViewProps } from 'expo-symbols';
+import { SymbolViewProps, SymbolWeight } from 'expo-symbols';
 import { ComponentProps } from 'react';
 import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
 
@@ -27,6 +27,7 @@ const MAPPING = {
   'circle': 'radio-button-unchecked',
   'folder.badge.plus': 'create-new-folder',
   'plus.circle': 'add-circle-outline',
+  'fork.knife': 'restaurant',  // Add this line
 } as IconMapping;
 
 /**
