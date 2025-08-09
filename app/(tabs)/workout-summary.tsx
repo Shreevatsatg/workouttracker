@@ -8,6 +8,7 @@ import { supabase } from '@/utils/supabase';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useWorkout } from '@/context/WorkoutContext';
 
 
 
@@ -21,6 +22,7 @@ export default function WorkoutSummaryScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { user } = useAuth();
+  const { saveWorkout } = useWorkout();
   const parsedWorkoutData = useMemo(() => {
     if (params.workoutData) {
       return JSON.parse(params.workoutData as string);
@@ -117,6 +119,7 @@ export default function WorkoutSummaryScreen() {
           }
         }
       }
+      saveWorkout(); // Clear workout context state
       setShowSuccessMessage(true);
     } catch (error: any) {
       alert(`Error saving workout: ${error.message}`);
@@ -124,7 +127,7 @@ export default function WorkoutSummaryScreen() {
     } finally {
       setIsSaving(false);
     }
-  }, [user, workoutData, workoutDuration]);
+  }, [user, workoutData, workoutDuration, saveWorkout]);
 
   if (!workoutData) {
     return (

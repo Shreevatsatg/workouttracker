@@ -9,13 +9,17 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
+import { Set } from '@/types';
+
 interface ExerciseDetail {
   name: string;
   primaryMuscles: string[];
   secondaryMuscles: string[];
   instructions: string[];
   equipment: string;
-  images: string[];
+  sets: Set[];
+  images?: string[];
+  loggedSets: Set[];
 }
 
 const EXERCISES_DATA = require('@/assets/data/exercises.json');
@@ -68,6 +72,7 @@ export default function RoutineScreen() {
       return {
         ...ex,
         images: details?.images || [],
+        loggedSets: [],
       };
     });
     startWorkoutContext({ ...routine, exercises: exercisesWithImages });
@@ -92,10 +97,8 @@ export default function RoutineScreen() {
 
   const startEmptyWorkout = () => {
     startWorkoutContext({
-      id: 'empty',
       name: 'Empty Workout',
       exercises: [],
-      type: 'routine',
     });
     router.push('/(tabs)/log-workout');
   };
@@ -224,7 +227,7 @@ export default function RoutineScreen() {
           <ThemedView style={[styles.modalContent, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
             <ThemedText type="subtitle" style={{ color: colors.text, marginBottom: 12 }}>Move to Folder</ThemedText>
             {items.filter(item => item.type === 'folder').map(folder => (
-              <TouchableOpacity key={folder.id} style={styles.menuItem} onPress={() => moveRoutineToFolder(folder.id)}>
+              <TouchableOpacity key={folder.id} style={styles.menuItem} onPress={() => moveRoutineToFolder(movingRoutine!.id, folder.id)}>
                 <ThemedText style={{ color: colors.secondary }}>{folder.name}</ThemedText>
               </TouchableOpacity>
             ))}

@@ -141,7 +141,7 @@ export default function ExerciseDetailsScreen() {
       {/* Exercise Info Cards */}
       <ThemedView style={styles.section}>
         {/* Basic Info */}
-        <View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <ThemedText type="subtitle" style={[styles.sectionTitle, { color: colors.tint }]}>
             Basic Information
           </ThemedText>
@@ -180,7 +180,7 @@ export default function ExerciseDetailsScreen() {
         </View>
 
         {/* Primary Muscles */}
-        <View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <ThemedText type="subtitle" style={[styles.sectionTitle, { color: colors.tint }]}>
             Primary Muscles
           </ThemedText>
@@ -197,7 +197,7 @@ export default function ExerciseDetailsScreen() {
 
         {/* Secondary Muscles */}
         {exercise.secondaryMuscles && exercise.secondaryMuscles.length > 0 && (
-          <View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <ThemedText type="subtitle" style={[styles.sectionTitle, { color: colors.tint }]}>
               Secondary Muscles
             </ThemedText>
@@ -214,7 +214,7 @@ export default function ExerciseDetailsScreen() {
         )}
 
         {/* Instructions */}
-        <View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <ThemedText type="subtitle" style={[styles.sectionTitle, { color: colors.tint }]}>
             Instructions
           </ThemedText>

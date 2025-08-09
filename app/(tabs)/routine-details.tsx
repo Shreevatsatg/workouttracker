@@ -11,16 +11,14 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 // Define interfaces for exercise and routine structure
-interface Set {
-  weight: string;
-  reps: string;
-}
+import { Set } from '@/types';
 
 interface Exercise {
   name: string;
   sets: Set[];
   images?: string[]; // Add images property
   id?: string; // Add id property
+  loggedSets: Set[];
 }
 
 interface Routine {
@@ -36,6 +34,7 @@ interface ExerciseDetail {
   instructions: string[];
   equipment: string;
   images: string[];
+  id: string;
 }
 
 const EXERCISES_DATA = require('@/assets/data/exercises.json');
@@ -65,6 +64,7 @@ export default function RoutineDetailsScreen() {
       return {
         ...ex,
         images: details?.images || [],
+        loggedSets: [],
       };
     });
     startWorkoutContext({ ...routine, exercises: exercisesWithImages });

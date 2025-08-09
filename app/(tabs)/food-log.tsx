@@ -121,9 +121,6 @@ const SectionHeader: React.FC<{
   const { getFoodDetails } = useFood();
   const [totalCalories, setTotalCalories] = useState(0);
 
-  // Create a stable dependency to prevent infinite loops
-  const dependency = data.map((e) => `${e.id}-${e.quantity}`).join(',');
-
   useEffect(() => {
     const calculateTotalCalories = async () => {
       let sum = 0;
@@ -142,7 +139,7 @@ const SectionHeader: React.FC<{
       setTotalCalories(sum);
     };
     calculateTotalCalories();
-  }, [dependency]);
+  }, [data, getFoodDetails]);
 
   return (
     <View style={styles.sectionHeader}>
@@ -220,7 +217,7 @@ export default function FoodLogScreen() {
       }
     };
     loadData();
-  }, []);
+  }, [fetchFoodEntries]);
 
   useEffect(() => {
     const getMacros = async () => {
@@ -231,7 +228,7 @@ export default function FoodLogScreen() {
       setIsCalculatingMacros(false);
     };
     getMacros();
-  }, [foodEntries]);
+  }, [foodEntries, calculateDailyMacros]);
 
   const handleToggleDropdown = (entry: FoodEntry) => {
     setSelectedEntry(entry);

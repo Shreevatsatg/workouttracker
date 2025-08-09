@@ -6,11 +6,11 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { supabase } from '@/utils/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
+  ColorValue,
   Dimensions,
   KeyboardAvoidingView,
   Platform,
@@ -21,13 +21,12 @@ import {
   TouchableOpacity
 } from 'react-native';
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 const WelcomeScreen = () => {
   const { user, refreshProfile } = useAuth();
   const [fullName, setFullName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   
@@ -35,7 +34,7 @@ const WelcomeScreen = () => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const inputRef = useRef(null);
+  const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     const parallelAnimation = Animated.parallel([
@@ -61,7 +60,7 @@ const WelcomeScreen = () => {
     return () => {
       parallelAnimation.stop();
     };
-  }, []);
+  }, [fadeAnim, slideAnim, scaleAnim]);
 
   const handleContinue = async () => {
     if (fullName.trim() === '') {
@@ -87,7 +86,7 @@ const WelcomeScreen = () => {
     setIsLoading(false);
   };
 
-  const gradientColors = colorScheme === 'dark' 
+  const gradientColors: readonly [ColorValue, ColorValue, ColorValue] = colorScheme === 'dark' 
     ? ['#1a1a2e', '#16213e', '#0f3460'] 
     : ['#667eea', '#764ba2', '#f093fb'];
 
@@ -136,7 +135,7 @@ const WelcomeScreen = () => {
                 Welcome to FitTracker!
               </ThemedText>
               <ThemedText style={[styles.subtitle, { color: 'rgba(255,255,255,0.8)' }]}>
-                Let's start your fitness journey together.{'\n'}
+                Let&apos;s start your fitness journey together.{'\n'}
                 First, tell us your name.
               </ThemedText>
             </Animated.View>
@@ -173,7 +172,7 @@ const WelcomeScreen = () => {
               <TouchableOpacity
                 style={[
                   styles.continueButton,
-                  { 
+                  {
                     backgroundColor: colors.tint,
                     opacity: fullName.trim() ? 1 : 0.6 
                   }
@@ -203,7 +202,7 @@ const WelcomeScreen = () => {
               ]}
             >
               <ThemedText style={[styles.quote, { color: 'rgba(255,255,255,0.7)' }]}>
-                "The journey of a thousand miles begins with one step."
+                &quot;The journey of a thousand miles begins with one step.&quot;
               </ThemedText>
             </Animated.View>
           </Animated.View>

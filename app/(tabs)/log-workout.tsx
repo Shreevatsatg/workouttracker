@@ -14,13 +14,7 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, TextInput, TouchableOpacity, Vibration, View } from 'react-native';
-interface Set {
-  weight: string;
-  reps: string;
-  loggedWeight?: string;
-  loggedReps?: string;
-  completed: boolean;
-}
+import { Set } from '@/types';
 
 interface Exercise {
   name: string;
@@ -55,7 +49,7 @@ export default function LogWorkoutScreen() {
   const [selectedExerciseIndex, setSelectedExerciseIndex] = useState<number | null>(null);
   const [restTimerActive, setRestTimerActive] = useState(false);
   const [restTimerRemaining, setRestTimerRemaining] = useState(0);
-  const restTimerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const restTimerIntervalRef = useRef<any | null>(null);
 
   const handleLoggedSetChange = (exIndex: number, setIndex: number, field: 'loggedWeight' | 'loggedReps', value: string) => {
     const newLoggedExercises = [...loggedExercises];

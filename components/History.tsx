@@ -2,7 +2,7 @@ import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { supabase } from '@/utils/supabase';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity, View } from 'react-native';
 import ConfirmationModal from './ConfirmationModal';
 import { ThemedText } from './ThemedText';
@@ -31,7 +31,7 @@ const History = () => {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     if (!user) {
       setLoading(false);
       return;
@@ -50,7 +50,7 @@ const History = () => {
       setSessions(data || []);
     }
     setLoading(false);
-  };
+  }, [user]);
 
   const handleDeleteSession = (sessionId: string) => {
     setSessionToDelete(sessionId);
@@ -59,7 +59,7 @@ const History = () => {
 
   useEffect(() => {
     fetchHistory();
-  }, [user]);
+  }, [fetchHistory]);
 
   const confirmDeleteSession = async () => {
     if (!sessionToDelete) return;

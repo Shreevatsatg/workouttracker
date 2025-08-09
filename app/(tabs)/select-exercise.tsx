@@ -13,7 +13,7 @@ interface Exercise {
   force: string | null;
   level: string;
   mechanic: string | null;
-  equipment: string;
+  equipment: string | null;
   primaryMuscles: string[];
   secondaryMuscles: string[];
   instructions: string[];
@@ -326,7 +326,7 @@ export default function SelectExerciseScreen() {
                   style={[
                     styles.muscleItem,
                     { 
-                      backgroundColor: isSelected ? colors.tint : colors.card,
+                      backgroundColor: isSelected ? colors.tint : colors.surface,
                       borderColor: colors.border 
                     }
                   ]}
@@ -380,7 +380,7 @@ export default function SelectExerciseScreen() {
           onChangeText={setSearchQuery}
         />
         <TouchableOpacity
-          style={[styles.filterButton, { backgroundColor: selectedMuscles.length > 0 ? colors.tint : colors.card, borderColor: colors.border }]}
+          style={[styles.filterButton, { backgroundColor: selectedMuscles.length > 0 ? colors.tint : colors.surface, borderColor: colors.border }]}
           onPress={() => setShowMuscleFilter(true)}
         >
           <Ionicons 
@@ -451,7 +451,7 @@ export default function SelectExerciseScreen() {
         {/* A-Z Scroll Bar */}
         <View 
           ref={scrollBarRef}
-          style={[styles.scrollBar, { backgroundColor: colors.card }]}
+          style={[styles.scrollBar, { backgroundColor: colors.surface }]}
           {...panResponder.panHandlers}
         >
           {ALPHABET.map(renderScrollBarLetter)}

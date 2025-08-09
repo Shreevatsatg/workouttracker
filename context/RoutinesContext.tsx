@@ -1,14 +1,12 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-interface Set {
-  weight: string;
-  reps: string;
-}
+import { Set } from '@/types';
 
 interface Exercise {
   name: string;
   sets: Set[];
+  loggedSets: Set[];
 }
 
 export interface Routine {

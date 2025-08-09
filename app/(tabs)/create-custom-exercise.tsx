@@ -63,7 +63,7 @@ export default function CreateCustomExerciseScreen() {
 
         <ThemedText style={[styles.label, { color: colors.text }]}>Exercise Name:</ThemedText>
         <TextInput
-          style={[styles.input, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
+          style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
           placeholder="e.g., Custom Bicep Curl"
           placeholderTextColor={colors.secondary}
           value={exerciseName}
@@ -74,7 +74,7 @@ export default function CreateCustomExerciseScreen() {
         <Picker
           selectedValue={equipment}
           onValueChange={(itemValue, itemIndex) => setEquipment(itemValue)}
-          style={[styles.picker, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
+          style={[styles.picker, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
         >
           <Picker.Item label="Select Equipment" value="" />
           <Picker.Item label="Bands" value="bands" />
@@ -95,7 +95,7 @@ export default function CreateCustomExerciseScreen() {
         <Picker
           selectedValue={category}
           onValueChange={(itemValue, itemIndex) => setCategory(itemValue)}
-          style={[styles.picker, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
+          style={[styles.picker, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
         >
           <Picker.Item label="Select Category" value="" />
           <Picker.Item label="Cardio" value="cardio" />
@@ -111,7 +111,7 @@ export default function CreateCustomExerciseScreen() {
         <Picker
           selectedValue={level}
           onValueChange={(itemValue, itemIndex) => setLevel(itemValue)}
-          style={[styles.picker, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
+          style={[styles.picker, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
         >
           <Picker.Item label="Select Level" value="" />
           <Picker.Item label="Beginner" value="beginner" />
@@ -123,7 +123,7 @@ export default function CreateCustomExerciseScreen() {
         <Picker
           selectedValue={force}
           onValueChange={(itemValue, itemIndex) => setForce(itemValue)}
-          style={[styles.picker, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
+          style={[styles.picker, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
         >
           <Picker.Item label="Select Force" value="" />
           <Picker.Item label="Push" value="push" />
@@ -135,7 +135,7 @@ export default function CreateCustomExerciseScreen() {
         <Picker
           selectedValue={mechanic}
           onValueChange={(itemValue, itemIndex) => setMechanic(itemValue)}
-          style={[styles.picker, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
+          style={[styles.picker, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
         >
           <Picker.Item label="Select Mechanic" value="" />
           <Picker.Item label="Compound" value="compound" />
@@ -144,7 +144,7 @@ export default function CreateCustomExerciseScreen() {
 
         <ThemedText style={[styles.label, { color: colors.text }]}>Primary Muscles:</ThemedText>
         <TouchableOpacity
-          style={[styles.multiSelectButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+          style={[styles.multiSelectButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={() => setShowMuscleModal(true)}
         >
           <ThemedText style={{ color: colors.text }}>
@@ -153,7 +153,7 @@ export default function CreateCustomExerciseScreen() {
         </TouchableOpacity>
         
         {showMuscleModal && (
-          <View style={[styles.modal, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[styles.modal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <FlatList
               data={[
                 'abdominals', 'abductors', 'adductors', 'biceps', 'calves', 'chest',
@@ -189,7 +189,7 @@ export default function CreateCustomExerciseScreen() {
 
         <ThemedText style={[styles.label, { color: colors.text }]}>Instructions (one per line):</ThemedText>
         <TextInput
-          style={[styles.input, styles.textArea, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
+          style={[styles.input, styles.textArea, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
           placeholder="Enter instructions here..."
           placeholderTextColor={colors.secondary}
           multiline

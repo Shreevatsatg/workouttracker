@@ -99,14 +99,10 @@ export default function CreateRoutineScreen() {
         });
         router.setParams({ selectedExercises: undefined, replaceIndex: undefined });
       }
-    }, [params.routine, params.selectedExercises, router])
+    }, [params.routine, params.selectedExercises, params.replaceIndex, router])
   );
 
-  const handleExerciseChange = (id: string, name: string) => {
-    setExercises((prevExercises) =>
-      prevExercises.map((ex) => (ex.id === id ? { ...ex, name } : ex))
-    );
-  };
+  
 
   const handleSetChange = (exId: string, setIndex: number, field: keyof Set, value: string) => {
     setExercises((prevExercises) =>
@@ -149,9 +145,7 @@ export default function CreateRoutineScreen() {
     );
   };
 
-  const removeExercise = (id: string) => {
-    setExercises((prevExercises) => prevExercises.filter((ex) => ex.id !== id));
-  };
+  
 
   const saveRoutine = () => {
     if (!routineName.trim()) {
@@ -186,11 +180,7 @@ export default function CreateRoutineScreen() {
     });
   };
 
-  const EXERCISES_DATA = require('@/assets/data/exercises.json');
-
-  const getExerciseDetails = (exerciseName: string): Exercise | undefined => {
-    return EXERCISES_DATA.find((ex: Exercise) => ex.name === exerciseName);
-  };
+  
 
   return (
     <ScrollView ref={scrollViewRef} style={[styles.container, { backgroundColor: 'transparent' }]}>

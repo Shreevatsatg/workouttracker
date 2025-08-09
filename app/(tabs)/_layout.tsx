@@ -118,9 +118,6 @@ export default function TabLayout() {
             letterSpacing: -0.2,
           },
           headerTitleAlign: 'center',
-          sceneContainerStyle: {
-            backgroundColor: 'transparent',
-          },
         }}>
 
       <Tabs.Screen

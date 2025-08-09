@@ -14,7 +14,7 @@ export default function WorkoutNotificationBar() {
 
   const router = useRouter();
 
-  if (!activeRoutine || pathname === '/log-workout' || !isWorkoutRunning) {
+  if (!activeRoutine || pathname === '/log-workout' || pathname === '/workout-summary' || !isWorkoutRunning) {
     return null;
   }
 

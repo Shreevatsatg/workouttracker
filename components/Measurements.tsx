@@ -96,7 +96,7 @@ const Measurements = ({ refresh }: { refresh?: boolean }) => {
             </View>
             <ThemedText style={styles.itemDate}>{new Date(measurement.created_at).toLocaleDateString()}</ThemedText>
             {menuVisible === measurement.id && (
-              <View style={[styles.menu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[styles.menu, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <TouchableOpacity onPress={() => handleDeleteMeasurement(measurement.id)} style={styles.menuItem}>
                   <ThemedText style={{ color: colors.text }}>Delete</ThemedText>
                 </TouchableOpacity>

@@ -2,6 +2,7 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { supabase } from '@/utils/supabase';
@@ -119,7 +120,7 @@ const LoginScreen = () => {
           </View>
 
           <TouchableOpacity style={[styles.button, styles.googleButton]} onPress={handleGoogleSignIn} disabled={loading}>
-            <IconSymbol name="logo.google" size={20} color="#DB4437" style={{ marginRight: 10 }} />
+            <Ionicons name="logo-google" size={20} color="#DB4437" style={{ marginRight: 10 }} />
             <ThemedText style={[styles.buttonText, { color: '#000' }]}>Sign In with Google</ThemedText>
           </TouchableOpacity>
         </View>
