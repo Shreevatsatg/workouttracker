@@ -4,7 +4,20 @@ import { useFood } from '@/context/FoodContext';
 import { Camera, CameraView } from 'expo-camera';
 import { router } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, StyleSheet, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Animated,
+  AppState,
+  Dimensions,
+  Platform,
+  StatusBar,
+  StyleSheet,
+  TouchableOpacity,
+  View
+} from 'react-native';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 export default function BarcodeScannerScreen() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -12,6 +25,11 @@ export default function BarcodeScannerScreen() {
   const [loading, setLoading] = useState(false);
   const { searchByBarcode } = useFood();
   const appState = useRef(AppState.currentState);
+  
+  // Animation values
+  const scanLineAnim = useRef(new Animated.Value(0)).current;
+  const cornerAnim = useRef(new Animated.Value(1)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const getCameraPermissions = async () => {
@@ -19,6 +37,57 @@ export default function BarcodeScannerScreen() {
       setHasPermission(status === 'granted');
     };
     getCameraPermissions();
+  }, []);
+
+  // Animate scan line
+  useEffect(() => {
+    if (hasPermission && !loading) {
+      const scanAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(scanLineAnim, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scanLineAnim, {
+            toValue: 0,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      scanAnimation.start();
+      
+      // Fade in animation
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
+
+      return () => scanAnimation.stop();
+    }
+  }, [hasPermission, loading]);
+
+  // Corner pulse animation
+  useEffect(() => {
+    const pulseAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(cornerAnim, {
+          toValue: 0.7,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(cornerAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulseAnimation.start();
+
+    return () => pulseAnimation.stop();
   }, []);
 
   // Handle app state changes to reset scanner when returning from background
@@ -29,7 +98,6 @@ export default function BarcodeScannerScreen() {
         nextAppState === 'active' &&
         scanned
       ) {
-        // Reset scanner when app becomes active again
         setScanned(false);
       }
       appState.current = nextAppState;
@@ -41,14 +109,14 @@ export default function BarcodeScannerScreen() {
   }, [scanned]);
 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
-    if (scanned || loading) return; // Prevent multiple scans
+    if (scanned || loading) return;
     
     setScanned(true);
     setLoading(true);
 
     try {
       const product = await searchByBarcode(data);
-      if (product) {
+      if (product && product.product_name) { // Check if product exists and has a product_name
         router.replace({
           pathname: '/(tabs)/add-food',
           params: { barcode: data },
@@ -89,7 +157,6 @@ export default function BarcodeScannerScreen() {
         ]
       );
     } finally {
-      // Only set loading to false if we're not navigating away
       if (!scanned) {
         setLoading(false);
       }
@@ -97,7 +164,7 @@ export default function BarcodeScannerScreen() {
   };
 
   const handleGoBack = () => {
-    router.back();
+    router.push('/(tabs)/add-food');
   };
 
   const handleManualEntry = () => {
@@ -107,8 +174,11 @@ export default function BarcodeScannerScreen() {
   if (hasPermission === null) {
     return (
       <View style={styles.permissionContainer}>
-        <ActivityIndicator size="large" />
-        <ThemedText style={styles.permissionText}>Requesting camera permission...</ThemedText>
+        <View style={styles.permissionCard}>
+          <ActivityIndicator size="large" color="#007AFF" />
+          <ThemedText style={styles.permissionTitle}>Setting up camera</ThemedText>
+          <ThemedText style={styles.permissionSubtitle}>Please wait a moment...</ThemedText>
+        </View>
       </View>
     );
   }
@@ -116,67 +186,114 @@ export default function BarcodeScannerScreen() {
   if (hasPermission === false) {
     return (
       <View style={styles.permissionContainer}>
-        <IconSymbol name="camera.fill" size={64} color="gray" />
-        <ThemedText style={styles.permissionText}>Camera access is required to scan barcodes</ThemedText>
-        <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-          <ThemedText style={styles.backButtonText}>Go Back</ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleManualEntry} style={[styles.backButton, styles.manualButton]}>
-          <ThemedText style={styles.backButtonText}>Enter Manually</ThemedText>
-        </TouchableOpacity>
+        <View style={styles.permissionCard}>
+          <View style={styles.iconContainer}>
+            <IconSymbol name="camera.fill" size={80} color="#FF3B30" />
+          </View>
+          <ThemedText style={styles.permissionTitle}>Camera Access Required</ThemedText>
+          <ThemedText style={styles.permissionSubtitle}>
+            We need camera access to scan barcodes and help you track your nutrition
+          </ThemedText>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity onPress={handleManualEntry} style={[styles.actionButton, styles.primaryButton]}>
+              <IconSymbol name="text.cursor" size={20} color="white" />
+              <ThemedText style={styles.primaryButtonText}>Enter Manually</ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleGoBack} style={[styles.actionButton, styles.secondaryButton]}>
+              <ThemedText style={styles.secondaryButtonText}>Go Back</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     );
   }
 
+  const scanLineTranslateY = scanLineAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-100, 100],
+  });
+
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="black" />
+      
       <CameraView
         onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
         style={StyleSheet.absoluteFillObject}
         barcodeScannerSettings={{
-          barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128'], // Added code128 for more coverage
+          barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128'],
         }}
       />
       
-      {/* Overlay with viewfinder */}
-      <View style={styles.overlay}>
-        <View style={styles.unfocusedContainer} />
-        <View style={styles.middleContainer}>
-          <View style={styles.unfocusedContainer} />
-          <View style={styles.viewfinder}>
-            <View style={styles.viewfinderCorner} />
-            <View style={[styles.viewfinderCorner, styles.topRight]} />
-            <View style={[styles.viewfinderCorner, styles.bottomLeft]} />
-            <View style={[styles.viewfinderCorner, styles.bottomRight]} />
-          </View>
-          <View style={styles.unfocusedContainer} />
+      {/* Modern Overlay */}
+      <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.headerButton} onPress={handleGoBack}>
+            <IconSymbol name="xmark" size={24} color="white" />
+          </TouchableOpacity>
+          <ThemedText style={styles.headerTitle}>Scan Barcode</ThemedText>
+          <View style={styles.headerSpacer} />
         </View>
-        <View style={styles.unfocusedContainer} />
-      </View>
 
-      {/* Instructions */}
-      <View style={styles.instructionsContainer}>
-        <ThemedText style={styles.instructions}>
-          {loading ? 'Searching...' : 'Align barcode within the frame to scan'}
-        </ThemedText>
-      </View>
+        {/* Scanning Area */}
+        <View style={styles.scanningArea}>
+          <View style={styles.viewfinderContainer}>
+            {/* Animated Corners */}
+            <Animated.View style={[styles.corner, styles.topLeft, { opacity: cornerAnim }]} />
+            <Animated.View style={[styles.corner, styles.topRight, { opacity: cornerAnim }]} />
+            <Animated.View style={[styles.corner, styles.bottomLeft, { opacity: cornerAnim }]} />
+            <Animated.View style={[styles.corner, styles.bottomRight, { opacity: cornerAnim }]} />
+            
+            {/* Animated Scan Line */}
+            {!loading && (
+              <Animated.View 
+                style={[
+                  styles.scanLine, 
+                  { 
+                    transform: [{ translateY: scanLineTranslateY }] 
+                  }
+                ]} 
+              />
+            )}
+          </View>
+        </View>
 
-      {/* Loading overlay */}
+        {/* Instructions */}
+        <View style={styles.instructionsArea}>
+          <View style={styles.instructionCard}>
+            <ThemedText style={styles.instructionTitle}>
+              {loading ? 'Searching...' : 'Position barcode in frame'}
+            </ThemedText>
+            <ThemedText style={styles.instructionSubtitle}>
+              {loading ? 'Please wait while we find your product' : 'Make sure the barcode is clearly visible and well-lit'}
+            </ThemedText>
+          </View>
+        </View>
+
+        {/* Bottom Actions */}
+        <View style={styles.bottomActions}>
+          <TouchableOpacity 
+            style={[styles.bottomButton, styles.manualEntryButton]} 
+            onPress={handleManualEntry}
+            disabled={loading}
+          >
+            <IconSymbol name="keyboard" size={20} color="white" />
+            <ThemedText style={styles.bottomButtonText}>Manual Entry</ThemedText>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+
+      {/* Loading Overlay */}
       {loading && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#fff" />
-          <ThemedText style={styles.loadingText}>Searching for product...</ThemedText>
+          <View style={styles.loadingCard}>
+            <ActivityIndicator size="large" color="#007AFF" />
+            <ThemedText style={styles.loadingTitle}>Searching Product</ThemedText>
+            <ThemedText style={styles.loadingSubtitle}>This may take a few seconds...</ThemedText>
+          </View>
         </View>
       )}
-
-      {/* Navigation buttons */}
-      <TouchableOpacity style={styles.closeButton} onPress={handleGoBack}>
-        <IconSymbol name="arrow.left" size={24} color="white" />
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.manualEntryButton} onPress={handleManualEntry}>
-        <ThemedText style={styles.manualEntryText}>Manual Entry</ThemedText>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -186,130 +303,257 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'black',
   },
+  
+  // Permission States
   permissionContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 20,
   },
-  permissionText: {
+  permissionCard: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 32,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 340,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+      },
+      android: {
+        elevation: 10,
+      },
+    }),
+  },
+  iconContainer: {
+    marginBottom: 24,
+  },
+  permissionTitle: {
+    fontSize: 24,
+    fontWeight: '700',
     textAlign: 'center',
-    marginVertical: 20,
-    fontSize: 16,
+    marginBottom: 12,
+    color: '#1a1a1a',
   },
+  permissionSubtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    color: '#666',
+    lineHeight: 22,
+    marginBottom: 32,
+  },
+  buttonContainer: {
+    width: '100%',
+    gap: 12,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    gap: 8,
+  },
+  primaryButton: {
+    backgroundColor: '#007AFF',
+  },
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+  },
+  primaryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  secondaryButtonText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
+  // Camera Overlay
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
     backgroundColor: 'transparent',
   },
-  unfocusedContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
-  middleContainer: {
+  
+  // Header
+  header: {
     flexDirection: 'row',
-    height: '40%',
-  },
-  viewfinder: {
-    width: '80%',
-    height: '100%',
-    position: 'relative',
-  },
-  viewfinderCorner: {
-    position: 'absolute',
-    width: 20,
-    height: 20,
-    borderColor: 'white',
-    borderWidth: 3,
-    top: -2,
-    left: -2,
-    borderRightWidth: 0,
-    borderBottomWidth: 0,
-  },
-  topRight: {
-    right: -2,
-    left: 'auto',
-    borderLeftWidth: 0,
-    borderRightWidth: 3,
-  },
-  bottomLeft: {
-    bottom: -2,
-    top: 'auto',
-    borderTopWidth: 0,
-    borderBottomWidth: 3,
-  },
-  bottomRight: {
-    bottom: -2,
-    right: -2,
-    top: 'auto',
-    left: 'auto',
-    borderTopWidth: 0,
-    borderLeftWidth: 0,
-    borderBottomWidth: 3,
-    borderRightWidth: 3,
-  },
-  instructionsContainer: {
-    position: 'absolute',
-    bottom: 100,
-    left: 0,
-    right: 0,
     alignItems: 'center',
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
-  instructions: {
-    color: 'white',
-    fontSize: 16,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
+  headerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    backdropFilter: 'blur(10px)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    flex: 1,
     textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '600',
+    color: 'white',
   },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.8)',
+  headerSpacer: {
+    width: 44,
+  },
+
+  // Scanning Area
+  scanningArea: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 40,
   },
-  loadingText: {
-    color: 'white',
-    marginTop: 15,
-    fontSize: 16,
+  viewfinderContainer: {
+    width: screenWidth * 0.8,
+    height: screenWidth * 0.6,
+    position: 'relative',
+    backgroundColor: 'transparent',
   },
-  closeButton: {
+  
+  // Modern Corners
+  corner: {
     position: 'absolute',
-    top: 50,
-    left: 20,
-    padding: 12,
-    borderRadius: 25,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    width: 30,
+    height: 30,
+    borderColor: '#00FF87',
+    borderWidth: 4,
   },
-  manualEntryButton: {
+  topLeft: {
+    top: 0,
+    left: 0,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+    borderTopLeftRadius: 4,
+  },
+  topRight: {
+    top: 0,
+    right: 0,
+    borderLeftWidth: 0,
+    borderBottomWidth: 0,
+    borderTopRightRadius: 4,
+  },
+  bottomLeft: {
+    bottom: 0,
+    left: 0,
+    borderRightWidth: 0,
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 4,
+  },
+  bottomRight: {
+    bottom: 0,
+    right: 0,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+    borderBottomRightRadius: 4,
+  },
+  
+  // Scan Line
+  scanLine: {
     position: 'absolute',
-    bottom: 40,
-    left: 20,
-    right: 20,
-    padding: 15,
-    borderRadius: 25,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: '#00FF87',
+    top: '50%',
+    shadowColor: '#00FF87',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 8,
+  },
+
+  // Instructions
+  instructionsArea: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  instructionCard: {
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: 16,
+    padding: 20,
     alignItems: 'center',
   },
-  manualEntryText: {
+  instructionTitle: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 8,
   },
-  backButton: {
-    marginTop: 15,
+  instructionSubtitle: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+
+  // Bottom Actions
+  bottomActions: {
     paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: '#007AFF',
-    borderRadius: 25,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
   },
-  manualButton: {
-    backgroundColor: '#34C759',
+  bottomButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 16,
+    gap: 8,
   },
-  backButtonText: {
+  manualEntryButton: {
+    backgroundColor: 'rgba(0,122,255,0.9)',
+    backdropFilter: 'blur(20px)',
+  },
+  bottomButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+
+  // Loading
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingCard: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: 20,
+    padding: 32,
+    alignItems: 'center',
+    minWidth: 280,
+  },
+  loadingTitle: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: '600',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  loadingSubtitle: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
+    textAlign: 'center',
   },
 });

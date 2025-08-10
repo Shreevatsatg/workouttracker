@@ -121,7 +121,7 @@ export default function RoutineDetailsScreen() {
               onPress={() => router.push({ pathname: '/(tabs)/exercise-details', params: { exerciseId: details?.id, exerciseName: exercise.name } })}
             >
               <Image
-                source={typeof imageUrl === 'string' ? { uri: imageUrl } : require('../../assets/images/exersiseplaceholder.png')}
+                                source={imageUrl.startsWith('http') ? { uri: imageUrl } : require('../../assets/images/exersiseplaceholder.png')}
                 style={styles.exerciseThumbnail}
               />
               <View>

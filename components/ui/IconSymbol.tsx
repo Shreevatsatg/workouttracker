@@ -1,11 +1,11 @@
 // Fallback for using MaterialIcons on Android and web.
 
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolViewProps, SymbolWeight } from 'expo-symbols';
+import { SymbolWeight } from 'expo-symbols';
 import { ComponentProps } from 'react';
 import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
 
-type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialIcons>['name']>;
+type IconMapping = Record<string, ComponentProps<typeof MaterialIcons>['name']>;
 type IconSymbolName = keyof typeof MAPPING;
 
 /**
@@ -17,6 +17,7 @@ const MAPPING = {
   'house.fill': 'home',
   'paperplane.fill': 'send',
   'chevron.left.forwardslash.chevron.right': 'code',
+  'chevron.left': 'chevron-left',
   'chevron.right': 'chevron-right',
   'chevron.backward': 'arrow-back',
   'person.crop.circle.fill': 'account-circle',
@@ -25,9 +26,21 @@ const MAPPING = {
   'ellipsis': 'more-vert',
   'checkmark.circle.fill': 'check-circle',
   'circle': 'radio-button-unchecked',
+  'folder': 'folder',
+  'folder.fill': 'folder-open',
   'folder.badge.plus': 'create-new-folder',
   'plus.circle': 'add-circle-outline',
-  'fork.knife': 'restaurant',  // Add this line
+  'fork.knife': 'restaurant',
+  'camera.fill': 'camera-alt',
+  'text.cursor': 'text-fields',
+  'keyboard': 'keyboard',
+  'camera': 'camera-alt',
+  'pencil': 'edit',
+  'checkmark': 'check',
+  'magnifyingglass': 'search',
+  'clock': 'access-time',
+  'plus': 'add',
+  'xmark': 'close',
 } as IconMapping;
 
 /**

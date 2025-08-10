@@ -33,13 +33,18 @@ const ProductItem: React.FC<{
     style={[
       styles.resultItem,
       {
-        backgroundColor: isSelected ? `${colors.accent}20` : colors.surfaceSecondary,
+        backgroundColor: isSelected ? `${colors.accent}15` : colors.surface,
         borderColor: isSelected ? colors.accent : colors.border,
         borderWidth: isSelected ? 2 : 1,
+        shadowColor: colors.text,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: isSelected ? 0.15 : 0.08,
+        shadowRadius: 8,
+        elevation: isSelected ? 4 : 2,
       },
     ]}
     onPress={() => onSelect(product)}
-    activeOpacity={0.8}
+    activeOpacity={0.7}
   >
     <View style={styles.productHeader}>
       <View style={styles.productInfo}>
@@ -52,7 +57,13 @@ const ProductItem: React.FC<{
           </ThemedText>
         )}
       </View>
-      {isSelected && <IconSymbol name="checkmark.circle" size={24} color={colors.accent} />}
+      {isSelected ? (
+        <View style={[styles.checkmarkContainer, { backgroundColor: colors.accent }]}>
+          <IconSymbol name="checkmark" size={16} color="white" />
+        </View>
+      ) : (
+        <View style={[styles.selectIndicator, { borderColor: colors.border }]} />
+      )}
     </View>
   </TouchableOpacity>
 );
@@ -63,17 +74,31 @@ const RecentFoodItem: React.FC<{
   colors: any;
 }> = ({ item, onSelect, colors }) => (
   <TouchableOpacity
-    style={[styles.recentItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
+    style={[
+      styles.recentItem, 
+      { 
+        backgroundColor: colors.surface, 
+        borderColor: colors.border,
+        shadowColor: colors.text,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 1,
+      }
+    ]}
     onPress={() => onSelect(item)}
     activeOpacity={0.7}
   >
+    <View style={styles.recentItemIcon}>
+      <IconSymbol name="clock" size={18} color={colors.accent} />
+    </View>
     <View style={styles.recentItemContent}>
       <ThemedText style={[styles.recentItemName, { color: colors.text }]}>{item.product_name}</ThemedText>
       <ThemedText style={[styles.recentItemDetails, { color: colors.textSecondary }]}>
         {item.quantity} {item.unit}
       </ThemedText>
     </View>
-    <IconSymbol name="arrow.up.left" size={16} color={colors.textSecondary} />
+    <IconSymbol name="chevron.right" size={16} color={colors.textSecondary} />
   </TouchableOpacity>
 );
 
@@ -94,8 +119,13 @@ const UnitSelector: React.FC<{
             style={[
               styles.unitButton,
               {
-                backgroundColor: selectedUnit === unit ? colors.accent : colors.surface,
+                backgroundColor: selectedUnit === unit ? colors.accent : colors.background,
                 borderColor: selectedUnit === unit ? colors.accent : colors.border,
+                shadowColor: selectedUnit === unit ? colors.accent : 'transparent',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: selectedUnit === unit ? 0.2 : 0,
+                shadowRadius: 4,
+                elevation: selectedUnit === unit ? 2 : 0,
               }
             ]}
             onPress={() => onSelectUnit(unit)}
@@ -113,6 +143,62 @@ const UnitSelector: React.FC<{
     </View>
   );
 };
+
+const QuickActionButton: React.FC<{
+  icon: string;
+  title: string;
+  subtitle: string;
+  onPress: () => void;
+  colors: any;
+  variant?: 'primary' | 'secondary';
+}> = ({ icon, title, subtitle, onPress, colors, variant = 'secondary' }) => (
+  <TouchableOpacity
+    style={[
+      styles.quickActionButton,
+      {
+        backgroundColor: variant === 'primary' ? colors.accent : colors.surface,
+        borderColor: variant === 'primary' ? colors.accent : colors.border,
+        shadowColor: variant === 'primary' ? colors.accent : colors.text,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: variant === 'primary' ? 0.25 : 0.08,
+        shadowRadius: 8,
+        elevation: variant === 'primary' ? 4 : 2,
+      }
+    ]}
+    onPress={onPress}
+    activeOpacity={0.7}
+  >
+    <View style={[
+      styles.quickActionIcon,
+      { backgroundColor: variant === 'primary' ? 'rgba(255,255,255,0.2)' : `${colors.accent}15` }
+    ]}>
+      <IconSymbol 
+        name={icon} 
+        size={24} 
+        color={variant === 'primary' ? 'white' : colors.accent} 
+      />
+    </View>
+    <View style={styles.quickActionText}>
+      <ThemedText style={[
+        styles.quickActionTitle,
+        { color: variant === 'primary' ? 'white' : colors.text }
+      ]}>
+        {title}
+      </ThemedText>
+      <ThemedText style={[
+        styles.quickActionSubtitle,
+        { color: variant === 'primary' ? 'rgba(255,255,255,0.8)' : colors.textSecondary }
+      ]}>
+        {subtitle}
+      </ThemedText>
+    </View>
+    <IconSymbol 
+      name="chevron.right" 
+      size={16} 
+      color={variant === 'primary' ? 'rgba(255,255,255,0.8)' : colors.textSecondary} 
+    />
+  </TouchableOpacity>
+);
 
 export default function AddFoodScreen() {
   const { searchFood, addFoodEntry, fetchRecentFoods, getFoodDetails } = useFood();
@@ -258,34 +344,71 @@ export default function AddFoodScreen() {
     if (searchQuery.length > 0) {
       return (
         <View style={styles.emptyState}>
-          <IconSymbol name="magnifyingglass" size={64} color={colors.textSecondary} />
+          <View style={[styles.emptyStateIcon, { backgroundColor: `${colors.accent}10` }]}>
+            <IconSymbol name="magnifyingglass" size={32} color={colors.accent} />
+          </View>
           <ThemedText style={[styles.emptyStateTitle, { color: colors.text }]}>No results found</ThemedText>
           <ThemedText style={[styles.emptyStateText, { color: colors.textSecondary }]}>
-            Try searching with different keywords
+            Try searching with different keywords or scan a barcode
           </ThemedText>
         </View>
       );
     }
 
     return (
-      <View>
-        <ThemedText style={[styles.recentTitle, { color: colors.text }]}>Recently Added</ThemedText>
-        <FlatList
-          data={recentFoods}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <RecentFoodItem item={item} onSelect={handleSelectRecent} colors={colors} />
-          )}
-          ListEmptyComponent={() => (
-            <View style={styles.emptyState}>
-              <IconSymbol name="clock" size={64} color={colors.textSecondary} />
-              <ThemedText style={[styles.emptyStateTitle, { color: colors.text }]}>No Recent Foods</ThemedText>
-              <ThemedText style={[styles.emptyStateText, { color: colors.textSecondary }]}>
-                Your recently added foods will appear here.
-              </ThemedText>
-            </View>
-          )}
-        />
+      <View style={styles.homeContent}>
+        {/* Quick Actions */}
+        <View style={styles.quickActionsContainer}>
+          <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>Quick Add</ThemedText>
+          <View style={styles.quickActions}>
+            <QuickActionButton
+              icon="camera"
+              title="Scan Barcode"
+              subtitle="Quick product lookup"
+              onPress={() => router.push('/(tabs)/barcode-scanner')}
+              colors={colors}
+              variant="primary"
+            />
+            <QuickActionButton
+              icon="pencil"
+              title="Add Manually"
+              subtitle="Enter nutrition info"
+              onPress={() => router.push('/manual-food-entry')}
+              colors={colors}
+            />
+          </View>
+        </View>
+
+        {/* Recent Foods */}
+        <View style={styles.recentSection}>
+          <View style={styles.sectionHeader}>
+            <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>Recently Added</ThemedText>
+            {recentFoods.length > 0 && (
+              <TouchableOpacity activeOpacity={0.7}>
+                <ThemedText style={[styles.sectionAction, { color: colors.accent }]}>See all</ThemedText>
+              </TouchableOpacity>
+            )}
+          </View>
+          <FlatList
+            data={recentFoods}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <RecentFoodItem item={item} onSelect={handleSelectRecent} colors={colors} />
+            )}
+            scrollEnabled={false}
+            ListEmptyComponent={() => (
+              <View style={styles.emptyRecentState}>
+                <View style={[styles.emptyStateIcon, { backgroundColor: `${colors.accent}10` }]}>
+                  <IconSymbol name="clock" size={32} color={colors.accent} />
+                </View>
+                <ThemedText style={[styles.emptyStateTitle, { color: colors.text }]}>No Recent Foods</ThemedText>
+                <ThemedText style={[styles.emptyStateText, { color: colors.textSecondary }]}>
+                  Your recently added foods will appear here
+                </ThemedText>
+              </View>
+            )}
+          />
+        </View>
       </View>
     );
   };
@@ -293,63 +416,44 @@ export default function AddFoodScreen() {
   return (
     <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: 'transparent' }]}>
         <View style={styles.headerTop}>
-          <TouchableOpacity
-            style={[styles.backButton, { backgroundColor: 'transparent' }]}
-            onPress={() => router.push('/(tabs)/food-log')}
-            activeOpacity={0.7}
-          >
-            <IconSymbol name="arrow.left" size={20} color={colors.text} />
-          </TouchableOpacity>
-          <ThemedText type="title" style={[styles.title, { color: colors.text }]}>
-            Add Food
-          </ThemedText>
-          <View style={{ width: 40 }} />
+          
+          <View style={styles.headerCenter}>
+            <ThemedText type="title" style={[styles.title, { color: colors.text }]}>
+              Add Food
+            </ThemedText>
+            <ThemedText style={[styles.subtitle, { color: colors.textSecondary }]}>
+              {params.mealType || 'Search and log your food'}
+            </ThemedText>
+          </View>
+          <View style={{ width: 44 }} />
         </View>
-        <ThemedText style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Search and log your food intake
-        </ThemedText>
       </View>
 
       {/* Search Input */}
-      <View style={styles.searchContainer}>
-        <IconSymbol name="magnifyingglass" size={20} color={colors.textSecondary} style={styles.searchIcon} />
-        <TextInput
-          style={[styles.searchInput, { 
-            backgroundColor: colors.surface, 
-            color: colors.text, 
-            borderColor: colors.border 
-          }]}
-          placeholder="Search for food items..."
-          placeholderTextColor={colors.textSecondary}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <TouchableOpacity
-          style={[styles.barcodeButton, { backgroundColor: colors.surface }]}
-          onPress={() => router.push('/(tabs)/barcode-scanner')}
-          activeOpacity={0.7}
-        >
-          <IconSymbol name="barcode.viewfinder" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.scanButton, { backgroundColor: colors.accent }]}
-          onPress={() => router.push('/(tabs)/barcode-scanner')}
-        >
-          <IconSymbol name="camera" size={20} color="white" />
-          <ThemedText style={styles.scanButtonText}>Scan Barcode</ThemedText>
-        </TouchableOpacity>
-        {searchQuery.length > 0 && (
-          <TouchableOpacity
-            style={styles.clearButton}
-            onPress={() => setSearchQuery('')}
-          >
-            <IconSymbol name="xmark.circle.fill" size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
-        )}
+      <View style={[styles.searchContainer, { backgroundColor: 'transparent' }]}>
+        <View style={[styles.searchInputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <IconSymbol name="magnifyingglass" size={20} color={colors.textSecondary} style={styles.searchIcon} />
+          <TextInput
+            style={[styles.searchInput, { color: colors.text }]}
+            placeholder="Search for food items..."
+            placeholderTextColor={colors.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={() => setSearchQuery('')}
+              activeOpacity={0.7}
+            >
+              <IconSymbol name="xmark.circle.fill" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Search Results */}
@@ -375,7 +479,7 @@ export default function AddFoodScreen() {
           style={styles.resultsList}
           contentContainerStyle={[
             styles.resultsListContent,
-            searchResults.length === 0 && recentFoods.length === 0 && styles.resultsListEmpty,
+            searchResults.length === 0 && styles.resultsListEmpty,
           ]}
           ListEmptyComponent={!loading ? renderEmptySearch : null}
           showsVerticalScrollIndicator={false}
@@ -384,12 +488,26 @@ export default function AddFoodScreen() {
 
       {/* Selected Product Panel */}
       {selectedProduct && (
-        <ThemedView style={[styles.selectedProductContainer, { backgroundColor: colors.surface, borderColor: colors.border } ]}>
-          <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedProduct(null)}>
-            <ThemedText style={styles.closeButtonText}>X</ThemedText>
-          </TouchableOpacity>
-          <ThemedText type="subtitle" style={styles.selectedProductName}>Selected: {selectedProduct.product_name}</ThemedText>
-          <ThemedText style={styles.selectedProductBrand}>{selectedProduct.brands}</ThemedText>
+        <View style={[styles.selectedProductContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.selectedProductHeader}>
+            <View style={styles.selectedProductInfo}>
+              <ThemedText style={[styles.selectedProductName, { color: colors.text }]}>
+                {selectedProduct.product_name}
+              </ThemedText>
+              {selectedProduct.brands && (
+                <ThemedText style={[styles.selectedProductBrand, { color: colors.textSecondary }]}>
+                  {selectedProduct.brands}
+                </ThemedText>
+              )}
+            </View>
+            <TouchableOpacity 
+              style={[styles.closeButton, { backgroundColor: `${colors.text}10` }]} 
+              onPress={() => setSelectedProduct(null)}
+              activeOpacity={0.7}
+            >
+              <IconSymbol name="xmark" size={16} color={colors.text} />
+            </TouchableOpacity>
+          </View>
           
           <View style={styles.inputSection}>
             <View style={styles.quantitySection}>
@@ -429,9 +547,12 @@ export default function AddFoodScreen() {
             activeOpacity={0.8}
           >
             {isAdding ? (
-              <ActivityIndicator color="white" />
+              <ActivityIndicator color="white" size="small" />
             ) : showSuccessMessage ? (
-              <ThemedText style={styles.addButtonText}>Food Added!</ThemedText>
+              <>
+                <IconSymbol name="checkmark" size={20} color="white" />
+                <ThemedText style={styles.addButtonText}>Food Added!</ThemedText>
+              </>
             ) : (
               <>
                 <IconSymbol name="plus" size={20} color="white" />
@@ -439,7 +560,7 @@ export default function AddFoodScreen() {
               </>
             )}
           </TouchableOpacity>
-        </ThemedView>
+        </View>
       )}
     </ThemedView>
   );
@@ -448,128 +569,94 @@ export default function AddFoodScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  recentTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  recentItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 10,
-  },
-  recentItemContent: {
-    flex: 1,
-  },
-  recentItemName: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  recentItemDetails: {
-    fontSize: 14,
-    opacity: 0.8,
-    marginTop: 4,
   },
   header: {
-    marginBottom: 14,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 4,
   },
   subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    opacity: 0.7,
+    fontSize: 15,
+    fontWeight: '500',
   },
   searchContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-    position: 'relative',
+    height: 52,
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 1,
   },
   searchIcon: {
-    position: 'absolute',
-    left: 16,
-    zIndex: 1,
+    marginRight: 12,
   },
   searchInput: {
     flex: 1,
-    height: 50,
-    borderRadius: 16,
-    paddingLeft: 10,
-    paddingRight: 10,
     fontSize: 16,
-    borderWidth: 1,
-  },
-  barcodeButton: {
-    position: 'absolute',
-    right: 48,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scanButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginLeft: 10,
-  },
-  scanButtonText: {
-    color: 'white',
-    marginLeft: 5,
-    fontWeight: 'bold',
+    fontWeight: '500',
   },
   clearButton: {
-    position: 'absolute',
-    right: 16,
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: 4,
   },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 40,
+    paddingVertical: 60,
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
+    fontWeight: '500',
   },
   resultsList: {
     flex: 1,
+    paddingHorizontal: 20,
   },
   resultsListContent: {
-    paddingBottom: 20,
+    paddingBottom: 100,
   },
   resultsListEmpty: {
     flexGrow: 1,
-    justifyContent: 'center',
   },
   resultItem: {
     borderRadius: 16,
@@ -580,71 +667,197 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: 20,
   },
   productInfo: {
     flex: 1,
-    marginRight: 12,
+    marginRight: 16,
   },
   productName: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     marginBottom: 4,
+    lineHeight: 24,
   },
   productBrand: {
     fontSize: 14,
-    opacity: 0.8,
+    fontWeight: '500',
+    opacity: 0.7,
+  },
+  checkmarkContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectIndicator: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+  },
+  homeContent: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  quickActionsContainer: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  quickActions: {
+    gap: 12,
+  },
+  quickActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  quickActionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  quickActionText: {
+    flex: 1,
+  },
+  quickActionTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  quickActionSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  recentSection: {
+    flex: 1,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionAction: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  recentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  recentItemIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  recentItemContent: {
+    flex: 1,
+  },
+  recentItemName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  recentItemDetails: {
+    fontSize: 14,
+    fontWeight: '500',
+    opacity: 0.7,
   },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 60,
+    paddingHorizontal: 32,
+  },
+  emptyRecentState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 32,
+  },
+  emptyStateIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
   },
   emptyStateTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 16,
+    fontWeight: '700',
     marginBottom: 8,
+    textAlign: 'center',
   },
   emptyStateText: {
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: '500',
     textAlign: 'center',
-    paddingHorizontal: 32,
-    lineHeight: 24,
+    lineHeight: 22,
+    opacity: 0.8,
   },
   selectedProductContainer: {
-    marginTop: 20,
-    padding: 20,
-    borderRadius: 20,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    margin: 20,
+    padding: 24,
+    borderRadius: 24,
     borderWidth: 1,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  selectedHeader: {
+  selectedProductHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  selectedTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginLeft: 12,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
   },
   selectedProductInfo: {
-    marginBottom: 20,
+    flex: 1,
+    marginRight: 16,
   },
   selectedProductName: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
     marginBottom: 4,
+    lineHeight: 24,
   },
   selectedProductBrand: {
     fontSize: 14,
+    fontWeight: '500',
     opacity: 0.7,
   },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   inputSection: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   quantitySection: {
     marginBottom: 20,
@@ -655,10 +868,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   quantityInput: {
-    height: 50,
-    borderRadius: 12,
+    height: 52,
+    borderRadius: 16,
     paddingHorizontal: 16,
     fontSize: 16,
+    fontWeight: '500',
     borderWidth: 1,
   },
   unitContainer: {
@@ -676,39 +890,31 @@ const styles = StyleSheet.create({
   },
   unitButton: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingVertical: 10,
+    borderRadius: 16,
     borderWidth: 1,
+    minWidth: 50,
+    alignItems: 'center',
   },
   unitButtonText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
-    borderRadius: 16,
+    borderRadius: 20,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
+    elevation: 4,
   },
   addButtonText: {
     color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    padding: 5,
-    zIndex: 1,
-  },
-  closeButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#666',
+    fontSize: 17,
+    fontWeight: '700',
+    marginLeft: 8,
   },
 });

@@ -1,12 +1,15 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
-interface Set {
+export interface Set {
   weight: string;
   reps: string;
+  loggedWeight?: string;
+  loggedReps?: string;
+  completed: boolean;
 }
 
-interface Exercise {
+export interface Exercise {
   name: string;
   sets: Set[];
 }
@@ -83,46 +86,61 @@ export const RoutinesProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteItem = (id: string) => {
     setItems(prevItems => {
-      const itemToDelete = prevItems.find(item => item.id === id);
-      if (itemToDelete && itemToDelete.type === 'folder') {
-        const folder = itemToDelete as Folder;
-        const routinesToMove = folder.routines.map(routine => ({ ...routine, folderId: undefined }));
-        const newItems = prevItems.filter(item => item.id !== id);
-        return [...newItems, ...routinesToMove];
-      } else {
-        return prevItems.filter(item => item.id !== id);
-      }
+        const itemToDelete = prevItems.find(item => item.id === id);
+        if (!itemToDelete) return prevItems;
+
+        if (itemToDelete.type === 'folder') {
+            const folder = itemToDelete as Folder;
+            const routinesToMove = folder.routines.map(r => ({ ...r, folderId: undefined }));
+            const newItems = prevItems.filter(item => item.id !== id);
+            return [...newItems, ...routinesToMove];
+        } else {
+            const newItems = prevItems.filter(item => item.id !== id);
+            return newItems.map(item => {
+                if (item.type === 'folder') {
+                    const updatedRoutines = item.routines.filter(r => r.id !== id);
+                    return { ...item, routines: updatedRoutines };
+                }
+                return item;
+            });
+        }
     });
-  };
+};
 
-  const moveRoutineToFolder = (routineId: string, targetFolderId: string) => {
+  const moveRoutineToFolder = (routineId: string, folderId: string) => {
     setItems(prevItems => {
-      const routineToMove = prevItems.find(item => item.id === routineId && item.type === 'routine') as Routine;
-      if (!routineToMove) return prevItems; // Routine not found
-
-      // Remove routine from its current location (either root or another folder)
-      let updatedItems = prevItems.filter(item => item.id !== routineId); // Remove from root
-
-      updatedItems = updatedItems.map(item => {
+      let routineToMove: Routine | undefined;
+      const newItems = prevItems.map(item => {
+        if (item.id === routineId && item.type === 'routine') {
+          routineToMove = item;
+          return null; 
+        }
         if (item.type === 'folder') {
-          // Remove from old folder if it was in one
-          if (routineToMove.folderId && item.id === routineToMove.folderId) {
-            return { ...item, routines: item.routines.filter(r => r.id !== routineId) };
-          }
-          // Add to new folder
-          if (item.id === targetFolderId) {
-            return { ...item, routines: [...item.routines, { ...routineToMove, folderId: targetFolderId }] };
-          }
+          const updatedRoutines = item.routines.filter(r => {
+            if (r.id === routineId) {
+              routineToMove = r;
+              return false;
+            }
+            return true;
+          });
+          return { ...item, routines: updatedRoutines };
         }
         return item;
-      });
+      }).filter(Boolean) as Item[];
 
-      // If moving to root, add it back to the main array with folderId undefined
-      if (targetFolderId === 'root') {
-        return [...updatedItems, { ...routineToMove, folderId: undefined }];
+      if (!routineToMove) return prevItems;
+
+      if (folderId === 'root') {
+        delete routineToMove.folderId;
+        return [...newItems, routineToMove];
+      } else {
+        return newItems.map(item => {
+          if (item.id === folderId && item.type === 'folder') {
+            return { ...item, routines: [...item.routines, { ...routineToMove!, folderId }] };
+          }
+          return item;
+        });
       }
-
-      return updatedItems;
     });
   };
 

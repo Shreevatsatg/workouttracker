@@ -83,7 +83,7 @@ export default function TabLayout() {
             backgroundColor: colors.surface,
             borderTopWidth: 1,
             borderTopColor: colors.border,
-            height: Platform.OS === 'ios' ? 70 : 70,
+            height: Platform.OS === 'ios' ? 90 : 70, // Increased height for iOS
             paddingBottom: Platform.OS === 'ios' ? 30 : 20,
             shadowColor: '#000000',
             shadowOffset: { width: 0, height: -2 },
@@ -118,9 +118,6 @@ export default function TabLayout() {
             letterSpacing: -0.2,
           },
           headerTitleAlign: 'center',
-          sceneContainerStyle: {
-            backgroundColor: 'transparent',
-          },
         }}>
 
       <Tabs.Screen
@@ -138,7 +135,7 @@ export default function TabLayout() {
               minWidth: 32,
             }}>
               <IconSymbol 
-                size={22} 
+                size={26} 
                 name="dumbbell" 
                 color={color} 
               />
@@ -173,7 +170,7 @@ export default function TabLayout() {
               minWidth: 32,
             }}>
               <IconSymbol 
-                size={22} 
+                size={26} 
                 name="fork.knife" 
                 color={color} 
               />
@@ -209,7 +206,7 @@ export default function TabLayout() {
               minWidth: 32,
             }}>
               <IconSymbol 
-                size={22} 
+                size={26} 
                 name="person.crop.circle.fill" 
                 color={color} 
               />
@@ -599,6 +596,25 @@ export default function TabLayout() {
             shadowOpacity: 0.05,
             shadowRadius: 2,
           },
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.replace('/(tabs)/food-log')} 
+              style={{ 
+                marginLeft: 16,
+                padding: 8,
+                borderRadius: 12,
+                backgroundColor: colors.surfaceSecondary,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <IconSymbol 
+                size={20} 
+                name="chevron.backward" 
+                color={colors.text} 
+              />
+            </TouchableOpacity>
+          ),
         }}
       />
       <Tabs.Screen
@@ -635,6 +651,25 @@ export default function TabLayout() {
             shadowOpacity: 0.05,
             shadowRadius: 2,
           },
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.replace('/(tabs)/add-food')} 
+              style={{ 
+                marginLeft: 16,
+                padding: 8,
+                borderRadius: 12,
+                backgroundColor: colors.surfaceSecondary,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <IconSymbol 
+                size={20} 
+                name="chevron.backward" 
+                color={colors.text} 
+              />
+            </TouchableOpacity>
+          ),
         }}
       />
       <Tabs.Screen

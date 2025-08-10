@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
 
-interface Set {
+export interface Set {
   weight: string;
   reps: string;
   loggedWeight?: string;
@@ -8,7 +8,7 @@ interface Set {
   completed: boolean;
 }
 
-interface Exercise {
+export interface Exercise {
   name: string;
   sets: Set[];
   loggedSets: Set[];
@@ -16,7 +16,7 @@ interface Exercise {
   images?: string[];
 }
 
-interface Routine {
+export interface Routine {
   name: string;
   exercises: Exercise[];
 }
@@ -43,7 +43,7 @@ export const WorkoutProvider = ({ children }: { children: ReactNode }) => {
   const [isWorkoutRunning, setIsWorkoutRunning] = useState(false);
   const [loggedExercises, setLoggedExercises] = useState<Exercise[]>([]);
 
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | number | null>(null); // Updated type
 
   useEffect(() => {
     if (isWorkoutRunning) {

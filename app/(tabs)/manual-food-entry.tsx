@@ -41,8 +41,8 @@ export default function ManualFoodEntryScreen() {
   };
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ThemedText type="title" style={{ color: colors.text }}>Enter Food Details</ThemedText>
+    <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
+      <ThemedText type="title" style={{ color: colors.text, marginBottom: 20 }}>Enter Food Details</ThemedText>
       <TextInput
         style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surface }]}
         placeholder="Product Name"

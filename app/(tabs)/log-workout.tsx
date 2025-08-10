@@ -1,4 +1,3 @@
-
 import RestTimer from '@/components/RestTimer';
 import RestTimerNotification from '@/components/RestTimerNotification';
 import RestTimerSelector from '@/components/RestTimerSelector';
@@ -13,13 +12,15 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, Vibration, View } from 'react-native';
+import { Animated, PanResponder, ScrollView, StyleSheet, TextInput, TouchableOpacity, Vibration, View } from 'react-native';
+
 interface Set {
   weight: string;
   reps: string;
   loggedWeight?: string;
   loggedReps?: string;
   completed: boolean;
+  id?: string;
 }
 
 interface Exercise {
@@ -31,7 +32,155 @@ interface Exercise {
   id?: string;
 }
 
+// SwipeableSetRow component for individual set rows with swipe functionality
+const SwipeableSetRow = ({ 
+  set, 
+  setIndex, 
+  exIndex, 
+  colors, 
+  handleLoggedSetChange, 
+  toggleSetCompletion,
+  deleteSet,
+  totalSets,
+  setId
+}: {
+  set: Set;
+  setIndex: number;
+  exIndex: number;
+  colors: any;
+  handleLoggedSetChange: (exIndex: number, setIndex: number, field: 'loggedWeight' | 'loggedReps', value: string) => void;
+  toggleSetCompletion: (exIndex: number, setIndex: number) => void;
+  deleteSet: (exIndex: number, setIndex: number, setId: string) => void;
+  totalSets: number;
+  setId: string;
+}) => {
+  const translateX = useRef(new Animated.Value(0)).current;
+  const [isDeleting, setIsDeleting] = useState(false);
 
+  const panResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      // Only respond to horizontal swipes and only if there's more than one set
+      return totalSets > 1 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 10;
+    },
+    onPanResponderGrant: () => {
+      // Set the initial value for the animation
+      translateX.setOffset(translateX._value);
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      // Only allow left swipes (negative dx)
+      if (gestureState.dx < 0) {
+        translateX.setValue(gestureState.dx);
+      }
+    },
+    onPanResponderRelease: (evt, gestureState) => {
+      translateX.flattenOffset();
+      
+      if (gestureState.dx < -80) {
+        // Swipe threshold reached - show delete button
+        Animated.timing(translateX, {
+          toValue: -80,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      } else {
+        // Return to original position
+        Animated.timing(translateX, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      }
+    },
+  });
+
+  const handleDelete = () => {
+    setIsDeleting(true);
+    Animated.timing(translateX, {
+      toValue: -300,
+      duration: 300,
+      useNativeDriver: true,
+    }).start((finished) => {
+      if (finished) {
+        deleteSet(exIndex, setIndex, setId);
+      }
+    });
+  };
+
+  const resetPosition = () => {
+    Animated.timing(translateX, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  return (
+    <View style={styles.swipeableContainer}>
+      {/* Delete button behind the row - only show if there's more than one set */}
+      {totalSets > 1 && (
+        <View style={[styles.deleteButtonContainer, { backgroundColor: '#ff4444' }]}>
+          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+            <IconSymbol name="trash" size={20} color="white" />
+            <ThemedText style={styles.deleteButtonText}>Delete</ThemedText>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Main set row */}
+      <Animated.View
+        style={[
+          styles.setRow,
+          {
+            backgroundColor: set.completed ? colors.success : colors.background,
+            transform: [{ translateX }],
+          },
+        ]}
+        {...panResponder.panHandlers}
+      >
+        <TouchableOpacity 
+          style={styles.resetTouchArea}
+          onPress={resetPosition}
+          activeOpacity={1}
+        >
+          <View style={styles.setRowContent}>
+            <ThemedText style={[styles.cellText, styles.setColumn, { color: colors.text }]}>
+              {setIndex + 1}
+            </ThemedText>
+            <ThemedText style={[styles.cellText, styles.prevColumn, { color: colors.text }]}>
+              -
+            </ThemedText>
+            <TextInput
+              style={[styles.setInput, styles.kgRepsColumn, { color: colors.text }]}
+              placeholder={set.weight}
+              placeholderTextColor={colors.secondary}
+              keyboardType="numeric"
+              value={set.loggedWeight}
+              onChangeText={(val) => handleLoggedSetChange(exIndex, setIndex, 'loggedWeight', val)}
+            />
+            <TextInput
+              style={[styles.setInput, styles.kgRepsColumn, { color: colors.text }]}
+              placeholder={set.reps}
+              placeholderTextColor={colors.secondary}
+              keyboardType="numeric"
+              value={set.loggedReps}
+              onChangeText={(val) => handleLoggedSetChange(exIndex, setIndex, 'loggedReps', val)}
+            />
+            <TouchableOpacity 
+              style={styles.checkmarkColumn} 
+              onPress={() => toggleSetCompletion(exIndex, setIndex)}
+            >
+              <IconSymbol
+                name={set.completed ? "checkmark.circle.fill" : "circle"}
+                size={28}
+                color={set.completed ? colors.tint : colors.tint}
+              />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
+  );
+};
 
 export default function LogWorkoutScreen() {
   // Helper to truncate long exercise names
@@ -39,6 +188,7 @@ export default function LogWorkoutScreen() {
     if (!name) return '';
     return name.length > maxLength ? name.slice(0, maxLength - 1) + '…' : name;
   };
+  
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const params = useLocalSearchParams();
@@ -65,8 +215,32 @@ export default function LogWorkoutScreen() {
 
   const addLoggedSet = (exIndex: number) => {
     const newLoggedExercises = [...loggedExercises];
-    newLoggedExercises[exIndex].loggedSets.push({ weight: '', reps: '', loggedWeight: '', loggedReps: '', completed: false });
+    const newSet = { 
+      weight: '', 
+      reps: '', 
+      loggedWeight: '', 
+      loggedReps: '', 
+      completed: false,
+      id: `${Date.now()}-${Math.random()}` // Generate unique ID
+    };
+    newLoggedExercises[exIndex].loggedSets.push(newSet);
     updateLoggedExercises(newLoggedExercises);
+  };
+
+  const deleteSet = (exIndex: number, setIndex: number, setId: string) => {
+    const newLoggedExercises = [...loggedExercises];
+    // Only allow deletion if there's more than one set
+    if (newLoggedExercises[exIndex].loggedSets.length > 1) {
+      // Find the set by ID instead of index to ensure we delete the right one
+      const setToDeleteIndex = newLoggedExercises[exIndex].loggedSets.findIndex(set => set.id === setId);
+      if (setToDeleteIndex !== -1) {
+        newLoggedExercises[exIndex].loggedSets.splice(setToDeleteIndex, 1);
+        updateLoggedExercises(newLoggedExercises);
+      }
+    } else {
+      // If it's the last set, show some feedback that it can't be deleted
+      console.log('Cannot delete the last set');
+    }
   };
 
   const addLoggedExercise = () => {
@@ -151,8 +325,6 @@ export default function LogWorkoutScreen() {
     setRestTimerSelectorVisible(true);
   };
 
-  
-
   const handleExercisePress = (exercise: Exercise) => {
     router.push({
       pathname: '/(tabs)/exercise-details',
@@ -194,16 +366,20 @@ export default function LogWorkoutScreen() {
     setSelectedExerciseIndex(null);
   };
 
-  
-
   useEffect(() => {
     if (params.selectedExercises) {
       const newSelectedExercises = JSON.parse(params.selectedExercises as string);
       const exercisesToAdd = newSelectedExercises.map((ex: Exercise) => ({
         ...ex,
-        loggedSets: [{ weight: '', reps: '', loggedWeight: '', loggedReps: '', completed: false }],
+        loggedSets: [{ 
+          weight: '', 
+          reps: '', 
+          loggedWeight: '', 
+          loggedReps: '', 
+          completed: false,
+          id: `${Date.now()}-${Math.random()}`
+        }],
       }));
-
 
       if (params.replaceIndex !== undefined && params.replaceIndex !== null) {
         const indexToReplace = parseInt(params.replaceIndex as string, 10);
@@ -226,10 +402,6 @@ export default function LogWorkoutScreen() {
     };
   }, []);
 
-  
-
-  
-
   return (
     <>
       {/* Rest Timer Notification */}
@@ -245,104 +417,97 @@ export default function LogWorkoutScreen() {
           <ThemedText type="title" style={{ color: colors.tint }}>{activeRoutine && activeRoutine.name ? activeRoutine.name : 'Workout'}</ThemedText>
         </ThemedView>
 
-      <ThemedView style={[styles.section, { backgroundColor: 'transparent' }]}>
-        <ThemedText type="subtitle" style={{ color: colors.text, marginBottom: 16 }}>Exercises:</ThemedText>
-        {loggedExercises.length === 0 ? (
-          <ThemedView style={{ alignItems: 'center', backgroundColor: 'transparent' }}>
-            <ThemedText style={{ color: colors.secondary, marginBottom: 16 }}>No exercises in this routine.</ThemedText>
-            <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint, marginTop: 12, width: '100%' }]} onPress={addLoggedExercise}>
-              <IconSymbol name="plus.circle" size={20} color={colors.background} />
-              <ThemedText style={[styles.buttonText, { color: colors.background }]}>Add Exercise</ThemedText>
-            </TouchableOpacity>
-          </ThemedView>
-        ) : (
-          <>
-            {loggedExercises.map((exercise, exIndex) => (
-              <ThemedView key={exIndex} style={[styles.exerciseCard,{backgroundColor:'transparent'}, { borderColor: colors.tabIconDefault }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <TouchableOpacity onPress={() => handleExercisePress(exercise)} style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                    <Image
-                      source={exercise.images && exercise.images.length > 0
-                        ? { uri: `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${exercise.images[0]}` }
-                        : require('../../assets/images/exersiseplaceholder.png')
-                      }
-                      style={styles.exerciseImage}
-                    />
-                    <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 4, fontSize: 20 }}>
-                      {exIndex + 1}. {getDisplayExerciseName(exercise.name)}
-                    </ThemedText>
-                  </TouchableOpacity>
-
-                  <View>
-                    <TouchableOpacity onPress={() => handleExerciseOptionsPress(exIndex)} style={{ padding: 8 }}>
-                      <IconSymbol name="ellipsis" size={24} color={colors.text} />
-                    </TouchableOpacity>
-                    {showDropdownForExercise === exIndex && (
-                      <View style={[styles.dropdownMenu, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
-                        <TouchableOpacity onPress={() => deleteExercise(exIndex)} style={styles.dropdownItem}>
-                          <ThemedText style={{ color: colors.text }}>Delete Exercise</ThemedText>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => replaceExercise(exIndex)} style={[styles.dropdownItem, styles.lastDropdownItem]}>
-                          <ThemedText style={{ color: colors.text }}>Replace Exercise</ThemedText>
-                        </TouchableOpacity>
-                      </View>
-                    )}
-                  </View>
-                </View>
-                <RestTimer 
-                  restTime={exercise.restTime || 0} 
-                  onPress={() => openRestTimerSelector(exIndex)} 
-                />
-                <ThemedView style={[ styles.headerRow]}>
-                  <ThemedText style={[styles.headerText, styles.setColumn, { color: colors.text }]}>Set</ThemedText>
-                  <ThemedText style={[styles.headerText, styles.prevColumn, { color: colors.text }]}>Prev</ThemedText>
-                  <ThemedText style={[styles.headerText, styles.kgRepsColumn, { color: colors.text }]}>kg</ThemedText>
-                  <ThemedText style={[styles.headerText, styles.kgRepsColumn, { color: colors.text }]}>Reps</ThemedText>
-                  <ThemedText style={[styles.headerText, styles.checkmarkColumn, { color: colors.text }]}></ThemedText>
-                </ThemedView>
-                {exercise.loggedSets.map((set, setIndex) => (
-                  <ThemedView key={setIndex} style={[styles.setRow, { backgroundColor: set.completed ? colors.success : colors.background }]}> 
-                    <ThemedText style={[styles.cellText, styles.setColumn, { color: colors.text }]}>{setIndex + 1}</ThemedText>
-                    <ThemedText style={[styles.cellText, styles.prevColumn, { color: colors.text }]}>-</ThemedText>
-                    <TextInput
-                      style={[styles.setInput, styles.kgRepsColumn, { color: colors.text }]}
-                      placeholder={set.weight}
-                      placeholderTextColor={colors.secondary}
-                      keyboardType="numeric"
-                      value={set.loggedWeight}
-                      onChangeText={(val) => handleLoggedSetChange(exIndex, setIndex, 'loggedWeight', val)}
-                    />
-                    <TextInput
-                      style={[styles.setInput, styles.kgRepsColumn, { color: colors.text }]}
-                      placeholder={set.reps}
-                      placeholderTextColor={colors.secondary}
-                      keyboardType="numeric"
-                      value={set.loggedReps}
-                      onChangeText={(val) => handleLoggedSetChange(exIndex, setIndex, 'loggedReps', val)}
-                    />
-                    <TouchableOpacity style={styles.checkmarkColumn} onPress={() => toggleSetCompletion(exIndex, setIndex)}>
-                      <IconSymbol
-                        name={set.completed ? "checkmark.circle.fill" : "circle"}
-                        size={28}
-                        color={set.completed ? colors.tint : colors.tint}
+        <ThemedView style={[styles.section, { backgroundColor: 'transparent' }]}>
+          <ThemedText type="subtitle" style={{ color: colors.text, marginBottom: 16 }}>Exercises:</ThemedText>
+          {loggedExercises.length === 0 ? (
+            <ThemedView style={{ alignItems: 'center', backgroundColor: 'transparent' }}>
+              <ThemedText style={{ color: colors.secondary, marginBottom: 16 }}>No exercises in this routine.</ThemedText>
+              <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint, marginTop: 12, width: '100%' }]} onPress={addLoggedExercise}>
+                <IconSymbol name="plus.circle" size={20} color={colors.background} />
+                <ThemedText style={[styles.buttonText, { color: colors.background }]}>Add Exercise</ThemedText>
+              </TouchableOpacity>
+            </ThemedView>
+          ) : (
+            <>
+              {loggedExercises.map((exercise, exIndex) => (
+                <ThemedView key={exIndex} style={[styles.exerciseCard,{backgroundColor:'transparent'}, { borderColor: colors.tabIconDefault }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <TouchableOpacity onPress={() => handleExercisePress(exercise)} style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                      <Image
+                        source={exercise.images && exercise.images.length > 0
+                          ? { uri: `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${exercise.images[0]}` }
+                          : require('../../assets/images/exersiseplaceholder.png')
+                        }
+                        style={styles.exerciseImage}
                       />
+                      <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 4, fontSize: 20 }}>
+                        {exIndex + 1}. {getDisplayExerciseName(exercise.name)}
+                      </ThemedText>
                     </TouchableOpacity>
+
+                    <View>
+                      <TouchableOpacity onPress={() => handleExerciseOptionsPress(exIndex)} style={{ padding: 8 }}>
+                        <IconSymbol name="ellipsis" size={24} color={colors.text} />
+                      </TouchableOpacity>
+                      {showDropdownForExercise === exIndex && (
+                        <View style={[styles.dropdownMenu, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
+                          <TouchableOpacity onPress={() => deleteExercise(exIndex)} style={styles.dropdownItem}>
+                            <ThemedText style={{ color: colors.text }}>Delete Exercise</ThemedText>
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={() => replaceExercise(exIndex)} style={[styles.dropdownItem, styles.lastDropdownItem]}>
+                            <ThemedText style={{ color: colors.text }}>Replace Exercise</ThemedText>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                  <RestTimer 
+                    restTime={exercise.restTime || 0} 
+                    onPress={() => openRestTimerSelector(exIndex)} 
+                  />
+                  <ThemedView style={[ styles.headerRow]}>
+                    <ThemedText style={[styles.headerText, styles.setColumn, { color: colors.text }]}>Set</ThemedText>
+                    <ThemedText style={[styles.headerText, styles.prevColumn, { color: colors.text }]}>Prev</ThemedText>
+                    <ThemedText style={[styles.headerText, styles.kgRepsColumn, { color: colors.text }]}>kg</ThemedText>
+                    <ThemedText style={[styles.headerText, styles.kgRepsColumn, { color: colors.text }]}>Reps</ThemedText>
+                    <ThemedText style={[styles.headerText, styles.checkmarkColumn, { color: colors.text }]}></ThemedText>
                   </ThemedView>
-                ))}
-                <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint, marginTop: 12 }]} onPress={() => addLoggedSet(exIndex)}>
-                    <ThemedText style={[styles.buttonText, { color: colors.background }]}>+Add Set</ThemedText>
-                  </TouchableOpacity>
-              </ThemedView>
-            ))}
-            <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint, marginTop: 12 }]} onPress={addLoggedExercise}>
-              <ThemedText style={[styles.buttonText, { color: colors.background }]}>+Add Exercise</ThemedText>
-            </TouchableOpacity>
-          </>
-        )}
-      </ThemedView>
-        <TouchableOpacity style={[styles.button, { backgroundColor: "#f87171", marginTop: 10 }]} onPress={() => { discardWorkout(); router.push('/(tabs)/workout'); }}>
-          <ThemedText style={[styles.buttonText, { color: colors.background }]}>Discard Workout</ThemedText>
-        </TouchableOpacity>
+                  {exercise.loggedSets.map((set, setIndex) => {
+                    // Ensure each set has an ID
+                    const setId = set.id || `${exIndex}-${setIndex}-${Date.now()}`;
+                    if (!set.id) {
+                      set.id = setId;
+                    }
+                    
+                    return (
+                      <SwipeableSetRow
+                        key={setId}
+                        set={set}
+                        setIndex={setIndex}
+                        exIndex={exIndex}
+                        colors={colors}
+                        handleLoggedSetChange={handleLoggedSetChange}
+                        toggleSetCompletion={toggleSetCompletion}
+                        deleteSet={deleteSet}
+                        totalSets={exercise.loggedSets.length}
+                        setId={setId}
+                      />
+                    );
+                  })}
+                  <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint, marginTop: 12 }]} onPress={() => addLoggedSet(exIndex)}>
+                      <ThemedText style={[styles.buttonText, { color: colors.background }]}>+Add Set</ThemedText>
+                    </TouchableOpacity>
+                </ThemedView>
+              ))}
+              <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint, marginTop: 12 }]} onPress={addLoggedExercise}>
+                <ThemedText style={[styles.buttonText, { color: colors.background }]}>+Add Exercise</ThemedText>
+              </TouchableOpacity>
+            </>
+          )}
+        </ThemedView>
+          <TouchableOpacity style={[styles.button, { backgroundColor: "#f87171", marginTop: 10 }]} onPress={() => { discardWorkout(); router.push('/(tabs)/workout'); }}>
+            <ThemedText style={[styles.buttonText, { color: colors.background }]}>Discard Workout</ThemedText>
+          </TouchableOpacity>
       </ScrollView>
       
       {/* Rest Timer Selector Modal */}
@@ -401,14 +566,14 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
     zIndex: 1000,
-    width: 180, // Added a fixed width
-    flexDirection: 'column', // Explicitly set to column
+    width: 180,
+    flexDirection: 'column',
   },
   dropdownItem: {
     padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-    width: '100%', // Ensure item takes full width of menu
+    width: '100%',
   },
   lastDropdownItem: {
     borderBottomWidth: 0,
@@ -422,12 +587,48 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
+  // New styles for swipeable functionality
+  swipeableContainer: {
+    marginBottom: 4,
+    position: 'relative',
+  },
+  deleteButtonContainer: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 6,
+  },
+  deleteButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100%',
+    width: '100%',
+  },
+  deleteButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  resetTouchArea: {
+    flex: 1,
+  },
+  setRowContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
   setRow: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 6,
     borderWidth: 1,
-    marginBottom: 4,
+    minHeight: 48,
   },
   setColumn: {
     width: 40,

@@ -229,7 +229,7 @@ export const FoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     if (error) {
-      console.error('Error adding manual food entry:', error);
+      console.error('Error adding manual food entry:', JSON.stringify(error, null, 2));
       Alert.alert('Error', 'Could not add manual food entry.');
     } else {
       Alert.alert('Success', 'Food item submitted for review!');
