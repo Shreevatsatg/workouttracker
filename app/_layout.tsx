@@ -15,21 +15,35 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 
 // This hook protects the routes and handles redirection
 function useProtectedRoute() {
-  const { session, loading } = useAuth();
+  const { session, loading, profile } = useAuth();
   const segments = useSegments();
 
   useEffect(() => {
-    if (loading) return; // Wait until the session is loaded
+    if (loading) return;
 
-    const inTabsGroup = segments[0] === '(tabs)';
+    const inAuthGroup = segments[0] === 'login' || segments[0] === 'welcome';
+    const inAppGroup = segments[0] === '(tabs)';
 
-    // Prevent unnecessary navigation if already on the target screen
-    if (session && !inTabsGroup && segments[0] !== 'login' && segments[0] !== 'welcome') {
-      router.replace('/(tabs)/workout');
-    } else if (!session && segments[0] !== 'login') {
-      router.replace('/login');
+    if (session) {
+      // User is authenticated
+      if (!profile?.full_name) { // Assuming full_name indicates profile completion
+        // Profile not complete, redirect to welcome
+        if (segments[0] !== 'welcome') {
+          router.replace('/welcome');
+        }
+      } else {
+        // Profile complete, redirect to main app
+        if (!inAppGroup) {
+          router.replace('/(tabs)/workout');
+        }
+      }
+    } else {
+      // User is not authenticated
+      if (!inAuthGroup) {
+        router.replace('/login');
+      }
     }
-  }, [session, loading, segments]);
+  }, [session, profile, loading, segments]);
 }
 
 function RootLayoutNav() {

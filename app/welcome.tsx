@@ -3,6 +3,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { ActivityLevel, calculateTDEE } from '@/utils/calorieCalculator';
 import { supabase } from '@/utils/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,7 +19,8 @@ import {
   StatusBar,
   StyleSheet,
   TextInput,
-  TouchableOpacity
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -26,6 +28,11 @@ const { width, height } = Dimensions.get('window');
 const WelcomeScreen = () => {
   const { user, refreshProfile } = useAuth();
   const [fullName, setFullName] = useState('');
+  const [gender, setGender] = useState<'Male' | 'Female' | 'Other' | null>(null);
+  const [age, setAge] = useState<string>('');
+  const [height, setHeight] = useState<string>(''); // in cm
+  const [weight, setWeight] = useState<string>(''); // in kg
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const colorScheme = useColorScheme();
@@ -70,18 +77,52 @@ const WelcomeScreen = () => {
       return;
     }
 
+    if (!gender || !age || !height || !weight || !activityLevel) {
+      Alert.alert('Missing Information', 'Please fill in all personal details to continue.');
+      return;
+    }
+
+    const ageNum = parseInt(age);
+    const heightNum = parseFloat(height);
+    const weightNum = parseFloat(weight);
+
+    if (isNaN(ageNum) || ageNum <= 0 || isNaN(heightNum) || heightNum <= 0 || isNaN(weightNum) || weightNum <= 0) {
+      Alert.alert('Invalid Input', 'Please enter valid positive numbers for age, height, and weight.');
+      return;
+    }
+
     setIsLoading(true);
+
+    let calorieGoal = 0;
+    try {
+      calorieGoal = calculateTDEE(gender, ageNum, heightNum, weightNum, activityLevel);
+    } catch (error) {
+      console.error('Error calculating TDEE:', error);
+      Alert.alert('Calculation Error', 'Could not calculate calorie goal. Please check your inputs.');
+      setIsLoading(false);
+      return;
+    }
 
     if (user) {
       const { error } = await supabase
         .from('profiles')
-        .update({ full_name: fullName.trim() })
+        .update({
+          full_name: fullName.trim(),
+          gender: gender,
+          age: ageNum,
+          height: heightNum,
+          weight: weightNum,
+          activity_level: activityLevel,
+          calorie_goal: calorieGoal,
+        })
         .eq('id', user.id);
 
       if (error) {
         Alert.alert('Error', 'Unable to update your profile. Please try again.');
+        console.error('Supabase update error:', error);
       } else {
         await refreshProfile();
+        router.replace('/(tabs)/food-log'); // Navigate to main app screen
       }
     }
     setIsLoading(false);
@@ -157,7 +198,8 @@ const WelcomeScreen = () => {
                 />
                 <TextInput
                   ref={inputRef}
-                  style={[styles.input, { color: colors.text }]}
+                  style={[styles.input, { color: colors.text }, { borderColor: colors.tabIconDefault, borderWidth: 1,borderRadius: 12 }]}
+
                   placeholder="Enter your full name"
                   placeholderTextColor={colors.tabIconDefault}
                   value={fullName}
@@ -169,17 +211,111 @@ const WelcomeScreen = () => {
                 />
               </ThemedView>
 
+              {/* Gender Selection */}
+              <ThemedText style={[styles.label, { color: colors.text }]}>Gender</ThemedText>
+              <View style={styles.genderContainer}>
+                <TouchableOpacity
+                  style={[
+                    styles.genderButton,
+                    gender === 'Male' && { backgroundColor: colors.tint },
+                  ]}
+                  onPress={() => setGender('Male')}
+                >
+                  <Ionicons name="male" size={24} color={gender === 'Male' ? 'white' : colors.text} />
+                  <ThemedText style={[styles.genderButtonText, { color: gender === 'Male' ? 'white' : colors.text }]}>Male</ThemedText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.genderButton,
+                    gender === 'Female' && { backgroundColor: colors.tint },
+                  ]}
+                  onPress={() => setGender('Female')}
+                >
+                  <Ionicons name="female" size={24} color={gender === 'Female' ? 'white' : colors.text} />
+                  <ThemedText style={[styles.genderButtonText, { color: gender === 'Female' ? 'white' : colors.text }]}>Female</ThemedText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.genderButton,
+                    gender === 'Other' && { backgroundColor: colors.tint },
+                  ]}
+                  onPress={() => setGender('Other')}
+                >
+                  <Ionicons name="body" size={24} color={gender === 'Other' ? 'white' : colors.text} />
+                  <ThemedText style={[styles.genderButtonText, { color: gender === 'Other' ? 'white' : colors.text }]}>Other</ThemedText>
+                </TouchableOpacity>
+              </View>
+
+              {/* Age, Height, Weight Inputs */}
+              <ThemedText style={[styles.label, { color: colors.text }]}>Age</ThemedText>
+              <ThemedView style={styles.inputContainer}>
+                <Ionicons name="calendar-outline" size={20} color={colors.tabIconDefault} style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, { color: colors.text }, { borderColor: colors.tabIconDefault, borderWidth: 1,borderRadius: 12 }]}
+                  placeholder="Enter your age"
+                  placeholderTextColor={colors.tabIconDefault}
+                  keyboardType="numeric"
+                  value={age}
+                  onChangeText={setAge}
+                />
+              </ThemedView>
+
+              <ThemedText style={[styles.label, { color: colors.text }]}>Height (cm)</ThemedText>
+              <ThemedView style={styles.inputContainer}>
+                <Ionicons name="resize-outline" size={20} color={colors.tabIconDefault} style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, { color: colors.text }, { borderColor: colors.tabIconDefault, borderWidth: 1,borderRadius: 12 }]}
+                  placeholder="Enter your height in cm"
+                  placeholderTextColor={colors.tabIconDefault}
+                  keyboardType="numeric"
+                  value={height}
+                  onChangeText={setHeight}
+                />
+              </ThemedView>
+
+              <ThemedText style={[styles.label, { color: colors.text }]}>Weight (kg)</ThemedText>
+              <ThemedView style={styles.inputContainer}>
+                <Ionicons name="scale-outline" size={20} color={colors.tabIconDefault} style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, { color: colors.text }, { borderColor: colors.tabIconDefault, borderWidth: 1,borderRadius: 12 }]}
+                  placeholder="Enter your weight in kg"
+                  placeholderTextColor={colors.tabIconDefault}
+                  keyboardType="numeric"
+                  value={weight}
+                  onChangeText={setWeight}
+                />
+              </ThemedView>
+
+              {/* Activity Level Selection */}
+              <ThemedText style={[styles.label, { color: colors.text }]}>Activity Level</ThemedText>
+              <View style={styles.activityLevelContainer}>
+                {Object.values(ActivityLevel).map((level) => (
+                  <TouchableOpacity
+                    key={level}
+                    style={[
+                      styles.activityLevelButton,
+                      activityLevel === level && { backgroundColor: colors.tint },
+                    ]}
+                    onPress={() => setActivityLevel(level as ActivityLevel)}
+                  >
+                    <ThemedText style={[styles.activityLevelButtonText, { color: activityLevel === level ? 'white' : colors.text }]}>
+                      {level}
+                    </ThemedText>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
               {/* Continue Button */}
               <TouchableOpacity
                 style={[
                   styles.continueButton,
                   { 
                     backgroundColor: colors.tint,
-                    opacity: fullName.trim() ? 1 : 0.6 
+                    opacity: fullName.trim() && gender && age && height && weight && activityLevel ? 1 : 0.6 
                   }
                 ]}
                 onPress={handleContinue}
-                disabled={isLoading || !fullName.trim()}
+                disabled={isLoading || !fullName.trim() || !gender || !age || !height || !weight || !activityLevel}
                 activeOpacity={0.8}
               >
                 {isLoading ? (
@@ -285,7 +421,6 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 4,
   },
   inputIcon: {
     marginRight: 12,
@@ -294,6 +429,56 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     paddingVertical: 16,
+    fontWeight: '500',
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'white',
+    marginBottom: 10,
+    marginTop: 20,
+    alignSelf: 'flex-start',
+  },
+  genderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 20,
+    width: '100%',
+  },
+  genderButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  genderButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  activityLevelContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  activityLevelButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    margin: 5,
+  },
+  activityLevelButtonText: {
+    color: 'white',
+    fontSize: 14,
     fontWeight: '500',
   },
   continueButton: {
