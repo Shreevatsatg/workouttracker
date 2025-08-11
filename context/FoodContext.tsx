@@ -33,9 +33,10 @@ interface FoodContextType {
     product_name: string,
     quantity: number,
     unit: string,
-    meal_type: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks'
+    meal_type: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks',
+    logged_at: string
   ) => Promise<void>;
-  fetchFoodEntries: () => Promise<void>;
+  fetchFoodEntries: (date?: Date) => Promise<void>;
   searchFood: (query: string) => Promise<any[]>;
   getFoodDetails: (productId: string) => Promise<ProductDetails | null>;
   calculateDailyMacros: () => Promise<{ proteins: number; carbohydrates: number; fats: number; }>;
@@ -53,11 +54,21 @@ export const FoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([]);
   const [productDetailsCache, setProductDetailsCache] = useState<Record<string, ProductDetails>>({});
 
-  const fetchFoodEntries = async () => {
-    const { data, error } = await supabase
-      .from('food_entries')
-      .select('*')
-      .order('logged_at', { ascending: false });
+  const fetchFoodEntries = async (date?: Date) => {
+    let query = supabase.from('food_entries').select('*');
+
+    if (date) {
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      query = query
+        .gte('logged_at', startOfDay.toISOString())
+        .lte('logged_at', endOfDay.toISOString());
+    }
+
+    const { data, error } = await query.order('logged_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching food entries:', error);
@@ -72,7 +83,8 @@ export const FoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
     product_name: string,
     quantity: number,
     unit: string,
-    meal_type: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks'
+    meal_type: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks',
+    logged_at: string
   ) => {
     const {
       data: { user },
@@ -91,7 +103,7 @@ export const FoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
         product_name,
         quantity,
         unit,
-        logged_at: new Date().toISOString(),
+        logged_at,
         meal_type,
       });
 
@@ -99,7 +111,7 @@ export const FoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Error adding food entry:', error);
       Alert.alert('Error', 'Could not add food entry.');
     } else {
-      fetchFoodEntries(); // Refresh list after adding
+      fetchFoodEntries(new Date(logged_at)); // Refresh list after adding
       // Removed Alert.alert('Success', 'Food entry added!'); as per user request
     }
   };
@@ -192,7 +204,10 @@ export const FoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Error updating meal type:', error);
       Alert.alert('Error', 'Could not update meal type.');
     } else {
-      fetchFoodEntries();
+      const entryToUpdate = foodEntries.find(entry => entry.id === entryId);
+      if (entryToUpdate) {
+        fetchFoodEntries(new Date(entryToUpdate.logged_at));
+      }
     }
   };
 
@@ -202,7 +217,10 @@ export const FoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Error deleting food entry:', error);
       Alert.alert('Error', 'Could not delete food entry.');
     } else {
-      fetchFoodEntries();
+      const entryToDelete = foodEntries.find(entry => entry.id === entryId);
+      if (entryToDelete) {
+        fetchFoodEntries(new Date(entryToDelete.logged_at));
+      }
     }
   };
 
@@ -212,7 +230,10 @@ export const FoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Error updating food entry:', error);
       Alert.alert('Error', 'Could not update food entry.');
     } else {
-      fetchFoodEntries();
+      const entryToUpdate = foodEntries.find(entry => entry.id === entryId);
+      if (entryToUpdate) {
+        fetchFoodEntries(new Date(entryToUpdate.logged_at));
+      }
     }
   };
 
@@ -304,7 +325,7 @@ export const FoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    fetchFoodEntries();
+    // fetchFoodEntries();
   }, []);
 
   return (

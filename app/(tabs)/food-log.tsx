@@ -6,7 +6,7 @@ import { Colors } from '@/constants/Colors';
 import { useFood } from '@/context/FoodContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -339,15 +339,17 @@ const DateNavigator: React.FC<{
 const FoodEntryItem: React.FC<{
   entry: FoodEntry;
   onPress: () => void;
-  onToggleDropdown: () => void;
+  onToggleDropdown: (y: number, height: number) => void;
   isDropdownOpen: boolean;
   onMove: (mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks') => void;
   onDelete: () => void;
-}> = ({ entry, onPress, onToggleDropdown, isDropdownOpen, onMove, onDelete }) => {
+  dropdownDirection: 'up' | 'down';
+}> = ({ entry, onPress, onToggleDropdown, isDropdownOpen, onMove, onDelete, dropdownDirection }) => {
   const { getFoodDetails } = useFood();
   const [details, setDetails] = useState<ProductDetails | null>(null);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const itemRef = useRef<TouchableOpacity>(null);
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -364,8 +366,17 @@ const FoodEntryItem: React.FC<{
     return proteins_100g * 4 * scale + carbohydrates_100g * 4 * scale + fat_100g * 9 * scale;
   }, [details, entry.quantity]);
 
+  const handleEllipsisPress = () => {
+    if (itemRef.current) {
+      itemRef.current.measureInWindow((x, y, width, height) => {
+        onToggleDropdown(y, height);
+      });
+    }
+  };
+
   return (
     <TouchableOpacity 
+      ref={itemRef}
       onPress={onPress} 
       style={[
         styles.foodEntryItem, 
@@ -383,11 +394,15 @@ const FoodEntryItem: React.FC<{
       </View>
       <ThemedText style={styles.foodEntryCalories}>{totalCalories.toFixed(0)} kcal</ThemedText>
       <View>
-        <TouchableOpacity onPress={onToggleDropdown} style={{ padding: 8 }}>
+        <TouchableOpacity onPress={handleEllipsisPress} style={{ padding: 8 }}>
           <IconSymbol name="ellipsis" size={20} color={colors.text} />
         </TouchableOpacity>
         {isDropdownOpen && (
-          <View style={[styles.dropdownMenu, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[
+            styles.dropdownMenu,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+            dropdownDirection === 'up' ? styles.dropdownMenuUp : styles.dropdownMenuDown,
+          ]}>
             <ThemedText style={styles.dropdownTitle}>Move to...</ThemedText>
             {['Breakfast', 'Lunch', 'Dinner', 'Snacks'].map((mealType) => (
               <TouchableOpacity
@@ -512,25 +527,19 @@ export default function FoodLogScreen() {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<FoodEntry | null>(null);
   const [openDropdownEntryId, setOpenDropdownEntryId] = useState<string | null>(null);
+  const [dropdownDirection, setDropdownDirection] = useState<'up' | 'down'>('down');
+  const itemRefs = useRef<{ [key: string]: TouchableOpacity | null }>({});
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        await fetchFoodEntries();
+        await fetchFoodEntries(selectedDate);
       } finally {
         setIsLoading(false);
       }
     };
     loadData();
-  }, []);
-
-  // Filter food entries by selected date
-  const filteredFoodEntries = useMemo(() => {
-    return foodEntries.filter((entry) => {
-      const entryDate = new Date(entry.logged_at);
-      return isSameDay(entryDate, selectedDate);
-    });
-  }, [foodEntries, selectedDate]);
+  }, [selectedDate]);
 
   useEffect(() => {
     const getMacros = async () => {
@@ -541,7 +550,7 @@ export default function FoodLogScreen() {
       let carbohydrates = 0;
       let fats = 0;
 
-      for (const entry of filteredFoodEntries) {
+      for (const entry of foodEntries) {
         const details = await getFoodDetails(entry.product_id);
         if (details?.nutriments) {
           const scale = entry.quantity / 100;
@@ -554,11 +563,22 @@ export default function FoodLogScreen() {
       const totalCalories = proteins * 4 + carbohydrates * 4 + fats * 9;
       setDailyMacros({ proteins, carbohydrates, fats, calories: totalCalories });
       setIsCalculatingMacros(false);
+      console.log('Daily Macros for selected date:', { proteins, carbohydrates, fats, calories: totalCalories });
     };
     getMacros();
-  }, [filteredFoodEntries, getFoodDetails]);
+  }, [foodEntries, getFoodDetails]);
 
-  const handleToggleDropdown = (entry: FoodEntry) => {
+  const handleToggleDropdown = (entry: FoodEntry, y: number, height: number) => {
+    const screenHeight = Dimensions.get('window').height;
+    const dropdownHeight = 200; // Approximate height of the dropdown menu
+
+    // Check if there's enough space below the item
+    if (y + height + dropdownHeight > screenHeight) {
+      setDropdownDirection('up');
+    } else {
+      setDropdownDirection('down');
+    }
+
     setSelectedEntry(entry);
     setOpenDropdownEntryId(openDropdownEntryId === entry.id ? null : entry.id);
   };
@@ -624,9 +644,9 @@ export default function FoodLogScreen() {
     ];
     return mealTypes.map((mealType) => ({
       title: mealType,
-      data: filteredFoodEntries.filter((entry) => entry.meal_type === mealType),
+      data: foodEntries.filter((entry) => entry.meal_type === mealType),
     }));
-  }, [filteredFoodEntries]);
+  }, [foodEntries]);
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
@@ -708,10 +728,11 @@ export default function FoodLogScreen() {
               <FoodEntryItem
                 entry={item}
                 onPress={() => handlePressItem(item)}
-                onToggleDropdown={() => handleToggleDropdown(item)}
+                onToggleDropdown={(y, height) => handleToggleDropdown(item, y, height)}
                 isDropdownOpen={openDropdownEntryId === item.id}
                 onMove={handleMove}
                 onDelete={handleDelete}
+                dropdownDirection={dropdownDirection}
               />
             )}
             renderSectionHeader={({ section: { title, data } }) => (
@@ -921,12 +942,18 @@ const styles = StyleSheet.create({
   dropdownMenu: {
     position: 'absolute',
     right: 0,
-    top: 40, // Adjust as needed to position below the ellipsis
     borderRadius: 10,
     borderWidth: 1,
     paddingVertical: 5,
     zIndex: 999, // Increased zIndex to ensure it appears on top
     minWidth: 150,
+  },
+  dropdownMenuUp: {
+    bottom: '100%', // Position above the item
+    marginBottom: 10, // Add some space
+  },
+  dropdownMenuDown: {
+    top: 40, // Position below the ellipsis
   },
   dropdownTitle: {
     fontSize: 14,

@@ -314,7 +314,8 @@ export default function AddFoodScreen() {
         selectedProduct.product_name,
         quantityNum,
         unit,
-        params.mealType as 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks'
+        params.mealType as 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks',
+        params.selectedDate as string
       );
       setShowSuccessMessage(true);
       setTimeout(() => {
