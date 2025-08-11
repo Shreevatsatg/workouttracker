@@ -3,8 +3,11 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
+import { useAuth } from '@/context/AuthContext';
 import { useFood } from '@/context/FoodContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { Feather } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -19,6 +22,8 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import PagerView from 'react-native-pager-view';
+import Svg, { Circle } from 'react-native-svg';
 
 interface FoodEntry {
   id: string;
@@ -476,29 +481,90 @@ const SectionHeader: React.FC<{
   );
 };
 
-const MacroCard: React.FC<{
+const ModernMacroCard: React.FC<{
   title: string;
   value: number;
   unit: string;
+  percentage: number;
   icon: any;
   color: string;
   backgroundColor: string;
   isLoading: boolean;
-}> = ({ title, value, unit, icon, color, backgroundColor, isLoading }) => (
-  <View style={[styles.macroCard, { backgroundColor }]}>
-    <IconSymbol name={icon} size={20} color={color} />
-    {isLoading ? (
-      <ActivityIndicator size="small" color={color} style={{ marginTop: 8, marginBottom: 4 }} />
-    ) : (
-      <ThemedText style={[styles.macroCardValue, { color }]}>
-        {value.toFixed(1)}{unit}
+  colors: any;
+}> = ({ title, value, unit, percentage, icon, color, backgroundColor, isLoading, colors }) => (
+  <View style={[styles.modernMacroCard, { backgroundColor }]}>
+    <View style={styles.macroCardHeader}>
+      <View style={[styles.macroCardIcon, { backgroundColor: color + '20' }]}>
+        <Feather name={icon} size={18} color={color} />
+      </View>
+      <View style={styles.macroCardProgress}>
+        <View style={[styles.progressBar, { backgroundColor: color + '20' }]}>
+          <View
+            style={[
+              styles.progressFill,
+              {
+                backgroundColor: color,
+                width: `${Math.min(percentage, 100)}%`,
+              },
+            ]}
+          />
+        </View>
+        <ThemedText style={[styles.macroPercentage, { color: colors.textSecondary }]}>
+          {percentage.toFixed(0)}%
+        </ThemedText>
+      </View>
+    </View>
+    <View style={styles.macroCardContent}>
+      <ThemedText style={[styles.macroCardTitle, { color: colors.textSecondary }]}>
+        {title}
       </ThemedText>
-    )}
-    <ThemedText style={[styles.macroCardTitle, { color }]}>
-      {title}
-    </ThemedText>
+      <View style={styles.macroCardValue}>
+        {isLoading ? (
+          <ActivityIndicator size="small" color={color} />
+        ) : (
+          <ThemedText style={[styles.macroValue, { color: colors.text }]}>
+            {value.toFixed(1)} {unit}
+          </ThemedText>
+        )}
+      </View>
+    </View>
   </View>
 );
+
+const CircularProgress: React.FC<{
+  progress: number;
+  radius: number;
+  strokeWidth: number;
+  color: string;
+}> = ({ progress, radius, strokeWidth, color }) => {
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+  return (
+    <Svg width={(radius + strokeWidth) * 2} height={(radius + strokeWidth) * 2}>
+      <Circle
+        cx={radius + strokeWidth}
+        cy={radius + strokeWidth}
+        r={radius}
+        stroke={color + '20'}
+        strokeWidth={strokeWidth}
+        fill="transparent"
+      />
+      <Circle
+        cx={radius + strokeWidth}
+        cy={radius + strokeWidth}
+        r={radius}
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeDasharray={circumference}
+        strokeDashoffset={strokeDashoffset}
+        strokeLinecap="round"
+        fill="transparent"
+        transform={`rotate(-90 ${radius + strokeWidth} ${radius + strokeWidth})`}
+      />
+    </Svg>
+  );
+};
 
 export default function FoodLogScreen() {
   const {
@@ -510,6 +576,7 @@ export default function FoodLogScreen() {
     getFoodDetails,
     updateFoodEntry,
   } = useFood();
+  const { profile } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
@@ -528,7 +595,14 @@ export default function FoodLogScreen() {
   const [selectedEntry, setSelectedEntry] = useState<FoodEntry | null>(null);
   const [openDropdownEntryId, setOpenDropdownEntryId] = useState<string | null>(null);
   const [dropdownDirection, setDropdownDirection] = useState<'up' | 'down'>('down');
+  const [activePagerPage, setActivePagerPage] = useState(0);
   const itemRefs = useRef<{ [key: string]: TouchableOpacity | null }>({});
+
+  // Calculate remaining calories
+  const calorieGoal = profile?.calorie_goal || 2000;
+  const totalCaloriesToday = dailyMacros.calories;
+  const exerciseCaloriesBurned = 0;
+  const remainingCalories = calorieGoal - totalCaloriesToday + exerciseCaloriesBurned;
 
   useEffect(() => {
     const loadData = async () => {
@@ -563,7 +637,6 @@ export default function FoodLogScreen() {
       const totalCalories = proteins * 4 + carbohydrates * 4 + fats * 9;
       setDailyMacros({ proteins, carbohydrates, fats, calories: totalCalories });
       setIsCalculatingMacros(false);
-      console.log('Daily Macros for selected date:', { proteins, carbohydrates, fats, calories: totalCalories });
     };
     getMacros();
   }, [foodEntries, getFoodDetails]);
@@ -678,49 +751,198 @@ export default function FoodLogScreen() {
                   colors={colors}
                 />
 
-                {/* Macros Summary */}
-                <View style={[styles.macrosSummary, { borderBottomColor: colors.border, borderBottomWidth: 1, paddingBottom: 8, paddingTop: 20 }]}>
-                  <ThemedText style={[styles.summaryTitle, { color: colors.text }]}>
-                    {formatDateForDisplay(selectedDate)}'s Nutrition
-                  </ThemedText>
-                  <View style={[styles.macroCardsContainer, { height: 80 }]}>
-                    <MacroCard
-                      title="Calories"
-                      value={dailyMacros.calories}
-                      unit="k"
-                      icon="flame.fill"
-                      color="#FF9F43"
-                      backgroundColor={`${colors.surface}dd`}
-                      isLoading={isCalculatingMacros}
-                    />
-                    <MacroCard
-                      title="Protein"
-                      value={dailyMacros.proteins}
-                      unit="g"
-                      icon="bolt.fill"
-                      color="#FF6B6B"
-                      backgroundColor={`${colors.surface}dd`}
-                      isLoading={isCalculatingMacros}
-                    />
-                    <MacroCard
-                      title="Carbs"
-                      value={dailyMacros.carbohydrates}
-                      unit="g"
-                      icon="flame.fill"
-                      color="#4ECDC4"
-                      backgroundColor={`${colors.surface}dd`}
-                      isLoading={isCalculatingMacros}
-                    />
-                    <MacroCard
-                      title="Fat"
-                      value={dailyMacros.fats}
-                      unit="g"
-                      icon="drop.fill"
-                      color="#45B7D1"
-                      backgroundColor={`${colors.surface}dd`}
-                      isLoading={isCalculatingMacros}
-                    />
+                {/* Modern Header with Gradient Background */}
+                <View style={[styles.modernHeader, { backgroundColor: colors.surface }]}>
+                  <LinearGradient
+                    colors={[colors.accent + '15', colors.accent + '05']}
+                    style={styles.headerGradient}
+                  >
+                    <ThemedText style={[styles.modernTitle, { color: colors.text }]}>
+                      {formatDateForDisplay(selectedDate)}'s Progress
+                    </ThemedText>
+                    <View style={styles.headerStats}>
+                      <View style={styles.quickStat}>
+                        <ThemedText style={[styles.quickStatValue, { color: colors.accent }]}>
+                          {((totalCaloriesToday / calorieGoal) * 100).toFixed(0)}%
+                        </ThemedText>
+                        <ThemedText style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
+                          Goal Progress
+                        </ThemedText>
+                      </View>
+                    </View>
+                  </LinearGradient>
+                </View>
+
+                <PagerView
+                  style={styles.pagerView}
+                  initialPage={0}
+                  onPageSelected={(e) => setActivePagerPage(e.nativeEvent.position)}
+                >
+                  <View key="goal" style={styles.modernPage}>
+                    <View style={[styles.modernGoalContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                      <View style={styles.goalHeader}>
+                        <ThemedText style={[styles.goalTitle, { color: colors.text }]}>
+                          Calorie Breakdown
+                        </ThemedText>
+                      </View>
+
+                      {/* Modern Breakdown Cards */}
+                      <View style={styles.breakdownGrid}>
+                        <View style={[styles.breakdownCard, { backgroundColor: colors.background }]}>
+                          <View style={styles.cardHeader}>
+                            <View style={[styles.cardIcon, { backgroundColor: colors.accent + '20' }]}>
+                              <Feather name="target" size={16} color={colors.accent} />
+                            </View>
+                            <ThemedText style={[styles.cardValue, { color: colors.text }]}>
+                              {calorieGoal.toFixed(0)}
+                            </ThemedText>
+                          </View>
+                          <ThemedText style={[styles.cardLabel, { color: colors.textSecondary }]}>Goal</ThemedText>
+                        </View>
+
+                        <View style={[styles.breakdownCard, { backgroundColor: colors.background }]}>
+                          <View style={styles.cardHeader}>
+                            <View style={[styles.cardIcon, { backgroundColor: remainingCalories >= 0 ? '#4CAF50' + '20' : '#FF5722' + '20' }]}>
+                              <Feather name="trending-down" size={16} color={remainingCalories >= 0 ? '#4CAF50' : '#FF5722'} />
+                            </View>
+                            <ThemedText style={[styles.cardValue, { color: remainingCalories >= 0 ? '#4CAF50' : '#FF5722' }]}>
+                              {Math.abs(remainingCalories).toFixed(0)}
+                            </ThemedText>
+                          </View>
+                          <ThemedText style={[styles.cardLabel, { color: colors.textSecondary }]}>Remaining</ThemedText>
+                        </View>
+                      </View>
+
+                      <View style={styles.formulaContainer}>
+                        <View style={styles.formulaItem}>
+                          <ThemedText style={styles.formulaValue}>{calorieGoal.toFixed(0)}</ThemedText>
+                          <ThemedText style={styles.formulaLabel}>Goal</ThemedText>
+                        </View>
+                        <ThemedText style={styles.operator}>-</ThemedText>
+                        <View style={styles.formulaItem}>
+                          <ThemedText style={styles.formulaValue}>{totalCaloriesToday.toFixed(0)}</ThemedText>
+                          <ThemedText style={styles.formulaLabel}>Food</ThemedText>
+                        </View>
+                        <ThemedText style={styles.operator}>+</ThemedText>
+                        <View style={styles.formulaItem}>
+                          <ThemedText style={styles.formulaValue}>{exerciseCaloriesBurned.toFixed(0)}</ThemedText>
+                          <ThemedText style={styles.formulaLabel}>Exercise</ThemedText>
+                        </View>
+                        <ThemedText style={styles.operator}>=</ThemedText>
+                        <View style={styles.formulaItem}>
+                          <ThemedText style={[styles.formulaValue, { color: remainingCalories >= 0 ? '#4CAF50' : '#FF5722' }]}>{remainingCalories.toFixed(0)}</ThemedText>
+                          <ThemedText style={styles.formulaLabel}>Remaining</ThemedText>
+                        </View>
+                      </View>
+                    </View>
                   </View>
+
+                  {/* Page 2: Enhanced Macro Cards */}
+                  <View key="macros" style={styles.modernPage}>
+                    <View style={[styles.modernMacrosContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                      <View style={styles.macrosHeader}>
+                        <ThemedText style={[styles.macrosTitle, { color: colors.text }]}>
+                          Macronutrients
+                        </ThemedText>
+                        <View style={styles.macrosTotalCalories}>
+                          <ThemedText style={[styles.macrosTotalValue, { color: colors.accent }]}>
+                            {dailyMacros.calories.toFixed(0)}
+                          </ThemedText>
+                          <ThemedText style={[styles.macrosTotalLabel, { color: colors.textSecondary }]}>
+                            kcal
+                          </ThemedText>
+                        </View>
+                      </View>
+
+                      <View style={styles.modernMacroGrid}>
+                        <ModernMacroCard
+                          title="Protein"
+                          value={dailyMacros.proteins}
+                          unit="g"
+                          percentage={(dailyMacros.proteins * 4 / dailyMacros.calories) * 100}
+                          icon="shield"
+                          color="#FF6B6B"
+                          backgroundColor={colors.background}
+                          isLoading={isCalculatingMacros}
+                          colors={colors}
+                        />
+                        <ModernMacroCard
+                          title="Carbs"
+                          value={dailyMacros.carbohydrates}
+                          unit="g"
+                          percentage={(dailyMacros.carbohydrates * 4 / dailyMacros.calories) * 100}
+                          icon="zap"
+                          color="#4ECDC4"
+                          backgroundColor={colors.background}
+                          isLoading={isCalculatingMacros}
+                          colors={colors}
+                        />
+                        <ModernMacroCard
+                          title="Fat"
+                          value={dailyMacros.fats}
+                          unit="g"
+                          percentage={(dailyMacros.fats * 9 / dailyMacros.calories) * 100}
+                          icon="droplet"
+                          color="#45B7D1"
+                          backgroundColor={colors.background}
+                          isLoading={isCalculatingMacros}
+                          colors={colors}
+                        />
+                      </View>
+
+                      <View style={styles.distributionContainer}>
+                        <ThemedText style={[styles.distributionTitle, { color: colors.textSecondary }]}>
+                          Distribution
+                        </ThemedText>
+                        <View style={[styles.distributionBar, { backgroundColor: colors.border }]}>
+                          <View 
+                            style={[
+                              styles.distributionSegment, 
+                              { 
+                                backgroundColor: '#FF6B6B',
+                                flex: dailyMacros.proteins * 4 
+                              }
+                            ]} 
+                          />
+                          <View 
+                            style={[
+                              styles.distributionSegment, 
+                              { 
+                                backgroundColor: '#4ECDC4',
+                                flex: dailyMacros.carbohydrates * 4 
+                              }
+                            ]} 
+                          />
+                          <View 
+                            style={[
+                              styles.distributionSegment, 
+                              { 
+                                backgroundColor: '#45B7D1',
+                                flex: dailyMacros.fats * 9 
+                              }
+                            ]} 
+                          />
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </PagerView>
+
+                {/* Modern Pagination Dots */}
+                <View style={styles.modernPaginationContainer}>
+                  {[0, 1].map((_, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => {}}
+                      style={[
+                        styles.modernPaginationDot,
+                        { 
+                          backgroundColor: activePagerPage === index ? colors.accent : colors.tint,
+                          width: activePagerPage === index ? 24 : 8,
+                        },
+                      ]}
+                    />
+                  ))}
                 </View>
               </View>
             }
@@ -828,38 +1050,6 @@ const styles = StyleSheet.create({
   fullDateText: {
     fontSize: 12,
     opacity: 0.7,
-  },
-  macrosSummary: {
-    marginBottom: 24,
-  },
-  summaryTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  macroCardsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  macroCard: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 80,
-  },
-  macroCardValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 6,
-    marginBottom: 2,
-  },
-  macroCardTitle: {
-    fontSize: 10,
-    fontWeight: '500',
-    opacity: 0.8,
   },
   foodList: {
     flex: 1,
@@ -1070,5 +1260,240 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: 'white', // Assuming primary color is dark enough for white text
+  },
+  pagerView: {
+    height: 280, // Increased height for modern layout
+    marginBottom: 16,
+  },
+  modernPage: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  modernPaginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modernPaginationDot: {
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: 4,
+    transition: 'width 0.3s',
+  },
+  modernHeader: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  headerGradient: {
+    padding: 20,
+  },
+  modernTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  headerStats: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quickStat: {
+    alignItems: 'center',
+  },
+  quickStatValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  quickStatLabel: {
+    fontSize: 14,
+    opacity: 0.8,
+  },
+  modernGoalContainer: {
+    flex: 1,
+    width: '100%',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+  },
+  goalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  goalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  remainingCaloriesContainer: {
+    alignItems: 'flex-end',
+  },
+  remainingValue: {
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  remainingLabel: {
+    fontSize: 14,
+    opacity: 0.8,
+  },
+  breakdownGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  breakdownCard: {
+    width: '48%',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  formulaContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  formulaItem: {
+    alignItems: 'center',
+  },
+  formulaValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  formulaLabel: {
+    fontSize: 12,
+    marginTop: 4,
+    color: 'gray',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  cardIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  cardValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  cardLabel: {
+    fontSize: 14,
+    opacity: 0.8,
+  },
+  modernMacrosContainer: {
+    flex: 1,
+    width: '100%',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+  },
+  macrosHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  macrosTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  macrosTotalCalories: {
+    alignItems: 'flex-end',
+  },
+  macrosTotalValue: {
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  macrosTotalLabel: {
+    fontSize: 14,
+    opacity: 0.8,
+  },
+  modernMacroGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 16,
+  },
+  modernMacroCard: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  macroCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  macroCardIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  macroCardProgress: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  progressBar: {
+    flex: 1,
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+  },
+  macroPercentage: {
+    fontSize: 12,
+    opacity: 0.8,
+  },
+  macroCardContent: {},
+  macroCardTitle: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  macroCardValue: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  macroValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  distributionContainer: {
+    marginTop: 16,
+  },
+  distributionTitle: {
+    fontSize: 14,
+    marginBottom: 8,
+    opacity: 0.8,
+  },
+  distributionBar: {
+    flexDirection: 'row',
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  distributionSegment: {
+    height: '100%',
   },
 });
