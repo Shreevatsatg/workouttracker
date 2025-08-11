@@ -321,7 +321,7 @@ export default function RoutineScreen() {
   return (
     <Pressable onPress={() => setMenuVisible(null)} style={{ flex: 1 }} accessible={false}>
       <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]} showsVerticalScrollIndicator={false}>
-        <ThemedView style={[styles.section, { marginTop: 24 }]}>
+        <ThemedView style={[styles.section, { marginTop: 24 },{ backgroundColor: 'transparent' }]}>
           <TouchableOpacity
             style={[styles.button, { backgroundColor: colors.tint }]}
             onPress={startEmptyWorkout}
