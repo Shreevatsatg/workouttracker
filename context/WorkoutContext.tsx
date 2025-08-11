@@ -24,7 +24,8 @@ export interface Routine {
 interface WorkoutContextType {
   activeRoutine: Routine | null;
   workoutTime: number;
-  isWorkoutRunning: boolean;
+  isWorkoutActivelyLogging: boolean;
+  isWorkoutPaused: boolean;
   loggedExercises: Exercise[];
   startWorkout: (routine: Routine) => void;
   pauseWorkout: () => void;
@@ -40,13 +41,14 @@ const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
 export const WorkoutProvider = ({ children }: { children: ReactNode }) => {
   const [activeRoutine, setActiveRoutine] = useState<Routine | null>(null);
   const [workoutTime, setWorkoutTime] = useState(0);
-  const [isWorkoutRunning, setIsWorkoutRunning] = useState(false);
+  const [isWorkoutActivelyLogging, setIsWorkoutActivelyLogging] = useState(false);
+  const [isWorkoutPaused, setIsWorkoutPaused] = useState(false);
   const [loggedExercises, setLoggedExercises] = useState<Exercise[]>([]);
 
   const intervalRef = useRef<NodeJS.Timeout | number | null>(null); // Updated type
 
   useEffect(() => {
-    if (isWorkoutRunning) {
+    if (isWorkoutActivelyLogging) {
       intervalRef.current = setInterval(() => {
         setWorkoutTime((prevTime) => prevTime + 1);
       }, 1000);
@@ -59,12 +61,13 @@ export const WorkoutProvider = ({ children }: { children: ReactNode }) => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [isWorkoutRunning]);
+  }, [isWorkoutActivelyLogging]);
 
   const startWorkout = (routine: Routine) => {
     setActiveRoutine(routine);
     setWorkoutTime(0);
-    setIsWorkoutRunning(true);
+    setIsWorkoutActivelyLogging(true);
+    setIsWorkoutPaused(false);
     setLoggedExercises(routine.exercises.map(ex => ({
       ...ex,
       loggedSets: ex.sets.map(set => ({ ...set, loggedWeight: '', loggedReps: '', completed: false })),
@@ -73,17 +76,20 @@ export const WorkoutProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const pauseWorkout = () => {
-    setIsWorkoutRunning(false);
+    setIsWorkoutActivelyLogging(false);
+    setIsWorkoutPaused(true);
   };
 
   const resumeWorkout = () => {
-    setIsWorkoutRunning(true);
+    setIsWorkoutActivelyLogging(true);
+    setIsWorkoutPaused(false);
   };
 
   const discardWorkout = () => {
     setActiveRoutine(null);
     setWorkoutTime(0);
-    setIsWorkoutRunning(false);
+    setIsWorkoutActivelyLogging(false);
+    setIsWorkoutPaused(false);
     setLoggedExercises([]);
   };
 
@@ -105,7 +111,8 @@ export const WorkoutProvider = ({ children }: { children: ReactNode }) => {
       value={{
         activeRoutine,
         workoutTime,
-        isWorkoutRunning,
+        isWorkoutActivelyLogging,
+        isWorkoutPaused,
         loggedExercises,
         startWorkout,
         pauseWorkout,

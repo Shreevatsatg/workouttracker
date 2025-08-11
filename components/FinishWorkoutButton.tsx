@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
 });
 
 const FinishWorkoutButton = () => {
-  const { loggedExercises, workoutTime, pauseWorkout } = useWorkout();
+  const { loggedExercises, workoutTime, saveWorkout } = useWorkout();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
@@ -137,7 +137,7 @@ const FinishWorkoutButton = () => {
   };
 
   const finishWorkoutAndNavigate = () => {
-    pauseWorkout();
+    saveWorkout();
     router.replace({
       pathname: '/(tabs)/workout-summary',
       params: { workoutData: JSON.stringify(loggedExercises), workoutDuration: workoutTime },

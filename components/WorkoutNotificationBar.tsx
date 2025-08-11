@@ -6,7 +6,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function WorkoutNotificationBar() {
-  const { activeRoutine, workoutTime, discardWorkout, resumeWorkout, isWorkoutRunning } = useWorkout();
+  const { activeRoutine, workoutTime, discardWorkout, resumeWorkout, isWorkoutActivelyLogging, isWorkoutPaused } = useWorkout();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   
@@ -14,7 +14,7 @@ export default function WorkoutNotificationBar() {
 
   const router = useRouter();
 
-  if (!activeRoutine || pathname === '/log-workout' || !isWorkoutRunning) {
+  if (!activeRoutine || pathname === '/log-workout' || !isWorkoutPaused) {
     return null;
   }
 
