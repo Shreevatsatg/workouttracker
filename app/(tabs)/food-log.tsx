@@ -6,7 +6,7 @@ import { Colors } from '@/constants/Colors';
 import { useFood } from '@/context/FoodContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
