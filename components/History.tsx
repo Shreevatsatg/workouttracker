@@ -39,7 +39,7 @@ const History = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('workout_sessions')
-      .select('*, session_sets(*)')
+      .select('*, session_exercises(*, session_sets(*))')
       .eq('user_id', user.id)
       .order('completed_at', { ascending: false });
 
@@ -85,43 +85,68 @@ const History = () => {
       return <ThemedText style={{ backgroundColor: 'transparent' }}>No workout history yet.</ThemedText>;
     }
 
-    return sessions.filter(Boolean).map((session) => (
-      <ThemedView key={session.id} style={[styles.item, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
-        <TouchableOpacity onPress={() => setExpandedSession(expandedSession === session.id ? null : session.id)}>
-          <View style={styles.itemHeader}>
-          <ThemedText style={styles.itemTitle}>{session.routine_name || 'Freestyle Workout'}</ThemedText>
-            <IconSymbol name={expandedSession === session.id ? "chevron.up" : "chevron.down"} size={20} color={colors.text} />
-          </View>
-          <ThemedText style={styles.itemDate}>{new Date(session.completed_at).toLocaleDateString()}</ThemedText>
-          <ThemedText style={styles.itemDuration}>Duration: {formatTime(session.duration)}</ThemedText>
-        </TouchableOpacity>
-        {expandedSession === session.id && (
-          <View style={styles.detailsContainer}>
-            <ThemedText style={styles.detailSummary}>Total Exercises: {new Set(session.session_sets.map((s: any) => s.exercise_name)).size}</ThemedText>
-            <ThemedText style={styles.detailSummary}>Total Volume: {session.session_sets.reduce((acc: number, set: any) => acc + (Number(set.weight || 0) * Number(set.reps || 0)), 0)} kg</ThemedText>
-            {Array.isArray(session.session_sets) && session.session_sets.length > 0 ? (
-              session.session_sets.map((set: any) => (
-                <ThemedText key={set.id} style={styles.detailText}>
-                  {set.exercise_name}: {set.weight}kg x {set.reps} reps
-                </ThemedText>
-              ))
-            ) : (
-              <ThemedText style={styles.detailText}>No sets recorded for this workout.</ThemedText>
-            )}
-          </View>
-        )}
-        <TouchableOpacity style={styles.menuButton} onPress={() => setMenuVisible(menuVisible === session.id ? null : session.id)}>
-          <IconSymbol name="ellipsis" size={20} color={colors.text} />
-        </TouchableOpacity>
-        {menuVisible === session.id && (
-          <View style={[styles.menu, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <TouchableOpacity onPress={() => handleDeleteSession(session.id)} style={styles.menuItem}>
-              <ThemedText style={{ color: colors.text }}>Delete</ThemedText>
-            </TouchableOpacity>
-          </View>
-        )}
-      </ThemedView>
-    ));
+    return sessions.filter(Boolean).map((session) => {
+      // Calculate metrics for each session
+      const totalExercises = session.session_exercises ? session.session_exercises.length : 0;
+      const totalSetsPerformed = session.session_exercises ? session.session_exercises.reduce((acc: number, exercise: any) => {
+        return acc + (exercise.session_sets ? exercise.session_sets.length : 0);
+      }, 0) : 0;
+
+      const totalVolume = session.session_exercises ? session.session_exercises.reduce((acc: number, exercise: any) => {
+        return acc + (exercise.session_sets ? exercise.session_sets.reduce((setAcc: number, set: any) => {
+          return setAcc + (Number(set.weight || 0) * Number(set.reps || 0));
+        }, 0) : 0);
+      }, 0) : 0;
+
+      return (
+        <ThemedView key={session.id} style={[styles.item, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
+          <TouchableOpacity onPress={() => setExpandedSession(expandedSession === session.id ? null : session.id)}>
+            <View style={styles.itemHeader}>
+              <ThemedText style={styles.itemTitle}>{session.routine_name || 'Freestyle Workout'}</ThemedText>
+              <IconSymbol name={expandedSession === session.id ? "chevron.up" : "chevron.down"} size={20} color={colors.text} />
+            </View>
+            <ThemedText style={styles.itemDate}>{new Date(session.completed_at).toLocaleDateString()}</ThemedText>
+            <ThemedText style={styles.itemDuration}>Duration: {formatTime(session.duration)}</ThemedText>
+            {session.notes && <ThemedText style={styles.itemNotes}>Notes: {session.notes}</ThemedText>} {/* Display Notes */}
+          </TouchableOpacity>
+          {expandedSession === session.id && (
+            <View style={styles.detailsContainer}>
+              <ThemedText style={styles.detailSummary}>Total Exercises: {totalExercises}</ThemedText>
+              <ThemedText style={styles.detailSummary}>Total Sets: {totalSetsPerformed}</ThemedText>
+              <ThemedText style={styles.detailSummary}>Total Volume: {totalVolume} kg</ThemedText>
+              {session.session_exercises && session.session_exercises.length > 0 ? (
+                session.session_exercises.map((exercise: any) => (
+                  <View key={exercise.id} style={styles.exerciseDetailContainer}>
+                    <ThemedText style={styles.exerciseName}>{exercise.exercise_name}</ThemedText>
+                    {exercise.session_sets && exercise.session_sets.length > 0 ? (
+                      exercise.session_sets.map((set: any) => (
+                        <ThemedText key={set.id} style={styles.detailText}>
+                          {set.weight}kg x {set.reps} reps
+                        </ThemedText>
+                      ))
+                    ) : (
+                      <ThemedText style={styles.detailText}>No sets recorded for this exercise.</ThemedText>
+                    )}
+                  </View>
+                ))
+              ) : (
+                <ThemedText style={styles.detailText}>No exercises recorded for this workout.</ThemedText>
+              )}
+            </View>
+          )}
+          <TouchableOpacity style={styles.menuButton} onPress={() => setMenuVisible(menuVisible === session.id ? null : session.id)}>
+            <IconSymbol name="ellipsis" size={20} color={colors.text} />
+          </TouchableOpacity>
+          {menuVisible === session.id && (
+            <View style={[styles.menu, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <TouchableOpacity onPress={() => handleDeleteSession(session.id)} style={styles.menuItem}>
+                <ThemedText style={{ color: colors.text }}>Delete</ThemedText>
+              </TouchableOpacity>
+            </View>
+          )}
+        </ThemedView>
+      );
+    });
   };
 
   return (
@@ -173,6 +198,9 @@ const styles = StyleSheet.create({
   },
   itemNotes: {
     fontSize: 14,
+    color: '#888',
+    marginTop: 4,
+    fontStyle: 'italic',
   },
   detailSummary: {
     fontSize: 14,
@@ -184,6 +212,18 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 14,
+    marginBottom: 5,
+  },
+  exerciseDetailContainer: {
+    marginTop: 10,
+    marginBottom: 5,
+    paddingLeft: 10,
+    borderLeftWidth: 2,
+    borderLeftColor: '#ccc',
+  },
+  exerciseName: {
+    fontSize: 16,
+    fontWeight: 'bold',
     marginBottom: 5,
   },
   menuButton: {

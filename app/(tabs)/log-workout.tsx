@@ -11,7 +11,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, PanResponder, ScrollView, StyleSheet, TextInput, TouchableOpacity, Vibration, View } from 'react-native';
 
 interface Set {
@@ -198,7 +198,40 @@ export default function LogWorkoutScreen() {
     loggedExercises,
     discardWorkout,
     updateLoggedExercises,
+    pauseWorkout,
   } = useWorkout();
+
+  // --- New Metric Calculations ---
+  const totalVolume = useMemo(() => {
+    return loggedExercises.reduce((acc, exercise) => {
+      return acc + exercise.loggedSets.reduce((setAcc, set) => {
+        if (set.completed) {
+          const weight = Number(set.loggedWeight || set.weight || 0);
+          const reps = Number(set.loggedReps || set.reps || 0);
+          return setAcc + (weight * reps);
+        }
+        return setAcc;
+      }, 0);
+    }, 0);
+  }, [loggedExercises]);
+
+  const setsPerformed = useMemo(() => {
+    return loggedExercises.reduce((acc, exercise) => {
+      return acc + exercise.loggedSets.filter(set => set.completed).length;
+    }, 0);
+  }, [loggedExercises]);
+
+  const totalPlannedSets = useMemo(() => {
+    return loggedExercises.reduce((acc, exercise) => {
+      return acc + exercise.loggedSets.length;
+    }, 0);
+  }, [loggedExercises]);
+
+  const progressPercentage = useMemo(() => {
+    if (totalPlannedSets === 0) return 0;
+    return Math.round((setsPerformed / totalPlannedSets) * 100);
+  }, [setsPerformed, totalPlannedSets]);
+  // --- End New Metric Calculations ---
 
   // Rest timer state
   const [restTimerSelectorVisible, setRestTimerSelectorVisible] = useState(false);
@@ -393,14 +426,16 @@ export default function LogWorkoutScreen() {
     }
   }, [params.selectedExercises, params.replaceIndex, loggedExercises, router, updateLoggedExercises]);
 
-  // Clean up rest timer on unmount
+  // Clean up rest timer and pause workout on unmount
   useEffect(() => {
     return () => {
       if (restTimerIntervalRef.current) {
         clearInterval(restTimerIntervalRef.current);
       }
+      // Pause the workout when leaving the log-workout page
+      pauseWorkout();
     };
-  }, []);
+  }, [pauseWorkout]);
 
   return (
     <>
@@ -412,10 +447,27 @@ export default function LogWorkoutScreen() {
         onSkip={skipRestTimer}
       />
       
-      <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]}>
+      <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]} contentContainerStyle={styles.scrollViewContent}>
         <ThemedView style={[styles.header ,{backgroundColor:'transparent'}]}>
           <ThemedText type="title" style={{ color: colors.tint }}>{activeRoutine && activeRoutine.name ? activeRoutine.name : 'Workout'}</ThemedText>
         </ThemedView>
+
+        {/* --- New Metrics Display --- */}
+        <ThemedView style={[styles.metricsContainer, { backgroundColor: colors.cardBackground, borderColor: colors.tabIconDefault }]}>
+          <View style={styles.metricItem}>
+            <ThemedText type="subtitle" style={{ color: colors.text }}>Volume</ThemedText>
+            <ThemedText type="defaultSemiBold" style={{ color: colors.tint }}>{totalVolume} kg</ThemedText>
+          </View>
+          <View style={styles.metricItem}>
+            <ThemedText type="subtitle" style={{ color: colors.text }}>Sets</ThemedText>
+            <ThemedText type="defaultSemiBold" style={{ color: colors.tint }}>{setsPerformed}</ThemedText>
+          </View>
+          <View style={styles.metricItem}>
+            <ThemedText type="subtitle" style={{ color: colors.text }}>Progress</ThemedText>
+            <ThemedText type="defaultSemiBold" style={{ color: colors.tint }}>{progressPercentage}%</ThemedText>
+          </View>
+        </ThemedView>
+        {/* --- End New Metrics Display --- */}
 
         <ThemedView style={[styles.section, { backgroundColor: 'transparent' }]}>
           <ThemedText type="subtitle" style={{ color: colors.text, marginBottom: 16 }}>Exercises:</ThemedText>
@@ -688,5 +740,21 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     borderWidth: 1,
+  },
+  metricsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  metricItem: {
+    alignItems: 'center',
+  },
+  scrollViewContent: {
+    paddingBottom: 100, // Adjust this value as needed to clear the tab bar
   },
 });

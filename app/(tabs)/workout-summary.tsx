@@ -3,11 +3,12 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
+import { useWorkout } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { supabase } from '@/utils/supabase';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 
 
@@ -21,6 +22,7 @@ export default function WorkoutSummaryScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { user } = useAuth();
+  const { discardWorkout, saveWorkout } = useWorkout();
   const parsedWorkoutData = useMemo(() => {
     if (params.workoutData) {
       return JSON.parse(params.workoutData as string);
@@ -39,6 +41,14 @@ export default function WorkoutSummaryScreen() {
   const workoutDuration = parsedWorkoutDuration;
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [workoutNotes, setWorkoutNotes] = useState(''); // New state for notes
+  const [workoutDate, setWorkoutDate] = useState(''); // New state for date
+
+  useEffect(() => {
+    const today = new Date();
+    const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+    setWorkoutDate(today.toLocaleDateString(undefined, options));
+  }, []);
 
   const totalVolume = useMemo(() => {
     if (!workoutData || !Array.isArray(workoutData.exercises)) return 0;
@@ -58,6 +68,14 @@ export default function WorkoutSummaryScreen() {
     return workoutData.exercises.filter((exercise: any) =>
       exercise && Array.isArray(exercise.loggedSets) && exercise.loggedSets.some((set: any) => set && set.completed)
     ).length;
+  }, [workoutData]);
+
+  const totalSetsPerformed = useMemo(() => {
+    if (!workoutData || !Array.isArray(workoutData.exercises)) return 0;
+    return workoutData.exercises.reduce((acc: number, exercise: any) => {
+      if (!exercise || !Array.isArray(exercise.loggedSets)) return acc;
+      return acc + exercise.loggedSets.filter((set: any) => set && set.completed).length;
+    }, 0);
   }, [workoutData]);
 
   const formatTime = (totalSeconds: number) => {
@@ -85,6 +103,7 @@ export default function WorkoutSummaryScreen() {
           routine_name: workoutData.name,
           duration: workoutDuration,
           completed_at: new Date().toISOString(),
+          notes: workoutNotes,
         })
         .select();
 
@@ -98,33 +117,54 @@ export default function WorkoutSummaryScreen() {
       // Save session exercises and sets
       if (Array.isArray(workoutData.exercises)) {
         for (const exercise of workoutData.exercises) {
-          if (exercise && Array.isArray(exercise.loggedSets)) {
-            for (const set of exercise.loggedSets) {
-              if (set && set.completed) {
-                const { error: sessionSetError } = await supabase
-                  .from('session_sets')
-                  .insert({
-                    session_id: sessionId,
-                    exercise_name: exercise.name,
-                    weight: Number(set.loggedWeight || set.weight || 0),
-                    reps: Number(set.loggedReps || set.reps || 0),
-                    completed_at: new Date().toISOString(),
-                  });
+          if (exercise) { // Ensure exercise is not null/undefined
+            // Insert into session_exercises
+            const { data: sessionExerciseData, error: sessionExerciseError } = await supabase
+              .from('session_exercises')
+              .insert({
+                session_id: sessionId,
+                exercise_name: exercise.name,
+                order: workoutData.exercises.indexOf(exercise), // Assuming order is based on array index
+              })
+              .select();
 
-                if (sessionSetError) throw sessionSetError;
+            if (sessionExerciseError) throw sessionExerciseError;
+
+            if (!sessionExerciseData || sessionExerciseData.length === 0) {
+              throw new Error(`Failed to retrieve session exercise ID for ${exercise.name}.`);
+            }
+            const sessionExerciseId = sessionExerciseData[0].id;
+
+            if (Array.isArray(exercise.loggedSets)) {
+              for (const set of exercise.loggedSets) {
+                if (set && set.completed) {
+                  const { error: sessionSetError } = await supabase
+                    .from('session_sets')
+                    .insert({
+                      session_id: sessionId, // Still link to session
+                      session_exercise_id: sessionExerciseId, // Link to session_exercise
+                      weight: String(Number(set.loggedWeight || set.weight || 0)), // Ensure weight is text
+                      reps: String(Number(set.loggedReps || set.reps || 0)),     // Ensure reps is text
+                      order: exercise.loggedSets.indexOf(set), // Assuming order is based on array index
+                      completed_at: new Date().toISOString(),
+                    });
+
+                  if (sessionSetError) throw sessionSetError;
+                }
               }
             }
           }
         }
       }
       setShowSuccessMessage(true);
+      saveWorkout();
     } catch (error: any) {
       alert(`Error saving workout: ${error.message}`);
       console.error('Error saving workout:', error);
     } finally {
       setIsSaving(false);
     }
-  }, [user, workoutData, workoutDuration]);
+  }, [user, workoutData, workoutDuration, workoutNotes]);
 
   if (!workoutData) {
     return (
@@ -135,13 +175,18 @@ export default function WorkoutSummaryScreen() {
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]}>
-      <ThemedView style={[styles.header, { backgroundColor: 'transparent' }]}>
-        <ThemedText type="title" style={{ color: colors.tint, marginBottom: 12 }}>Congratulations!</ThemedText>
-        <ThemedText type="subtitle" style={{ color: colors.text }}>You completed your workout!</ThemedText>
-        <ThemedText style={{ color: colors.secondary, marginTop: 8 }}>Duration: {formatTime(workoutDuration)}</ThemedText>
-        <ThemedText style={{ color: colors.secondary, marginTop: 4 }}>Total Exercises: {completedExercisesCount}</ThemedText>
-        <ThemedText style={{ color: colors.secondary, marginTop: 4 }}>Total Volume: {totalVolume} kg</ThemedText>
+    <ScrollView 
+      style={[styles.container, { backgroundColor: 'transparent', paddingHorizontal: 16 }]} 
+      contentContainerStyle={styles.scrollViewContent}
+    >
+      <ThemedView style={[styles.header, { backgroundColor: colors.cardBackground, borderColor: colors.tabIconDefault }]}>
+        <ThemedText type="title" style={{ color: colors.tint, marginBottom: 12, fontSize: 28 }}>Congratulations!</ThemedText>
+        <ThemedText type="subtitle" style={{ color: colors.text, fontSize: 20, marginBottom: 16 }}>You completed your workout!</ThemedText>
+        <ThemedText style={[styles.summaryMetric, { color: colors.secondary }]}>Date: {workoutDate}</ThemedText>
+        <ThemedText style={[styles.summaryMetric, { color: colors.secondary }]}>Duration: {formatTime(workoutDuration)}</ThemedText>
+        <ThemedText style={[styles.summaryMetric, { color: colors.secondary }]}>Total Exercises: {completedExercisesCount}</ThemedText>
+        <ThemedText style={[styles.summaryMetric, { color: colors.secondary }]}>Total Sets Performed: {totalSetsPerformed}</ThemedText>
+        <ThemedText style={[styles.summaryMetric, { color: colors.secondary }]}>Total Volume: {totalVolume} kg</ThemedText>
       </ThemedView>
 
       <SuccessModal
@@ -153,9 +198,20 @@ export default function WorkoutSummaryScreen() {
         }}
       />
 
-      <ThemedView style={[styles.section, { backgroundColor: 'transparent' }]}>
+      <ThemedView style={[styles.section, { backgroundColor: colors.cardBackground, borderColor: colors.tabIconDefault }]}>
         <ThemedText type="subtitle" style={{ color: colors.text, marginBottom: 16 }}>Workout Details:</ThemedText>
         <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 8 }}>Routine: {workoutData.name}</ThemedText>
+
+        <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginTop: 16, marginBottom: 8 }}>Notes:</ThemedText>
+        <TextInput
+          style={[styles.notesInput, { borderColor: colors.tabIconDefault, color: colors.text, backgroundColor: colors.background }]}
+          placeholder="Add any notes about your workout here..."
+          placeholderTextColor={colors.secondary}
+          multiline
+          numberOfLines={4}
+          value={workoutNotes}
+          onChangeText={setWorkoutNotes}
+        />
         {Array.isArray(workoutData.exercises) && workoutData.exercises.map((exercise: any, exIndex: number) => (
           <View key={exIndex} style={[styles.exerciseCard, { borderColor: colors.tabIconDefault }]}>
             <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 4 }}>{exercise.name}</ThemedText>
@@ -191,9 +247,18 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 24,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
   },
   section: {
     marginBottom: 24,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    backgroundColor: 'transparent',
   },
   exerciseCard: {
     borderWidth: 1,
@@ -216,5 +281,20 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  notesInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    minHeight: 100,
+    textAlignVertical: 'top',
+    marginBottom: 16,
+  },
+  summaryMetric: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  scrollViewContent: {
+    paddingBottom: 60, // Adjust this value as needed to clear the tab bar
   },
 });

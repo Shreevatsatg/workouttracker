@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
 });
 
 const FinishWorkoutButton = () => {
-  const { loggedExercises, workoutTime, saveWorkout } = useWorkout();
+  const { loggedExercises, workoutTime, saveWorkout, activeRoutine, discardWorkout } = useWorkout();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
@@ -137,10 +137,14 @@ const FinishWorkoutButton = () => {
   };
 
   const finishWorkoutAndNavigate = () => {
-    saveWorkout();
+    const workoutSummaryData = {
+      name: activeRoutine?.name || 'Unnamed Workout',
+      exercises: loggedExercises,
+    };
+    discardWorkout(); // Clear workout state immediately
     router.replace({
       pathname: '/(tabs)/workout-summary',
-      params: { workoutData: JSON.stringify(loggedExercises), workoutDuration: workoutTime },
+      params: { workoutData: JSON.stringify(workoutSummaryData), workoutDuration: workoutTime },
     });
   };
 
@@ -159,6 +163,7 @@ const FinishWorkoutButton = () => {
             ...exercise,
             loggedSets: exercise.loggedSets.filter(set => set.completed || (set.loggedWeight || set.loggedReps)),
           }));
+          discardWorkout(); // Clear workout state immediately
           router.replace({
             pathname: '/(tabs)/workout-summary',
             params: { workoutData: JSON.stringify(filteredLoggedExercises), workoutDuration: workoutTime },
