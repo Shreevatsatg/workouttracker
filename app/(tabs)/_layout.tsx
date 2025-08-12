@@ -802,6 +802,90 @@ export default function TabLayout() {
           },
         }}
       />
+      <Tabs.Screen
+        name="account-details"
+        options={{
+          href: null,
+          headerShown: true,
+          title: 'Account Details', // Keep title for tab bar label
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              {children}
+            </ThemedText>
+          ),
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.push('/(tabs)/settings')} 
+              style={{ 
+                marginLeft: 16,
+                padding: 8,
+                borderRadius: 12,
+                backgroundColor: colors.surfaceSecondary,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <IconSymbol 
+                size={20} 
+                name="chevron.backward" 
+                color={colors.text} 
+              />
+            </TouchableOpacity>
+          ),
+          headerStyle: {
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
+        }}
+      />
+      <Tabs.Screen
+        name="personal-details"
+        options={{
+          href: null,
+          headerShown: true,
+          title: 'Personal Details', // Keep title for tab bar label
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              {children}
+            </ThemedText>
+          ),
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.push('/(tabs)/settings')} 
+              style={{ 
+                marginLeft: 16,
+                padding: 8,
+                borderRadius: 12,
+                backgroundColor: colors.surfaceSecondary,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <IconSymbol 
+                size={20} 
+                name="chevron.backward" 
+                color={colors.text} 
+              />
+            </TouchableOpacity>
+          ),
+          headerStyle: {
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
+        }}
+      />
     </Tabs>
 
   );

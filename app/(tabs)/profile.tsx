@@ -31,6 +31,8 @@ export default function ProfileScreen() {
     }
   }, [user]);
 
+  
+
   useEffect(() => {
     if (user) {
       fetchWorkoutCount();
@@ -67,34 +69,7 @@ export default function ProfileScreen() {
         {/* Add more stats here if needed */}
       </ThemedView>
 
-      {/* Personal Details Section */}
-      <ThemedView lightColor="transparent" darkColor="transparent" style={styles.personalDetailsContainer}>
-        <ThemedText type="subtitle" style={[styles.sectionTitle, { color: colors.text }]}>Personal Details</ThemedText>
-        <ThemedView style={[styles.detailRow, { backgroundColor: 'transparent' }]}>
-          <ThemedText style={[styles.detailLabel, { color: colors.text }]}>Gender:</ThemedText>
-          <ThemedText style={[styles.detailValue, { color: colors.tint }]}>{profile?.gender || 'N/A'}</ThemedText>
-        </ThemedView>
-        <ThemedView style={[styles.detailRow, { backgroundColor: 'transparent' }]}>
-          <ThemedText style={[styles.detailLabel, { color: colors.text }]}>Age:</ThemedText>
-          <ThemedText style={[styles.detailValue, { color: colors.tint }]}>{profile?.age ? `${profile.age} years` : 'N/A'}</ThemedText>
-        </ThemedView>
-        <ThemedView style={[styles.detailRow, { backgroundColor: 'transparent' }]}>
-          <ThemedText style={[styles.detailLabel, { color: colors.text }]}>Height:</ThemedText>
-          <ThemedText style={[styles.detailValue, { color: colors.tint }]}>{profile?.height ? `${profile.height} cm` : 'N/A'}</ThemedText>
-        </ThemedView>
-        <ThemedView style={[styles.detailRow, { backgroundColor: 'transparent' }]}>
-          <ThemedText style={[styles.detailLabel, { color: colors.text }]}>Weight:</ThemedText>
-          <ThemedText style={[styles.detailValue, { color: colors.tint }]}>{profile?.weight ? `${profile.weight} kg` : 'N/A'}</ThemedText>
-        </ThemedView>
-        <ThemedView style={[styles.detailRow, { backgroundColor: 'transparent' }]}>
-          <ThemedText style={[styles.detailLabel, { color: colors.text }]}>Activity Level:</ThemedText>
-          <ThemedText style={[styles.detailValue, { color: colors.tint }]}>{profile?.activity_level || 'N/A'}</ThemedText>
-        </ThemedView>
-        <ThemedView style={[styles.detailRow, { backgroundColor: 'transparent' }]}>
-          <ThemedText style={[styles.detailLabel, { color: colors.text }]}>Daily Calorie Goal:</ThemedText>
-          <ThemedText style={[styles.detailValue, { color: colors.tint }]}>{profile?.calorie_goal ? `${profile.calorie_goal.toFixed(0)} kcal` : 'N/A'}</ThemedText>
-        </ThemedView>
-      </ThemedView>
+      
 
       {/* Quick Links */}
       <ThemedView lightColor="transparent" darkColor="transparent" style={styles.quickLinksContainer}>

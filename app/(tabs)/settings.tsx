@@ -4,72 +4,144 @@ import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { supabase } from '@/utils/supabase';
+import { Picker } from '@react-native-picker/picker';
 import Constants from 'expo-constants';
-import React from 'react';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function SettingsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { signOut, user } = useAuth();
+  const { signOut, user, profile, updateProfile } = useAuth();
+  const router = useRouter();
+  const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
 
-  const handleDeleteAccount = async () => {
-    Alert.alert(
-      'Delete Account',
-      'Are you sure you want to delete your account and all related data? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          onPress: async () => {
-            if (!user) {
-              alert('No user logged in.');
-              return;
-            }
+  useEffect(() => {
+    if (profile?.calorie_goal) {
+      const currentCalorieGoal = profile.calorie_goal;
+      // This mapping is simplified and assumes a base calorie goal for 'maintain'
+      // You might need a more robust way to determine the initial goal based on user's actual BMR/TDEE
+      // For now, we'll try to infer based on deviations from a hypothetical 'maintain' value (e.g., 2000 kcal)
+      const maintainCalorieGoal = 2000; // This should ideally come from a more accurate calculation
 
-            try {
-              const { error } = await supabase.functions.invoke('delete-user', {
-                method: 'POST',
-              });
-
-              if (error) {
-                throw error;
-              }
-
-              alert('Account and all related data deleted successfully.');
-              signOut();
-            } catch (error: any) {
-              alert(`Error deleting account: ${error.message}`);
-              console.error('Error deleting account:', error);
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
-  };
+      if (currentCalorieGoal <= maintainCalorieGoal - 1100) {
+        setSelectedGoal('lose1kg');
+      } else if (currentCalorieGoal <= maintainCalorieGoal - 825) {
+        setSelectedGoal('lose0.75kg');
+      } else if (currentCalorieGoal <= maintainCalorieGoal - 550) {
+        setSelectedGoal('lose0.5kg');
+      } else if (currentCalorieGoal <= maintainCalorieGoal - 275) {
+        setSelectedGoal('lose0.25kg');
+      } else if (currentCalorieGoal >= maintainCalorieGoal + 550) {
+        setSelectedGoal('gain0.5kg');
+      } else if (currentCalorieGoal >= maintainCalorieGoal + 275) {
+        setSelectedGoal('gain0.25kg');
+      } else {
+        setSelectedGoal('maintain');
+      }
+    } else {
+      setSelectedGoal('maintain'); // Default to maintain if no calorie goal is set
+    }
+  }, [profile?.calorie_goal]);
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]} showsVerticalScrollIndicator={false}>
       <ThemedView lightColor="transparent" darkColor="transparent" style={styles.section}>
         <ThemedText type="title" style={{ color: colors.tint, marginBottom: 24 }}>Settings</ThemedText>
 
+        {/* Goal Option */}
+        <ThemedView style={[styles.button, { backgroundColor: colors.cardBackground, borderColor: colors.tabIconDefault, borderWidth: 1, flexDirection: 'column', alignItems: 'flex-start' }]}>
+          <ThemedText style={[styles.buttonText, { color: colors.text, marginBottom: 5 }]}>Goal :</ThemedText>
+          <Picker
+            selectedValue={selectedGoal}
+            style={[styles.picker, { color: colors.text, width: '100%' }]}
+            onValueChange={async (itemValue) => {
+              setSelectedGoal(itemValue);
+              let newCalorieGoal = profile?.calorie_goal || 2000; // Default if not set
+              const baseCalorieGoal = profile?.calorie_goal || 2000; // Use current or default as base
+
+              switch (itemValue) {
+                case 'lose1kg':
+                  newCalorieGoal = baseCalorieGoal - 1100;
+                  break;
+                case 'lose0.75kg':
+                  newCalorieGoal = baseCalorieGoal - 825;
+                  break;
+                case 'lose0.5kg':
+                  newCalorieGoal = baseCalorieGoal - 550;
+                  break;
+                case 'lose0.25kg':
+                  newCalorieGoal = baseCalorieGoal - 275;
+                  break;
+                case 'maintain':
+                  newCalorieGoal = baseCalorieGoal;
+                  break;
+                case 'gain0.25kg':
+                  newCalorieGoal = baseCalorieGoal + 275;
+                  break;
+                case 'gain0.5kg':
+                  newCalorieGoal = baseCalorieGoal + 550;
+                  break;
+                default:
+                  newCalorieGoal = baseCalorieGoal; // Fallback
+                  break;
+              }
+
+              try {
+                const { error } = await supabase
+                  .from('profiles')
+                  .update({ calorie_goal: newCalorieGoal })
+                  .eq('id', user?.id);
+
+                if (error) {
+                  throw error;
+                }
+                // Update local profile context
+                if (profile) {
+                  await updateProfile({ ...profile, calorie_goal: newCalorieGoal });
+                }
+                Alert.alert('Success', `Daily calorie goal updated to ${newCalorieGoal} kcal.`);
+              } catch (error: any) {
+                Alert.alert('Error', `Failed to update calorie goal: ${error.message}`);
+                console.error('Error updating calorie goal:', error);
+              }
+            }}
+          >
+            <Picker.Item label="Lose 1 kg per week" value="lose1kg" />
+            <Picker.Item label="Lose 0.75 kg per week" value="lose0.75kg" />
+            <Picker.Item label="Lose 0.5 kg per week" value="lose0.5kg" />
+            <Picker.Item label="Lose 0.25 kg per week" value="lose0.25kg" />
+            <Picker.Item label="Maintain current weight" value="maintain" />
+            <Picker.Item label="Gain 0.25 kg per week" value="gain0.25kg" />
+            <Picker.Item label="Gain 0.5 kg per week" value="gain0.5kg" />
+          </Picker>
+        </ThemedView>
+
+        {/* Account Option */}
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: colors.cardBackground, borderColor: colors.tabIconDefault, borderWidth: 1 }]} // Use a distinct color for account
+          onPress={() => router.push('/(tabs)/account-details')}
+        >
+          <ThemedText style={[styles.buttonText, { color: colors.text }]}>Account</ThemedText>
+        </TouchableOpacity>
+
+        {/* Personal Details Option */}
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: colors.cardBackground, borderColor: colors.tabIconDefault, borderWidth: 1 }]} // Use a distinct color for personal details
+          onPress={() => router.push('/(tabs)/personal-details')}
+        >
+          <ThemedText style={[styles.buttonText, { color: colors.text }]}>Personal Details</ThemedText>
+        </TouchableOpacity>
+
         
 
         {/* Logout Option */}
         <TouchableOpacity
-          style={[styles.button, { backgroundColor: colors.tint }]} // Use a distinct color for logout
+          style={[styles.button, { backgroundColor: colors.tint, marginTop: 80 }]} // Use a distinct color for logout
           onPress={signOut}
         >
           <ThemedText style={[styles.buttonText, { color: colors.background }]}>Log Out</ThemedText>
-        </TouchableOpacity>
-
-        {/* Delete Account Option */}
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: colors.error }]} // Use a distinct color for delete
-          onPress={handleDeleteAccount}
-        >
-          <ThemedText style={[styles.buttonText, { color: colors.background }]}>Delete Account</ThemedText>
         </TouchableOpacity>
       </ThemedView>
     {/* App Version */}
@@ -99,5 +171,9 @@ const styles = StyleSheet.create({
   buttonText: {
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  picker: {
+    height: 50,
+    width: '100%',
   },
 });

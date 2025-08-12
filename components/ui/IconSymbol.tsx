@@ -36,11 +36,13 @@ const MAPPING = {
   'keyboard': 'keyboard',
   'camera': 'camera-alt',
   'pencil': 'edit',
+  'pencil.circle.fill': 'edit',
   'checkmark': 'check',
   'magnifyingglass': 'search',
   'clock': 'access-time',
   'plus': 'add',
   'xmark': 'close',
+  'xmark.circle.fill': 'close',
 } as IconMapping;
 
 /**

@@ -16,6 +16,7 @@ interface AuthContextType {
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  updateProfile: (newProfile: Partial<Profile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -81,8 +82,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user, fetchProfile]);
 
+  const updateProfile = useCallback(async (newProfile: Partial<Profile>) => {
+    if (!user) {
+      throw new Error('User not authenticated.');
+    }
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(newProfile)
+        .eq('id', user.id);
+
+      if (error) {
+        throw error;
+      }
+      setProfile(prevProfile => ({
+        ...prevProfile,
+        ...newProfile,
+      } as Profile)); // Type assertion to ensure it matches Profile
+    } catch (error: any) {
+      console.error('Error updating profile in context:', error.message);
+      throw error;
+    }
+  }, [user]);
+
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
