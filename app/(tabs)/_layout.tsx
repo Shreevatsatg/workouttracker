@@ -60,7 +60,7 @@ export default function TabLayout() {
     },
     dark: {
       background: '#0F172A',
-      surface: '#1E293B',
+      surface: '#2c2b2bff', // Changed from #1E293B to dark gray
       surfaceSecondary: '#334155',
       border: '#475569',
       text: '#F8FAFC',
@@ -102,7 +102,7 @@ export default function TabLayout() {
             marginBottom: 0,
           },
           headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
             elevation: 0,
@@ -123,7 +123,11 @@ export default function TabLayout() {
       <Tabs.Screen
         name="workout"
         options={{
-          title: 'Workout',
+          tabBarLabel: ({ color, focused }) => (
+            <ThemedText style={{ color, fontSize: 11, fontWeight: '600' }}>
+              Workout
+            </ThemedText>
+          ),
           tabBarIcon: ({ color, focused }) => (
             <View style={{
               padding: 4,
@@ -142,9 +146,13 @@ export default function TabLayout() {
             </View>
           ),
           headerShown: true,
-          headerTitle: 'Your Workout',
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              {children}
+            </ThemedText>
+          ),
           headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
             elevation: 0,
@@ -158,7 +166,11 @@ export default function TabLayout() {
       <Tabs.Screen
         name="food-log"
         options={{
-          title: 'Food',
+          tabBarLabel: ({ color, focused }) => (
+            <ThemedText style={{ color, fontSize: 11, fontWeight: '600' }}>
+              Food
+            </ThemedText>
+          ),
           tabBarIcon: ({ color, focused }) => (
             <View style={{
               padding: 4,
@@ -177,9 +189,13 @@ export default function TabLayout() {
             </View>
           ),
           headerShown: true,
-          headerTitle: 'Food Log',
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              {children}
+            </ThemedText>
+          ),
           headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
             elevation: 0,
@@ -194,7 +210,11 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          tabBarLabel: ({ color, focused }) => (
+            <ThemedText style={{ color, fontSize: 11, fontWeight: '600' }}>
+              Profile
+            </ThemedText>
+          ),
           tabBarIcon: ({ color, focused }) => (
             <View style={{
               padding: 4,
@@ -213,9 +233,13 @@ export default function TabLayout() {
             </View>
           ),
           headerShown: true,
-          headerTitle: 'Your Profile',
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              {children}
+            </ThemedText>
+          ),
           headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
             elevation: 0,
@@ -254,9 +278,14 @@ export default function TabLayout() {
         options={{
           href: null,
           headerShown: true,
-          title: 'Settings',
+          title: 'Settings', // Keep title for tab bar label, headerTitle will be handled by default if not explicitly set
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              {children}
+            </ThemedText>
+          ),
           headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
             elevation: 0,
@@ -292,9 +321,14 @@ export default function TabLayout() {
         options={{
           href: null,
           headerShown: true,
-          title: 'Create Routine',
+          title: 'Create Routine', // Keep title for tab bar label
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              {children}
+            </ThemedText>
+          ),
           headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
             elevation: 0,
@@ -330,9 +364,14 @@ export default function TabLayout() {
         options={{ 
           href: null,
           headerShown: true,
-          title: 'Explore Routines',
+          title: 'Explore Routines', // Keep title for tab bar label
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              {children}
+            </ThemedText>
+          ),
           headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
             elevation: 0,
@@ -368,9 +407,14 @@ export default function TabLayout() {
         options={{ 
           href: null,
           headerShown: true,
-          title: 'Routine Details',
+          title: 'Routine Details', // Keep title for tab bar label
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              {children}
+            </ThemedText>
+          ),
           headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
             elevation: 0,
@@ -410,7 +454,7 @@ export default function TabLayout() {
           headerTitle: () => <WorkoutTitle />,
           headerTitleAlign: 'center',
           headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
             elevation: 0,
@@ -432,9 +476,14 @@ export default function TabLayout() {
         options={{
           href: null,
           headerShown: true,
-          title: 'Workout Summary',
+          title: 'Workout Summary', // Keep title for tab bar label
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              {children}
+            </ThemedText>
+          ),
           headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
             elevation: 0,
@@ -445,15 +494,62 @@ export default function TabLayout() {
           },
         }}
       />
+      <Tabs.Screen
+        name="workout-details-page"
+        options={{
+          href: null,
+          headerShown: true,
+          title: 'Workout Details',
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              {children}
+            </ThemedText>
+          ),
+          headerStyle: {
+            backgroundColor: colors.surface,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            elevation: 0,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+          },
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.push('/(tabs)/profile')} 
+              style={{ 
+                marginLeft: 16,
+                padding: 8,
+                borderRadius: 12,
+                backgroundColor: colors.surfaceSecondary,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <IconSymbol 
+                size={20} 
+                name="chevron.backward" 
+                color={colors.text} 
+              />
+            </TouchableOpacity>
+          ),
+        }}
+      />
       
       <Tabs.Screen
         name="select-exercise"
         options={{
           href: null,
           headerShown: true,
-          title: 'Select Exercise',
+          title: 'Select Exercise', // Keep title for tab bar label
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              {children}
+            </ThemedText>
+          ),
           headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
             elevation: 0,
@@ -489,9 +585,14 @@ export default function TabLayout() {
         options={{
           href: null,
           headerShown: true,
-          title: 'Create Custom Exercise',
+          title: 'Create Custom Exercise', // Keep title for tab bar label
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              {children}
+            </ThemedText>
+          ),
           headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
             elevation: 0,
@@ -508,28 +609,14 @@ export default function TabLayout() {
         options={{
           href: null,
           headerShown: true,
-          title: 'Exercise Details',
+          title: 'Exercise Details', // Keep title for tab bar label
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              {children}
+            </ThemedText>
+          ),
           headerStyle: {
-            backgroundColor: colors.background,
-            borderBottomWidth: 1,
-            borderBottomColor: colors.border,
-            elevation: 0,
-            shadowColor: '#000000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 2,
-          },
-        }}
-      />
-      
-      <Tabs.Screen
-        name="folder-details"
-        options={{
-          href: null,
-          headerShown: true,
-          title: 'Folder Details',
-          headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
             elevation: 0,
@@ -546,9 +633,14 @@ export default function TabLayout() {
         options={{
           href: null,
           headerShown: true,
-          title: 'Measurements',
+          title: 'Measurements', // Keep title for tab bar label
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              {children}
+            </ThemedText>
+          ),
           headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
             elevation: 0,
@@ -585,9 +677,14 @@ export default function TabLayout() {
         options={{
           href: null,
           headerShown: true,
-          title: 'Add Food',
+          title: 'Add Food', // Keep title for tab bar label
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              {children}
+            </ThemedText>
+          ),
           headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
             elevation: 0,
@@ -622,9 +719,14 @@ export default function TabLayout() {
         options={{
           href: null,
           headerShown: true,
-          title: 'Barcode Scanner',
+          title: 'Barcode Scanner', // Keep title for tab bar label
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              {children}
+            </ThemedText>
+          ),
           headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
             elevation: 0,
@@ -640,9 +742,14 @@ export default function TabLayout() {
         options={{
           href: null,
           headerShown: true,
-          title: 'Manual Food Entry',
+          title: 'Manual Food Entry', // Keep title for tab bar label
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              {children}
+            </ThemedText>
+          ),
           headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
             elevation: 0,
@@ -677,9 +784,14 @@ export default function TabLayout() {
         options={{
           href: null,
           headerShown: true,
-          title: 'Food Details',
+          title: 'Food Details', // Keep title for tab bar label
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              {children}
+            </ThemedText>
+          ),
           headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
             elevation: 0,

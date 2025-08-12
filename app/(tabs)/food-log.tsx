@@ -7,7 +7,6 @@ import { useAuth } from '@/context/AuthContext';
 import { useFood } from '@/context/FoodContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Feather } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -752,13 +751,9 @@ export default function FoodLogScreen() {
                 />
 
                 {/* Modern Header with Gradient Background */}
-                <View style={[styles.modernHeader, { backgroundColor: colors.surface }]}>
-                  <LinearGradient
-                    colors={[colors.accent + '15', colors.accent + '05']}
-                    style={styles.headerGradient}
-                  >
+                <View style={[styles.modernHeader, { backgroundColor: colors.surfaceSecondary,borderColor: colors.border }]}>
                     <ThemedText style={[styles.modernTitle, { color: colors.text }]}>
-                      {formatDateForDisplay(selectedDate)}'s Progress
+                      {formatDateForDisplay(selectedDate)}&apos;s Progress
                     </ThemedText>
                     <View style={styles.headerStats}>
                       <View style={styles.quickStat}>
@@ -770,7 +765,6 @@ export default function FoodLogScreen() {
                         </ThemedText>
                       </View>
                     </View>
-                  </LinearGradient>
                 </View>
 
                 <PagerView
@@ -1287,6 +1281,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 16,
+    padding: 10,
   },
   headerGradient: {
     padding: 20,

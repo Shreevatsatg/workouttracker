@@ -10,10 +10,19 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
+// Helper function to truncate text
+const truncateText = (text: string, maxLength: number = 25) => {
+  if (text.length > maxLength) {
+    return text.substring(0, maxLength) + '..';
+  }
+  return text;
+};
+
 // Define interfaces for exercise and routine structure
 interface Set {
   weight: string;
   reps: string;
+  completed: boolean; // Make completed property required to match WorkoutContext's Set interface
 }
 
 interface Exercise {
@@ -21,6 +30,7 @@ interface Exercise {
   sets: Set[];
   images?: string[]; // Add images property
   id?: string; // Add id property
+  loggedSets: Set[]; // Make loggedSets property required to match WorkoutContext's Exercise interface
 }
 
 interface Routine {
@@ -36,6 +46,7 @@ interface ExerciseDetail {
   instructions: string[];
   equipment: string;
   images: string[];
+  id?: string; // Add id property to resolve TS error
 }
 
 const EXERCISES_DATA = require('@/assets/data/exercises.json');
@@ -65,6 +76,7 @@ export default function RoutineDetailsScreen() {
       return {
         ...ex,
         images: details?.images || [],
+        loggedSets: ex.sets.map(set => ({ ...set, loggedWeight: '', loggedReps: '', completed: false })), // Initialize loggedSets
       };
     });
     startWorkoutContext({ ...routine, exercises: exercisesWithImages });
@@ -80,6 +92,7 @@ export default function RoutineDetailsScreen() {
           ...ex,
           id: details?.id, // Include id
           images: details?.images || [], // Include images
+          loggedSets: ex.sets.map(set => ({ ...set, loggedWeight: '', loggedReps: '', completed: false })), // Initialize loggedSets
         };
       }),
     };
@@ -124,8 +137,8 @@ export default function RoutineDetailsScreen() {
                                 source={imageUrl.startsWith('http') ? { uri: imageUrl } : require('../../assets/images/exersiseplaceholder.png')}
                 style={styles.exerciseThumbnail}
               />
-              <View>
-                <ThemedText type="subtitle" style={{ color: colors.text }}>{exIndex + 1}. {exercise.name}</ThemedText>
+              <View style={{ flex: 1 }}>
+                <ThemedText type="subtitle" style={{ color: colors.text }} numberOfLines={1} ellipsizeMode="tail">{exIndex + 1}. {truncateText(exercise.name)}</ThemedText>
                 {details && details.primaryMuscles.length > 0 && (
                   <ThemedText style={styles.muscleText}>
                     {details.primaryMuscles.join(', ')}

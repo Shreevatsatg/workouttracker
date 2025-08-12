@@ -2,14 +2,20 @@ import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { supabase } from '@/utils/supabase';
-import React, { useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native'; // Import useFocusEffect
+import { useRouter } from 'expo-router'; // Import useRouter
+import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity, View } from 'react-native';
 import ConfirmationModal from './ConfirmationModal';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
 import { IconSymbol } from './ui/IconSymbol';
 
-const History = () => {
+interface HistoryProps {
+  onWorkoutDeleted: () => void;
+}
+
+const History = ({ onWorkoutDeleted }: HistoryProps) => {
   const { user } = useAuth();
 
   const formatTime = (totalSeconds: number) => {
@@ -30,8 +36,9 @@ const History = () => {
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const router = useRouter(); // Initialize useRouter
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     if (!user) {
       setLoading(false);
       return;
@@ -50,16 +57,18 @@ const History = () => {
       setSessions(data || []);
     }
     setLoading(false);
-  };
+  }, [user]);
 
   const handleDeleteSession = (sessionId: string) => {
     setSessionToDelete(sessionId);
     setShowDeleteConfirm(true);
   };
 
-  useEffect(() => {
-    fetchHistory();
-  }, [user]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchHistory();
+    }, [fetchHistory])
+  );
 
   const confirmDeleteSession = async () => {
     if (!sessionToDelete) return;
@@ -75,6 +84,7 @@ const History = () => {
     } else {
       setSessions(sessions.filter(session => session && session.id !== sessionToDelete));
       setMenuVisible(null);
+      onWorkoutDeleted(); // Call the callback here
     }
     setShowDeleteConfirm(false);
     setSessionToDelete(null);
@@ -100,14 +110,15 @@ const History = () => {
 
       return (
         <ThemedView key={session.id} style={[styles.item, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
-          <TouchableOpacity onPress={() => setExpandedSession(expandedSession === session.id ? null : session.id)}>
+          <TouchableOpacity 
+            onPress={() => router.push({ pathname: '/(tabs)/workout-details-page', params: { workoutId: session.id } })}
+          >
             <View style={styles.itemHeader}>
               <ThemedText style={styles.itemTitle}>{session.routine_name || 'Freestyle Workout'}</ThemedText>
               <IconSymbol name={expandedSession === session.id ? "chevron.up" : "chevron.down"} size={20} color={colors.text} />
             </View>
             <ThemedText style={styles.itemDate}>{new Date(session.completed_at).toLocaleDateString()}</ThemedText>
             <ThemedText style={styles.itemDuration}>Duration: {formatTime(session.duration)}</ThemedText>
-            {session.notes && <ThemedText style={styles.itemNotes}>Notes: {session.notes}</ThemedText>} {/* Display Notes */}
           </TouchableOpacity>
           {expandedSession === session.id && (
             <View style={styles.detailsContainer}>

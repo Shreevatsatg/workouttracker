@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { supabase } from '@/utils/supabase';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function ProfileScreen() {
@@ -17,23 +17,25 @@ export default function ProfileScreen() {
   const router = useRouter();
   const [workoutCount, setWorkoutCount] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (user) {
-      const fetchWorkoutCount = async () => {
-        const { count, error } = await supabase
-          .from('workout_sessions')
-          .select('id', { count: 'exact' })
-          .eq('user_id', user.id);
+  const fetchWorkoutCount = useCallback(async () => {
+    if (!user) return;
+    const { count, error } = await supabase
+      .from('workout_sessions')
+      .select('id', { count: 'exact' })
+      .eq('user_id', user.id);
 
-        if (error) {
-          console.error('Error fetching workout count:', error);
-        } else {
-          setWorkoutCount(count);
-        }
-      };
-      fetchWorkoutCount();
+    if (error) {
+      console.error('Error fetching workout count:', error);
+    } else {
+      setWorkoutCount(count);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchWorkoutCount();
+    }
+  }, [user, fetchWorkoutCount]);
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]} showsVerticalScrollIndicator={false}>
@@ -107,7 +109,7 @@ export default function ProfileScreen() {
       {/* History Section */}
       <ThemedView lightColor="transparent" darkColor="transparent" style={styles.historySection}>
         <ThemedText type="subtitle" style={[styles.historyTitle, { color: colors.tint }]}>Workout History</ThemedText>
-        <History />
+        <History onWorkoutDeleted={fetchWorkoutCount} />
       </ThemedView>
 
       {/* Bottom Spacing */}

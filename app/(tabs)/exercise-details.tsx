@@ -1,7 +1,6 @@
 import exercisesData from '@/assets/data/exercises.json';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Image } from 'expo-image';
@@ -86,12 +85,6 @@ export default function ExerciseDetailsScreen() {
     <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]}>
       {/* Header */}
       <ThemedView style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <IconSymbol name="chevron.left" size={24} color={colors.tint} />
-        </TouchableOpacity>
         <ThemedText type="title" style={[styles.title, { color: colors.text }]}>
           {exercise.name}
         </ThemedText>
@@ -241,7 +234,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     paddingTop: 20, // Account for status bar

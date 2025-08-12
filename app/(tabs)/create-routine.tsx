@@ -9,6 +9,14 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Button, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
+// Helper function to truncate text
+const truncateText = (text: string, maxLength: number = 20) => {
+  if (text.length > maxLength) {
+    return text.substring(0, maxLength) + '..';
+  }
+  return text;
+};
+
 interface Set {
   weight: string;
   reps: string;
@@ -27,7 +35,6 @@ interface Exercise {
   images?: string[];
   id?: string;
   sets: Set[]; // This will be used for the routine's exercises
-  images?: string[]; // Add images property
 }
 
 interface Routine {
@@ -218,8 +225,8 @@ export default function CreateRoutineScreen() {
                   }
                   style={styles.exerciseImage}
                 />
-                <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 4, fontSize: 20 }}>
-                  {exIndex + 1}. {exercise.name}
+                <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 4, fontSize: 20, flex: 1 }} numberOfLines={1} ellipsizeMode="tail">
+                  {exIndex + 1}. {truncateText(exercise.name)}
                 </ThemedText>
               </TouchableOpacity>
 
@@ -399,5 +406,11 @@ const styles = StyleSheet.create({
     color: 'red',
     marginBottom: 10,
     fontSize: 14,
+  },
+  addExerciseButton: {
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    alignItems: 'center',
   },
 });

@@ -177,7 +177,7 @@ const WelcomeScreen = () => {
                 Welcome to FitTracker!
               </ThemedText>
               <ThemedText style={[styles.subtitle, { color: 'rgba(255,255,255,0.8)' }]}>
-                Let's start your fitness journey together.{'\n'}
+                Let&apos;s start your fitness journey together.{'\n'}
                 First, tell us your name.
               </ThemedText>
             </Animated.View>
@@ -339,7 +339,7 @@ const WelcomeScreen = () => {
               ]}
             >
               <ThemedText style={[styles.quote, { color: 'rgba(255,255,255,0.7)' }]}>
-                "The journey of a thousand miles begins with one step."
+                &quot;The journey of a thousand miles begins with one step.&quot;
               </ThemedText>
             </Animated.View>
           </Animated.View>
