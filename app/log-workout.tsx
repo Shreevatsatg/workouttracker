@@ -235,10 +235,11 @@ export default function LogWorkoutScreen() {
       router.push({
         pathname: '/workout-summary',
         params: {
-          totalVolume: totalVolume,
-          setsPerformed: setsPerformed,
-          workoutTime: workoutTime,
-          routineName: activeRoutine?.name || 'Custom Workout',
+          workoutData: JSON.stringify({
+            name: activeRoutine?.name || 'Custom Workout',
+            exercises: loggedExercises,
+          }),
+          workoutDuration: workoutTime,
         },
       });
     }
@@ -643,10 +644,11 @@ export default function LogWorkoutScreen() {
           router.push({
             pathname: '/workout-summary',
             params: {
-              totalVolume: totalVolume,
-              setsPerformed: setsPerformed,
-              workoutTime: workoutTime,
-              routineName: activeRoutine?.name || 'Custom Workout',
+              workoutData: JSON.stringify({
+                name: activeRoutine?.name || 'Custom Workout',
+                exercises: loggedExercises,
+              }),
+              workoutDuration: workoutTime,
             },
           });
           setShowEmptySetsWarning(false);
