@@ -118,7 +118,7 @@ export default function BarcodeScannerScreen() {
       const product = await searchByBarcode(data);
       if (product && product.product_name) { // Check if product exists and has a product_name
         router.replace({
-          pathname: '/(tabs)/add-food',
+          pathname: '/add-food',
           params: { barcode: data },
         });
       } else {
@@ -136,7 +136,7 @@ export default function BarcodeScannerScreen() {
             },
             { 
               text: 'Enter Manually', 
-              onPress: () => router.push('/(tabs)/manual-food-entry') 
+              onPress: () => router.push('/manual-food-entry') 
             },
           ]
         );
@@ -164,11 +164,11 @@ export default function BarcodeScannerScreen() {
   };
 
   const handleGoBack = () => {
-    router.push('/(tabs)/add-food');
+    router.back();
   };
 
   const handleManualEntry = () => {
-    router.push('/(tabs)/manual-food-entry');
+    router.push('/manual-food-entry');
   };
 
   if (hasPermission === null) {

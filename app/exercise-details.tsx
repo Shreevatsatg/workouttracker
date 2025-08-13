@@ -117,7 +117,7 @@ export default function ExerciseDetailsScreen() {
             ))
           ) : (
             <Image
-              source={require('../../assets/images/exersiseplaceholder.png')}
+              source={require('../assets/images/exersiseplaceholder.png')}
               style={[styles.exerciseImage, { width: screenWidth }]} 
             />
           )}

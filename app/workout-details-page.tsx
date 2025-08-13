@@ -2,11 +2,11 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ThemedText } from '../../components/ThemedText';
-import { ThemedView } from '../../components/ThemedView';
-import { Colors } from '../../constants/Colors';
-import { useColorScheme } from '../../hooks/useColorScheme';
-import { supabase } from '../../utils/supabase';
+import { ThemedText } from '../components/ThemedText';
+import { ThemedView } from '../components/ThemedView';
+import { Colors } from '../constants/Colors';
+import { useColorScheme } from '../hooks/useColorScheme';
+import { supabase } from '../utils/supabase';
 
 // Helper function to truncate text
 const truncateText = (text: string, maxLength: number = 25) => {
@@ -16,7 +16,7 @@ const truncateText = (text: string, maxLength: number = 25) => {
   return text;
 };
 
-const EXERCISES_DATA = require('../../assets/data/exercises.json');
+const EXERCISES_DATA = require('../assets/data/exercises.json');
 
 interface ExerciseDetail {
   name: string;
@@ -155,7 +155,7 @@ export default function WorkoutDetailsPage() {
           const details = getExerciseDetails(exercise.exercise_name);
           const imageUrl = details?.images && details.images.length > 0
             ? `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${details.images[0]}`
-            : '../../assets/images/exersiseplaceholder.png';
+            : '../assets/images/exersiseplaceholder.png';
 
           return (
             <ThemedView key={index} style={[styles.exerciseContainer, { borderColor: colors.tabIconDefault }]}>
@@ -164,7 +164,7 @@ export default function WorkoutDetailsPage() {
                 onPress={() => router.push({ pathname: '/(tabs)/exercise-details', params: { exerciseId: details?.id, exerciseName: exercise.exercise_name } })}
               >
                 <Image
-                  source={imageUrl.startsWith('http') ? { uri: imageUrl } : require('../../assets/images/exersiseplaceholder.png')}
+                  source={imageUrl.startsWith('http') ? { uri: imageUrl } : require('../assets/images/exersiseplaceholder.png')}
                   style={styles.exerciseThumbnail}
                 />
                 <View style={{ flex: 1 }}>

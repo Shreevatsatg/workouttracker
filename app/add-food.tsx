@@ -320,7 +320,7 @@ export default function AddFoodScreen() {
       setShowSuccessMessage(true);
       setTimeout(() => {
         setShowSuccessMessage(false);
-        router.push('/(tabs)/food-log');
+        router.push('/food-log');
       }, 1500); // Show success message for 1.5 seconds
     } catch (error) {
       console.error('Failed to add food:', error);
@@ -366,7 +366,7 @@ export default function AddFoodScreen() {
               icon="camera"
               title="Scan Barcode"
               subtitle="Quick product lookup"
-              onPress={() => router.push('/(tabs)/barcode-scanner')}
+              onPress={() => router.push('/barcode-scanner')}
               colors={colors}
               variant="primary"
             />

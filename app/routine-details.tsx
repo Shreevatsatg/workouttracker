@@ -125,7 +125,7 @@ export default function RoutineDetailsScreen() {
         const details = getExerciseDetails(exercise.name);
         const imageUrl = details?.images && details.images.length > 0
           ? `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${details.images[0]}`
-          : '../../assets/images/exersiseplaceholder.png';
+          : '../assets/images/exersiseplaceholder.png';
 
         return (
           <ThemedView key={exIndex} style={[styles.exerciseContainer, { borderColor: colors.tabIconDefault }]}>
@@ -134,7 +134,7 @@ export default function RoutineDetailsScreen() {
               onPress={() => router.push({ pathname: '/(tabs)/exercise-details', params: { exerciseId: details?.id, exerciseName: exercise.name } })}
             >
               <Image
-                                source={imageUrl.startsWith('http') ? { uri: imageUrl } : require('../../assets/images/exersiseplaceholder.png')}
+                                source={imageUrl.startsWith('http') ? { uri: imageUrl } : require('../assets/images/exersiseplaceholder.png')}
                 style={styles.exerciseThumbnail}
               />
               <View style={{ flex: 1 }}>

@@ -35,7 +35,7 @@ export default function WorkoutNotificationBar() {
   const handleResume = () => {
     resumeWorkout();
     router.push({
-      pathname: '/(tabs)/log-workout',
+      pathname: '/log-workout',
       params: { routine: JSON.stringify(activeRoutine) },
     });
   };

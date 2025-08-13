@@ -466,7 +466,7 @@ const SectionHeader: React.FC<{
       <TouchableOpacity
         onPress={() =>
           router.push({
-            pathname: '/(tabs)/add-food',
+            pathname: '/add-food',
             params: { 
               mealType: title,
               selectedDate: selectedDate.toISOString().split('T')[0] // Pass date as YYYY-MM-DD
@@ -681,7 +681,7 @@ export default function FoodLogScreen() {
     if (details) {
       const totalCalories = details.nutriments.proteins_100g * 4 + details.nutriments.carbohydrates_100g * 4 + details.nutriments.fat_100g * 9;
       router.push({
-        pathname: '/(tabs)/food-details',
+        pathname: '/food-details',
         params: {
           name: entry.product_name,
           calories: totalCalories.toFixed(0),
@@ -964,7 +964,7 @@ export default function FoodLogScreen() {
                 style={[styles.addFoodButton, { backgroundColor: colors.accent }]}
                 onPress={() =>
                   router.push({
-                    pathname: '/(tabs)/add-food',
+                    pathname: '/add-food',
                     params: { 
                       mealType: title,
                       selectedDate: selectedDate.toISOString().split('T')[0] // Pass date as YYYY-MM-DD

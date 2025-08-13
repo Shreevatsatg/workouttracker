@@ -221,7 +221,7 @@ export default function CreateRoutineScreen() {
                 <Image
                   source={exercise.images && exercise.images.length > 0
                     ? { uri: `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${exercise.images[0]}` }
-                    : require('../../assets/images/exersiseplaceholder.png')
+                    : require('../assets/images/exersiseplaceholder.png')
                   }
                   style={styles.exerciseImage}
                 />

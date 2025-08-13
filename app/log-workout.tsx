@@ -10,8 +10,10 @@ import { useWorkout } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
+import ConfirmationModal from '@/components/ConfirmationModal';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Animated, PanResponder, ScrollView, StyleSheet, TextInput, TouchableOpacity, Vibration, View } from 'react-native';
 
 interface Set {
@@ -193,13 +195,75 @@ export default function LogWorkoutScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const params = useLocalSearchParams();
   const router = useRouter();
+  const navigation = useNavigation();
   const {
     activeRoutine,
     loggedExercises,
     discardWorkout,
     updateLoggedExercises,
     pauseWorkout,
+    saveWorkout,
+    workoutTime,
   } = useWorkout();
+
+  const [showEmptySetsWarning, setShowEmptySetsWarning] = useState(false);
+  const [emptySetsWarningMessage, setEmptySetsWarningMessage] = useState('');
+
+  const handleFinishWorkout = useCallback(() => {
+    let hasEmptySets = false;
+    const exercisesWithEmptySets: string[] = [];
+
+    loggedExercises.forEach(exercise => {
+      exercise.loggedSets.forEach(set => {
+        if (set.completed && (!set.loggedWeight || !set.loggedReps)) {
+          hasEmptySets = true;
+          if (!exercisesWithEmptySets.includes(exercise.name)) {
+            exercisesWithEmptySets.push(exercise.name);
+          }
+        }
+      });
+    });
+
+    if (hasEmptySets) {
+      setEmptySetsWarningMessage(
+        `You have completed sets with empty weight or reps in the following exercises: ${exercisesWithEmptySets.join(', ')}.\n\nDo you want to finish the workout anyway?`
+      );
+      setShowEmptySetsWarning(true);
+    } else {
+      // All good, finish workout
+      saveWorkout();
+      router.push({
+        pathname: '/workout-summary',
+        params: {
+          totalVolume: totalVolume,
+          setsPerformed: setsPerformed,
+          workoutTime: workoutTime,
+          routineName: activeRoutine?.name || 'Custom Workout',
+        },
+      });
+    }
+  }, [loggedExercises, totalVolume, setsPerformed, workoutTime, activeRoutine, router, saveWorkout]);
+
+  useFocusEffect(
+    useCallback(() => {
+      navigation.setOptions({
+        headerRight: () => (
+          <TouchableOpacity 
+            onPress={handleFinishWorkout}
+            style={{
+              backgroundColor: colors.accent,
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderRadius: 16,
+              marginRight: 10, // Add some right margin
+            }}
+          >
+            <ThemedText style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>Finish</ThemedText>
+          </TouchableOpacity>
+        ),
+      });
+    }, [navigation, handleFinishWorkout, colors.accent])
+  );
 
   // --- New Metric Calculations ---
   const totalVolume = useMemo(() => {
@@ -488,7 +552,7 @@ export default function LogWorkoutScreen() {
                       <Image
                         source={exercise.images && exercise.images.length > 0
                           ? { uri: `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${exercise.images[0]}` }
-                          : require('../../assets/images/exersiseplaceholder.png')
+                          : require('../assets/images/exersiseplaceholder.png')
                         }
                         style={styles.exerciseImage}
                       />
@@ -568,6 +632,28 @@ export default function LogWorkoutScreen() {
         currentTime={selectedExerciseIndex !== null ? loggedExercises[selectedExerciseIndex]?.restTime || 0 : 0}
         onSelect={handleRestTimeSelect}
         onClose={() => setRestTimerSelectorVisible(false)}
+      />
+
+      {/* Confirmation Modal for Empty Sets */}
+      <ConfirmationModal
+        visible={showEmptySetsWarning}
+        message={emptySetsWarningMessage}
+        onConfirm={() => {
+          saveWorkout();
+          router.push({
+            pathname: '/workout-summary',
+            params: {
+              totalVolume: totalVolume,
+              setsPerformed: setsPerformed,
+              workoutTime: workoutTime,
+              routineName: activeRoutine?.name || 'Custom Workout',
+            },
+          });
+          setShowEmptySetsWarning(false);
+        }}
+        onCancel={() => setShowEmptySetsWarning(false)}
+        confirmText="Finish Anyway"
+        cancelText="Cancel"
       />
     </>
   );

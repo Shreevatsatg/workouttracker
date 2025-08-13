@@ -221,7 +221,7 @@ export default function SelectExerciseScreen() {
     
     const imageSource = item.images && item.images.length > 0
       ? { uri: `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${item.images[0]}` }
-      : require('../../assets/images/exersiseplaceholder.png');
+      : require('../assets/images/exersiseplaceholder.png');
 
     return (
       <TouchableOpacity

@@ -101,7 +101,7 @@ export default function RoutineScreen() {
   const openRoutineDetails = useCallback((routine: RoutinesRoutine) => {
     setMenuVisible(null);
     router.push({
-      pathname: '/(tabs)/routine-details',
+      pathname: '/routine-details',
       params: { routine: JSON.stringify(routine) },
     });
   }, [router]);
@@ -116,13 +116,13 @@ export default function RoutineScreen() {
       };
     });
     startWorkoutContext({ ...routine, exercises: exercisesWithImagesAndLoggedSets });
-    router.push('/(tabs)/log-workout');
+    router.push('/log-workout');
   }, [getExerciseDetails, startWorkoutContext, router]);
 
   const editRoutine = useCallback((routine: RoutinesRoutine) => {
     setMenuVisible(null);
     router.push({
-      pathname: '/(tabs)/create-routine',
+      pathname: '/create-routine',
       params: { routine: JSON.stringify(routine) },
     });
   }, [router]);
@@ -201,7 +201,7 @@ export default function RoutineScreen() {
       exercises: [],
       type: 'routine',
     });
-    router.push('/(tabs)/log-workout');
+    router.push('/log-workout');
   }, [startWorkoutContext, router]);
 
   const renderRoutineCard = useCallback((routine: RoutinesRoutine, isInFolder: boolean = false) => (
@@ -332,7 +332,7 @@ export default function RoutineScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, { backgroundColor: colors.tint, marginTop: 12 }]}
-            onPress={() => router.push('/(tabs)/explore-routine')}
+            onPress={() => router.push('/explore-routine')}
             accessibilityLabel="Explore routines"
           >
             <IconSymbol name="magnifyingglass" size={20} color={colors.background} />
@@ -399,7 +399,7 @@ export default function RoutineScreen() {
                 <IconSymbol name="folder.badge.plus" size={28} color={colors.tint} />
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => router.push('/(tabs)/create-routine')}
+                onPress={() => router.push('/create-routine')}
                 accessibilityLabel="Create new routine"
                 style={styles.headerButton}
               >
@@ -482,7 +482,7 @@ export default function RoutineScreen() {
                         )}
                         <TouchableOpacity
                           style={[styles.addRoutineButton, { backgroundColor: colors.tint }]}
-                          onPress={() => router.push({ pathname: '/(tabs)/create-routine', params: { folderId: item.id } })}
+                          onPress={() => router.push({ pathname: '/create-routine', params: { folderId: item.id } })}
                           accessibilityLabel={'Add new routine to folder'}
                         >
                           <IconSymbol name="plus" size={20} color={colors.background} />

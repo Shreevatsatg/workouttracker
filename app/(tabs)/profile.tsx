@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { supabase } from '@/utils/supabase';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function ProfileScreen() {
@@ -55,7 +55,7 @@ export default function ProfileScreen() {
         <ThemedText type="title" style={[styles.profileName, { color: colors.text }]}>
           {profile?.full_name || 'User'}
         </ThemedText>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/settings')} style={styles.settingsButton}>
+        <TouchableOpacity onPress={() => router.push('/settings')} style={styles.settingsButton}>
           <IconSymbol name="gearshape.fill" size={24} color={colors.tint} />
         </TouchableOpacity>
       </ThemedView>
@@ -75,7 +75,7 @@ export default function ProfileScreen() {
       <ThemedView lightColor="transparent" darkColor="transparent" style={styles.quickLinksContainer}>
         <TouchableOpacity
           style={[styles.profileActionButton, { backgroundColor: colors.tint }]} // Use tint background for primary action
-          onPress={() => router.push('/(tabs)/measurements')}
+          onPress={() => router.push('/measurements')}
         >
           <ThemedText style={[styles.profileActionButtonText, { color: colors.background }]}>View & Add Measurements</ThemedText>
         </TouchableOpacity>
