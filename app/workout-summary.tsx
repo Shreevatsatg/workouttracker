@@ -158,6 +158,7 @@ export default function WorkoutSummaryScreen() {
       }
       setShowSuccessMessage(true);
       saveWorkout();
+      discardWorkout();
     } catch (error: any) {
       alert(`Error saving workout: ${error.message}`);
       console.error('Error saving workout:', error);

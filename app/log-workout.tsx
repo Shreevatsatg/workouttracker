@@ -4,17 +4,17 @@ import RestTimerSelector from '@/components/RestTimerSelector';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useWorkout } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { useNavigation } from '@react-navigation/native';
-import ConfirmationModal from '@/components/ConfirmationModal';
-import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { Animated, PanResponder, ScrollView, StyleSheet, TextInput, TouchableOpacity, Vibration, View } from 'react-native';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Animated, PanResponder, ScrollView, StyleSheet, TextInput, TouchableOpacity, Vibration, View } from 'react-native';
 
 interface Set {
   weight: string;
@@ -44,7 +44,9 @@ const SwipeableSetRow = ({
   toggleSetCompletion,
   deleteSet,
   totalSets,
-  setId
+  setId,
+  previousSet,
+  showValidationIndicator
 }: {
   set: Set;
   setIndex: number;
@@ -55,6 +57,8 @@ const SwipeableSetRow = ({
   deleteSet: (exIndex: number, setIndex: number, setId: string) => void;
   totalSets: number;
   setId: string;
+  previousSet?: Set;
+  showValidationIndicator: boolean;
 }) => {
   const translateX = useRef(new Animated.Value(0)).current;
   const [isDeleting, setIsDeleting] = useState(false);
@@ -116,6 +120,10 @@ const SwipeableSetRow = ({
     }).start();
   };
 
+  // Check if set has empty values but user is trying to complete it
+  const isEmpty = !set.loggedWeight?.trim() && !set.loggedReps?.trim();
+  const hasValidationError = showValidationIndicator && isEmpty && !set.completed;
+
   return (
     <View style={styles.swipeableContainer}>
       {/* Delete button behind the row - only show if there's more than one set */}
@@ -134,6 +142,8 @@ const SwipeableSetRow = ({
           styles.setRow,
           {
             backgroundColor: set.completed ? colors.success : colors.background,
+            borderColor: hasValidationError ? '#ff4444' : colors.tabIconDefault,
+            borderWidth: hasValidationError ? 2 : 1,
             transform: [{ translateX }],
           },
         ]}
@@ -149,10 +159,18 @@ const SwipeableSetRow = ({
               {setIndex + 1}
             </ThemedText>
             <ThemedText style={[styles.cellText, styles.prevColumn, { color: colors.text }]}>
-              -
+              {previousSet ? `${previousSet.loggedWeight || previousSet.weight || '-'}x${previousSet.loggedReps || previousSet.reps || '-'}` : '-'}
             </ThemedText>
             <TextInput
-              style={[styles.setInput, styles.kgRepsColumn, { color: colors.text }]}
+              style={[
+                styles.setInput, 
+                styles.kgRepsColumn, 
+                { 
+                  color: colors.text,
+                  borderColor: hasValidationError ? '#ff4444' : 'transparent',
+                  borderWidth: hasValidationError ? 1 : 0,
+                }
+              ]}
               placeholder={set.weight}
               placeholderTextColor={colors.secondary}
               keyboardType="numeric"
@@ -160,7 +178,15 @@ const SwipeableSetRow = ({
               onChangeText={(val) => handleLoggedSetChange(exIndex, setIndex, 'loggedWeight', val)}
             />
             <TextInput
-              style={[styles.setInput, styles.kgRepsColumn, { color: colors.text }]}
+              style={[
+                styles.setInput, 
+                styles.kgRepsColumn, 
+                { 
+                  color: colors.text,
+                  borderColor: hasValidationError ? '#ff4444' : 'transparent',
+                  borderWidth: hasValidationError ? 1 : 0,
+                }
+              ]}
               placeholder={set.reps}
               placeholderTextColor={colors.secondary}
               keyboardType="numeric"
@@ -171,6 +197,11 @@ const SwipeableSetRow = ({
               style={styles.checkmarkColumn} 
               onPress={() => toggleSetCompletion(exIndex, setIndex)}
             >
+              {hasValidationError && (
+                <View style={styles.warningIndicator}>
+                  <IconSymbol name="exclamationmark.triangle.fill" size={16} color="#ff4444" />
+                </View>
+              )}
               <IconSymbol
                 name={set.completed ? "checkmark.circle.fill" : "circle"}
                 size={28}
@@ -204,46 +235,152 @@ export default function LogWorkoutScreen() {
     pauseWorkout,
     saveWorkout,
     workoutTime,
+    lastCompletedWorkout,
+    clearLastCompletedWorkout,
+    updateWorkoutTime,
+    loadWorkout,
   } = useWorkout();
 
   const [showEmptySetsWarning, setShowEmptySetsWarning] = useState(false);
   const [emptySetsWarningMessage, setEmptySetsWarningMessage] = useState('');
+  const [showEmptyWorkoutModal, setShowEmptyWorkoutModal] = useState(false);
+  const [showValidationIndicators, setShowValidationIndicators] = useState(false);
+  const [isProcessingFinish, setIsProcessingFinish] = useState(false);
+
+  // Get previous workout data for each exercise (mock function - you'll need to implement based on your data structure)
+  const getPreviousSetData = (exerciseIndex: number, setIndex: number): Set | undefined => {
+    // This should return the previous workout data for the same exercise and set
+    // For now, returning undefined - you'll need to implement this based on your workout history
+    return undefined;
+  };
 
   const handleFinishWorkout = useCallback(() => {
+    if (isProcessingFinish) return; // Prevent double-clicks
+    
+    console.log('Finish workout clicked'); // Debug log
+    setIsProcessingFinish(true);
+    
+    // Check if workout is completely empty (no completed sets)
+    const hasAnyCompletedSets = loggedExercises.some(exercise => 
+      exercise.loggedSets.some(set => set.completed)
+    );
+
+    console.log('Has any completed sets:', hasAnyCompletedSets); // Debug log
+
+    if (!hasAnyCompletedSets) {
+      console.log('Showing empty workout modal'); // Debug log
+      setShowEmptyWorkoutModal(true);
+      setIsProcessingFinish(false);
+      return;
+    }
+
+    // Check for validation issues
     let hasEmptySets = false;
+    let hasIncompleteExercises = false;
     const exercisesWithEmptySets: string[] = [];
+    const exercisesWithNoCompletedSets: string[] = [];
 
     loggedExercises.forEach(exercise => {
+      let hasAnyCompletedSetInExercise = false;
+      
       exercise.loggedSets.forEach(set => {
-        if (set.completed && (!set.loggedWeight || !set.loggedReps)) {
-          hasEmptySets = true;
-          if (!exercisesWithEmptySets.includes(exercise.name)) {
-            exercisesWithEmptySets.push(exercise.name);
+        if (set.completed) {
+          hasAnyCompletedSetInExercise = true;
+          // Check if completed set has empty weight OR reps
+          const emptyWeight = !set.loggedWeight || set.loggedWeight.trim() === '';
+          const emptyReps = !set.loggedReps || set.loggedReps.trim() === '';
+          
+          if (emptyWeight || emptyReps) {
+            hasEmptySets = true;
+            if (!exercisesWithEmptySets.includes(exercise.name)) {
+              exercisesWithEmptySets.push(exercise.name);
+            }
           }
         }
       });
+
+      // Check for exercises with no completed sets
+      if (!hasAnyCompletedSetInExercise && exercise.loggedSets.length > 0) {
+        hasIncompleteExercises = true;
+        exercisesWithNoCompletedSets.push(exercise.name);
+      }
     });
 
+    console.log('Has empty sets:', hasEmptySets); // Debug log
+    console.log('Has incomplete exercises:', hasIncompleteExercises); // Debug log
+
+    // Show validation indicators for empty sets
     if (hasEmptySets) {
-      setEmptySetsWarningMessage(
-        `You have completed sets with empty weight or reps in the following exercises: ${exercisesWithEmptySets.join(', ')}.\n\nDo you want to finish the workout anyway?`
-      );
-      setShowEmptySetsWarning(true);
-    } else {
-      // All good, finish workout
-      saveWorkout();
-      router.push({
-        pathname: '/workout-summary',
-        params: {
-          workoutData: JSON.stringify({
-            name: activeRoutine?.name || 'Custom Workout',
-            exercises: loggedExercises,
-          }),
-          workoutDuration: workoutTime,
-        },
-      });
+      setShowValidationIndicators(true);
     }
-  }, [loggedExercises, totalVolume, setsPerformed, workoutTime, activeRoutine, router, saveWorkout]);
+
+    // Determine if we need to show warning
+    const needsWarning = hasEmptySets || hasIncompleteExercises;
+
+    if (needsWarning) {
+      let warningMessage = '';
+      
+      if (hasEmptySets) {
+        warningMessage += `You have completed sets with missing weight or reps in: ${exercisesWithEmptySets.join(', ')}.\n\n`;
+      }
+
+      if (hasIncompleteExercises) {
+        warningMessage += `The following exercises have no completed sets: ${exercisesWithNoCompletedSets.join(', ')}.\n\n`;
+      }
+
+      warningMessage += `Do you want to finish the workout anyway?`;
+      
+      console.log('Showing warning modal with message:', warningMessage); // Debug log
+      setEmptySetsWarningMessage(warningMessage);
+      setShowEmptySetsWarning(true);
+      setIsProcessingFinish(false);
+    } else {
+      console.log('All good, finishing workout'); // Debug log
+      // All validation passed, finish workout directly
+      finishWorkout();
+    }
+  }, [loggedExercises, workoutTime, activeRoutine, router, saveWorkout, isProcessingFinish]);
+
+  const finishWorkout = () => {
+    console.log('Actually finishing workout'); // Debug log
+    pauseWorkout();
+    router.push({
+      pathname: '/workout-summary',
+      params: {
+        workoutData: JSON.stringify({
+          name: activeRoutine?.name || 'Custom Workout',
+          exercises: loggedExercises,
+        }),
+        workoutDuration: workoutTime,
+      },
+    });
+  };
+
+  const handleEmptyWorkoutDiscard = () => {
+    console.log('Discarding empty workout'); // Debug log
+    setShowEmptyWorkoutModal(false);
+    discardWorkout();
+    router.push('/(tabs)/workout');
+  };
+
+  const handleEmptyWorkoutFinish = () => {
+    console.log('Finishing empty workout'); // Debug log
+    setShowEmptyWorkoutModal(false);
+    finishWorkout();
+  };
+
+  const handleWarningConfirm = () => {
+    console.log('User confirmed to finish with warnings'); // Debug log
+    setShowEmptySetsWarning(false);
+    setShowValidationIndicators(false);
+    finishWorkout();
+  };
+
+  const handleWarningCancel = () => {
+    console.log('User cancelled finish'); // Debug log
+    setShowEmptySetsWarning(false);
+    setShowValidationIndicators(false);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -256,7 +393,7 @@ export default function LogWorkoutScreen() {
               paddingHorizontal: 12,
               paddingVertical: 6,
               borderRadius: 16,
-              marginRight: 10, // Add some right margin
+              marginRight: 10,
             }}
           >
             <ThemedText style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>Finish</ThemedText>
@@ -264,6 +401,15 @@ export default function LogWorkoutScreen() {
         ),
       });
     }, [navigation, handleFinishWorkout, colors.accent])
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        // This will run when the screen blurs (loses focus)
+        pauseWorkout();
+      };
+    }, [pauseWorkout])
   );
 
   // --- New Metric Calculations ---
@@ -309,6 +455,11 @@ export default function LogWorkoutScreen() {
     const newLoggedExercises = [...loggedExercises];
     newLoggedExercises[exIndex].loggedSets[setIndex][field] = value;
     updateLoggedExercises(newLoggedExercises);
+    
+    // Hide validation indicators when user starts typing
+    if (showValidationIndicators) {
+      setShowValidationIndicators(false);
+    }
   };
 
   const addLoggedSet = (exIndex: number) => {
@@ -350,12 +501,48 @@ export default function LogWorkoutScreen() {
 
   const toggleSetCompletion = (exIndex: number, setIndex: number) => {
     const newLoggedExercises = [...loggedExercises];
-    const wasCompleted = newLoggedExercises[exIndex].loggedSets[setIndex].completed;
-    newLoggedExercises[exIndex].loggedSets[setIndex].completed = !wasCompleted;
+    const currentSet = newLoggedExercises[exIndex].loggedSets[setIndex];
+    const wasCompleted = currentSet.completed;
+
+    // If trying to complete a set with empty values, use previous values or show indicator
+    if (!wasCompleted) {
+      const isEmpty = !currentSet.loggedWeight?.trim() && !currentSet.loggedReps?.trim();
+      
+      if (isEmpty) {
+        // Try to get previous set data
+        const previousSet = getPreviousSetData(exIndex, setIndex);
+        
+        if (previousSet && (previousSet.loggedWeight || previousSet.loggedReps)) {
+          // Use previous values
+          currentSet.loggedWeight = previousSet.loggedWeight || previousSet.weight || '';
+          currentSet.loggedReps = previousSet.loggedReps || previousSet.reps || '';
+          currentSet.completed = true;
+        } else {
+          // Show validation indicator and don't complete the set
+          setShowValidationIndicators(true);
+          
+          // Show a brief alert to guide the user
+          Alert.alert(
+            "Missing Values", 
+            "Please enter weight and reps before completing the set.", 
+            [{ text: "OK" }],
+            { cancelable: true }
+          );
+          return;
+        }
+      } else {
+        // Set has values, complete it normally
+        currentSet.completed = true;
+      }
+    } else {
+      // Uncompleting a set
+      currentSet.completed = false;
+    }
+
     updateLoggedExercises(newLoggedExercises);
 
     // Start rest timer if set was just completed and rest time is set
-    if (!wasCompleted && newLoggedExercises[exIndex].restTime && newLoggedExercises[exIndex].restTime! > 0) {
+    if (!wasCompleted && currentSet.completed && newLoggedExercises[exIndex].restTime && newLoggedExercises[exIndex].restTime! > 0) {
       startRestTimer(newLoggedExercises[exIndex].restTime!);
     }
   };
@@ -465,7 +652,10 @@ export default function LogWorkoutScreen() {
   };
 
   useEffect(() => {
-    if (params.selectedExercises) {
+    if (lastCompletedWorkout) {
+      loadWorkout(lastCompletedWorkout);
+      clearLastCompletedWorkout();
+    } else if (params.selectedExercises) {
       const newSelectedExercises = JSON.parse(params.selectedExercises as string);
       const exercisesToAdd = newSelectedExercises.map((ex: Exercise) => ({
         ...ex,
@@ -483,13 +673,13 @@ export default function LogWorkoutScreen() {
         const indexToReplace = parseInt(params.replaceIndex as string, 10);
         const updatedExercises = [...loggedExercises];
         updatedExercises[indexToReplace] = exercisesToAdd[0]; // Assuming only one exercise is selected for replacement
-        updateLoggedExercises(updatedExercises);
+        startWorkout({ exercises: updatedExercises }); // Use startWorkout
       } else {
-        updateLoggedExercises([...loggedExercises, ...exercisesToAdd]);
+        startWorkout({ exercises: [...loggedExercises, ...exercisesToAdd] }); // Use startWorkout
       }
       router.setParams({ selectedExercises: undefined, replaceIndex: undefined });
     }
-  }, [params.selectedExercises, params.replaceIndex, loggedExercises, router, updateLoggedExercises]);
+  }, [params.selectedExercises, params.replaceIndex, loggedExercises, router, updateLoggedExercises, lastCompletedWorkout, clearLastCompletedWorkout, loadWorkout]);
 
   // Clean up rest timer and pause workout on unmount
   useEffect(() => {
@@ -498,7 +688,7 @@ export default function LogWorkoutScreen() {
         clearInterval(restTimerIntervalRef.current);
       }
       // Pause the workout when leaving the log-workout page
-      pauseWorkout();
+      // pauseWorkout(); // This line should remain commented out
     };
   }, [pauseWorkout]);
 
@@ -596,6 +786,9 @@ export default function LogWorkoutScreen() {
                       set.id = setId;
                     }
                     
+                    // Get previous set data for this exercise and set index
+                    const previousSet = getPreviousSetData(exIndex, setIndex);
+                    
                     return (
                       <SwipeableSetRow
                         key={setId}
@@ -608,6 +801,8 @@ export default function LogWorkoutScreen() {
                         deleteSet={deleteSet}
                         totalSets={exercise.loggedSets.length}
                         setId={setId}
+                        previousSet={previousSet}
+                        showValidationIndicator={showValidationIndicators}
                       />
                     );
                   })}
@@ -639,23 +834,20 @@ export default function LogWorkoutScreen() {
       <ConfirmationModal
         visible={showEmptySetsWarning}
         message={emptySetsWarningMessage}
-        onConfirm={() => {
-          saveWorkout();
-          router.push({
-            pathname: '/workout-summary',
-            params: {
-              workoutData: JSON.stringify({
-                name: activeRoutine?.name || 'Custom Workout',
-                exercises: loggedExercises,
-              }),
-              workoutDuration: workoutTime,
-            },
-          });
-          setShowEmptySetsWarning(false);
-        }}
-        onCancel={() => setShowEmptySetsWarning(false)}
+        onConfirm={handleWarningConfirm}
+        onCancel={handleWarningCancel}
         confirmText="Finish Anyway"
         cancelText="Cancel"
+      />
+
+      {/* Empty Workout Modal */}
+      <ConfirmationModal
+        isVisible={showEmptyWorkoutModal}
+        message="You haven't completed any sets in this workout. Would you like to discard this empty workout or finish it anyway?"
+        onConfirm={handleEmptyWorkoutFinish}
+        onCancel={handleEmptyWorkoutDiscard}
+        confirmText="Finish Empty Workout"
+        cancelText="Discard Workout"
       />
     </>
   );
@@ -767,7 +959,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 6,
-    borderWidth: 1,
     minHeight: 48,
   },
   setColumn: {
@@ -786,6 +977,7 @@ const styles = StyleSheet.create({
     width: 40,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
   },
   setInput: {
     borderRadius: 8,
@@ -844,5 +1036,15 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     paddingBottom: 100, // Adjust this value as needed to clear the tab bar
+  },
+  // New styles for validation indicators
+  warningIndicator: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#ff4444',
+    borderRadius: 8,
+    padding: 2,
+    zIndex: 1,
   },
 });

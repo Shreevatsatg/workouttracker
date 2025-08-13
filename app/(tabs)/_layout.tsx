@@ -2,9 +2,9 @@ import { HapticTab } from '@/components/HapticTab';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
+import { modernColors } from '@/constants/ModernColors';
 import { useWorkout } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { modernColors } from '@/constants/ModernColors';
 import { Tabs, router } from 'expo-router';
 import React from 'react';
 import { Platform, TouchableOpacity, View } from 'react-native';
@@ -55,14 +55,13 @@ export default function TabLayout() {
         screenOptions={{
           tabBarActiveTintColor: colors.accent,
           tabBarInactiveTintColor: colors.textSecondary,
-          headerShown: false,
           tabBarButton: HapticTab,
           tabBarStyle: {
             backgroundColor: colors.surface,
             borderTopWidth: 1,
             borderTopColor: colors.border,
-            height: Platform.OS === 'ios' ? 90 : 70, // Increased height for iOS
-            paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+            height: Platform.OS === 'ios' ? 70 : 60, // Adjusted height for iOS and Android
+            paddingBottom: 0,
             shadowColor: '#000000',
             shadowOffset: { width: 0, height: -2 },
             shadowOpacity: 0.05,
@@ -70,19 +69,18 @@ export default function TabLayout() {
             elevation: 8,
           },
           tabBarLabelStyle: {
-            fontSize: 11,
+            fontSize: 4,
             fontWeight: '600',
             marginTop: 4,
             marginBottom: 2,
           },
           tabBarIconStyle: {
-            marginTop: 8,
+            marginTop: 0,
             marginBottom: 0,
           },
           headerStyle: {
-            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
-            borderBottomWidth: 1,
-            borderBottomColor: colors.border,
+            backgroundColor: colors.surface, 
+            height: 90, // Added height for shorter header
             elevation: 0,
             shadowColor: '#000000',
             shadowOffset: { width: 0, height: 1 },
@@ -129,16 +127,6 @@ export default function TabLayout() {
               {children}
             </ThemedText>
           ),
-          headerStyle: {
-            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
-            borderBottomWidth: 1,
-            borderBottomColor: colors.border,
-            elevation: 0,
-            shadowColor: '#000000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 2,
-          },
         }}
       />
       <Tabs.Screen
@@ -169,19 +157,9 @@ export default function TabLayout() {
           headerShown: true,
           headerTitle: ({ children, tintColor }) => (
             <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
-              {children}
+              Food
             </ThemedText>
           ),
-          headerStyle: {
-            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
-            borderBottomWidth: 1,
-            borderBottomColor: colors.border,
-            elevation: 0,
-            shadowColor: '#000000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 2,
-          },
         }}
       />
 
@@ -216,16 +194,6 @@ export default function TabLayout() {
               {children}
             </ThemedText>
           ),
-          headerStyle: {
-            backgroundColor: colors.surface, // Changed to use the new dark gray surface color
-            borderBottomWidth: 1,
-            borderBottomColor: colors.border,
-            elevation: 0,
-            shadowColor: '#000000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 2,
-          },
           headerRight: () => (
             <TouchableOpacity 
               onPress={() => router.push('/settings')} 
