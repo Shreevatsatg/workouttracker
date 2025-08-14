@@ -184,7 +184,7 @@ export default function SelectExerciseScreen() {
         navParams.replaceIndex = params.replaceIndex;
       }
       router.push({
-        pathname: '/(tabs)/log-workout',
+        pathname: '/log-workout',
         params: navParams,
       });
     } else if (params.callingPage === 'create-routine') {
@@ -193,24 +193,25 @@ export default function SelectExerciseScreen() {
         navParams.replaceIndex = params.replaceIndex;
       }
       router.push({
-        pathname: '/(tabs)/create-routine',
+        pathname: '/create-routine',
         params: navParams,
       });
     } else {
       router.push({
-        pathname: '/(tabs)/create-routine',
+        pathname: '/create-routine',
         params: { selectedExercises: JSON.stringify(newExercisesToAdd) },
       });
     }
   };
 
   const handleCreateCustomExercise = () => {
-    router.push('/(tabs)/create-custom-exercise');
+    router.push('/create-custom-exercise');
   };
 
   const handleExerciseImagePress = (exercise: Exercise) => {
     router.push({
-      pathname: '/(tabs)/exercise-details',
+      
+      pathname: '/exercise-details',
       params: { exerciseId: exercise.id, exerciseName: exercise.name },
     });
   };

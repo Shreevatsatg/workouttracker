@@ -23,7 +23,7 @@ export default function RestTimer({ restTime, onPress }: RestTimerProps) {
   };
 
   return (
-    <TouchableOpacity onPress={onPress} style={{ marginBottom: 8 ,marginLeft:55}}>
+    <TouchableOpacity onPress={onPress} style={{ marginBottom: 8, marginLeft: 55 }}>
       <ThemedText style={{ color: colors.secondary, fontSize: 14 }}>
         Rest Timer: {formatRestTime(restTime)}
       </ThemedText>

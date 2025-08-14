@@ -128,6 +128,7 @@ function RootLayoutNav() {
   useProtectedRoute();
   const colorScheme = useColorScheme();
   const colors = modernColors[colorScheme ?? 'light'];
+  const segments = useSegments();
 
   // 🔥 ZERO-GLITCH SOLUTION: Pre-render approach
   const zeroGlitchTransition = ({ current, next, inverted, layouts, insets }) => {
@@ -358,7 +359,8 @@ function RootLayoutNav() {
         <Stack.Screen name="workout-summary" />
       </Stack>
       <StatusBar style="auto" />
-      <WorkoutNotificationBar />
+      {/* Conditionally render WorkoutNotificationBar */}
+      {!segments.includes('workout-summary') && <WorkoutNotificationBar />}
     </>
   );
 }

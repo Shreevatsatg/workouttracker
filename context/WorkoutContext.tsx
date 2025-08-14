@@ -1,4 +1,5 @@
 import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
+import { supabase } from '@/utils/supabase';
 
 export interface Set {
   weight: string;
@@ -6,6 +7,7 @@ export interface Set {
   loggedWeight?: string;
   loggedReps?: string;
   completed: boolean;
+  id?: string; // Add id property for consistency
 }
 
 export interface Exercise {
@@ -14,6 +16,7 @@ export interface Exercise {
   loggedSets: Set[];
   restTime?: number; // in seconds, 0 means "off"
   images?: string[];
+  id?: string; // Add id property for consistency
 }
 
 export interface Routine {
@@ -34,7 +37,7 @@ interface WorkoutContextType {
   isWorkoutPaused: boolean;
   loggedExercises: Exercise[];
   lastCompletedWorkout: WorkoutSession | null; // New state for completed workout
-  startWorkout: (routine: Routine) => void;
+  startWorkout: (options: { routine?: Routine, exercises?: Exercise[] }) => void;
   pauseWorkout: () => void;
   resumeWorkout: () => void;
   discardWorkout: () => void;
@@ -57,9 +60,12 @@ export const WorkoutProvider = ({ children }: { children: ReactNode }) => {
   const intervalRef = useRef<NodeJS.Timeout | number | null>(null); // Updated type
 
   useEffect(() => {
-    if (isWorkoutActivelyLogging) {
+   if (isWorkoutActivelyLogging) {
       intervalRef.current = setInterval(() => {
-        setWorkoutTime((prevTime) => prevTime + 1);
+        setWorkoutTime((prevTime) => {
+          const newTime = prevTime + 1;
+          return newTime;
+        });
       }, 1000);
     } else if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -77,21 +83,26 @@ export const WorkoutProvider = ({ children }: { children: ReactNode }) => {
 
     if (routine) {
       setActiveRoutine(routine);
-      setLoggedExercises(routine.exercises.map(ex => ({
+      setLoggedExercises(routine.exercises.map((ex, exIndex) => ({
         ...ex,
-        loggedSets: ex.sets.map(set => ({ ...set, loggedWeight: '', loggedReps: '', completed: false })),
+        loggedSets: ex.sets.map((set, index) => ({ 
+          ...set, 
+          loggedWeight: '', 
+          loggedReps: '', 
+          completed: false,
+          id: set.id || `${Date.now()}-${ex.id || exIndex}-${index}-${Math.random()}`
+        })),
         images: ex.images || [],
       })));
     } else if (exercises) {
       setActiveRoutine({ name: 'Custom Workout', exercises: [] }); // Create a dummy routine
       setLoggedExercises(exercises.map(ex => ({
         ...ex,
-        loggedSets: [{ weight: '', reps: '', loggedWeight: '', loggedReps: '', completed: false, id: `${Date.now()}-${Math.random()}` }],
+        loggedSets: ex.loggedSets || [{ weight: '', reps: '', loggedWeight: '', loggedReps: '', completed: false, id: `${Date.now()}-${Math.random()}` }],
         images: ex.images || [],
       })));
     } else {
       // Handle error or default to empty workout
-      console.error("startWorkout called without routine or exercises.");
       return;
     }
 
@@ -120,17 +131,77 @@ export const WorkoutProvider = ({ children }: { children: ReactNode }) => {
     setLastCompletedWorkout(null); // Also clear last completed workout on discard
   };
 
-  const saveWorkout = () => {
-    // Save the current workout state to lastCompletedWorkout instead of discarding
-    setLastCompletedWorkout({
-      routine: activeRoutine,
-      time: workoutTime,
-      exercises: loggedExercises,
-    });
-    // Optionally, you might still want to clear the active workout state here
-    // if the user is truly "done" with it and won't be editing it further
-    // For now, we'll leave the active state as is, so log-workout can pick it up
-    // discardWorkout(); // Removed this line
+  const saveWorkout = async () => {
+    if (!activeRoutine || loggedExercises.length === 0) {
+      console.warn("No active workout or exercises to save.");
+      return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error("User not authenticated. Cannot save workout.");
+      return;
+    }
+
+    try {
+      // 1. Insert into workout_sessions
+      const { data: workoutSessionData, error: workoutSessionError } = await supabase
+        .from('workout_sessions')
+        .insert({
+          user_id: user.id,
+          routine_id: activeRoutine.id || null, // Assuming routine might have an ID if from DB
+          routine_name: activeRoutine.name,
+          started_at: new Date(), // Or use a stored start time if available
+          ended_at: new Date(), // Or use a stored end time if available
+          duration: workoutTime,
+          completed_at: new Date(),
+          notes: '', // Add notes if you have them
+        })
+        .select();
+
+      if (workoutSessionError) throw workoutSessionError;
+      const workoutSessionId = workoutSessionData[0].id;
+
+      // 2. Insert into session_exercises
+      for (const exercise of loggedExercises) {
+        const { data: sessionExerciseData, error: sessionExerciseError } = await supabase
+          .from('session_exercises')
+          .insert({
+            session_id: workoutSessionId,
+            exercise_name: exercise.name,
+            order: loggedExercises.indexOf(exercise), // Simple order
+          })
+          .select();
+
+        if (sessionExerciseError) throw sessionExerciseError;
+        const sessionExerciseId = sessionExerciseData[0].id;
+
+        // 3. Insert into session_sets
+        for (const set of exercise.loggedSets) {
+          if (set.completed) { // Only save completed sets
+            const { error: sessionSetError } = await supabase
+              .from('session_sets')
+              .insert({
+                session_id: workoutSessionId, // Link to workout session
+                session_exercise_id: sessionExerciseId,
+                weight: set.loggedWeight || set.weight,
+                reps: set.loggedReps || set.reps,
+                order: exercise.loggedSets.indexOf(set),
+                completed_at: new Date(),
+              });
+
+            if (sessionSetError) throw sessionSetError;
+          }
+        }
+      }
+
+      console.log("Workout saved successfully!");
+      // After successful save, discard the active workout state
+      discardWorkout();
+    } catch (error) {
+      console.error("Error saving workout:", error);
+      // Optionally, set an error state or show a toast message
+    }
   };
 
   const updateLoggedExercises = (exercises: Exercise[]) => {

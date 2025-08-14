@@ -14,7 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Animated, PanResponder, ScrollView, StyleSheet, TextInput, TouchableOpacity, Vibration, View } from 'react-native';
+import { Animated, PanResponder, ScrollView, StyleSheet, TextInput, TouchableOpacity, Vibration, View } from 'react-native';
 
 interface Set {
   weight: string;
@@ -23,6 +23,7 @@ interface Set {
   loggedReps?: string;
   completed: boolean;
   id?: string;
+  hasValidationError?: boolean; // Added for individual set validation
 }
 
 interface Exercise {
@@ -45,8 +46,7 @@ const SwipeableSetRow = ({
   deleteSet,
   totalSets,
   setId,
-  previousSet,
-  showValidationIndicator
+  previousSet
 }: {
   set: Set;
   setIndex: number;
@@ -58,42 +58,47 @@ const SwipeableSetRow = ({
   totalSets: number;
   setId: string;
   previousSet?: Set;
-  showValidationIndicator: boolean;
 }) => {
   const translateX = useRef(new Animated.Value(0)).current;
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSwipeOpen, setIsSwipeOpen] = useState(false);
 
   const panResponder = PanResponder.create({
     onMoveShouldSetPanResponder: (evt, gestureState) => {
       // Only respond to horizontal swipes and only if there's more than one set
-      return totalSets > 1 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 10;
+      return totalSets > 1 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 5;
     },
     onPanResponderGrant: () => {
       // Set the initial value for the animation
       translateX.setOffset(translateX._value);
     },
     onPanResponderMove: (evt, gestureState) => {
-      // Only allow left swipes (negative dx)
+      // Only allow left swipes (negative dx) and limit the maximum swipe distance
       if (gestureState.dx < 0) {
-        translateX.setValue(gestureState.dx);
+        const limitedDx = Math.max(gestureState.dx, -100); // Limit to 100px
+        translateX.setValue(limitedDx);
       }
     },
     onPanResponderRelease: (evt, gestureState) => {
       translateX.flattenOffset();
       
-      if (gestureState.dx < -80) {
+      if (gestureState.dx < -60) {
         // Swipe threshold reached - show delete button
-        Animated.timing(translateX, {
+        setIsSwipeOpen(true);
+        Animated.spring(translateX, {
           toValue: -80,
-          duration: 200,
           useNativeDriver: true,
+          tension: 100,
+          friction: 8,
         }).start();
       } else {
         // Return to original position
-        Animated.timing(translateX, {
+        setIsSwipeOpen(false);
+        Animated.spring(translateX, {
           toValue: 0,
-          duration: 200,
           useNativeDriver: true,
+          tension: 100,
+          friction: 8,
         }).start();
       }
     },
@@ -103,7 +108,7 @@ const SwipeableSetRow = ({
     setIsDeleting(true);
     Animated.timing(translateX, {
       toValue: -300,
-      duration: 300,
+      duration: 250,
       useNativeDriver: true,
     }).start((finished) => {
       if (finished) {
@@ -113,28 +118,28 @@ const SwipeableSetRow = ({
   };
 
   const resetPosition = () => {
-    Animated.timing(translateX, {
+    setIsSwipeOpen(false);
+    Animated.spring(translateX, {
       toValue: 0,
-      duration: 200,
       useNativeDriver: true,
+      tension: 100,
+      friction: 8,
     }).start();
   };
 
   // Check if set has empty values but user is trying to complete it
-  const isEmpty = !set.loggedWeight?.trim() && !set.loggedReps?.trim();
-  const hasValidationError = showValidationIndicator && isEmpty && !set.completed;
+  // Use individual set validation instead of global state
+  const hasValidationError = set.hasValidationError || false;
 
   return (
     <View style={styles.swipeableContainer}>
-      {/* Delete button behind the row - only show if there's more than one set */}
-      {totalSets > 1 && (
-        <View style={[styles.deleteButtonContainer, { backgroundColor: '#ff4444' }]}>
-          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-            <IconSymbol name="trash" size={20} color="white" />
-            <ThemedText style={styles.deleteButtonText}>Delete</ThemedText>
-          </TouchableOpacity>
-        </View>
-      )}
+      {/* Delete button behind the row - show for all sets */}
+      <View style={[styles.deleteButtonContainer, { backgroundColor: '#ff4444' }]}>
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+          <IconSymbol name="trash" size={20} color="white" />
+          <ThemedText style={styles.deleteButtonText}>Delete</ThemedText>
+        </TouchableOpacity>
+      </View>
 
       {/* Main set row */}
       <Animated.View
@@ -143,7 +148,7 @@ const SwipeableSetRow = ({
           {
             backgroundColor: set.completed ? colors.success : colors.background,
             borderColor: hasValidationError ? '#ff4444' : colors.tabIconDefault,
-            borderWidth: hasValidationError ? 2 : 1,
+            borderWidth: hasValidationError ? 1 : 1,
             transform: [{ translateX }],
           },
         ]}
@@ -167,7 +172,7 @@ const SwipeableSetRow = ({
                 styles.kgRepsColumn, 
                 { 
                   color: colors.text,
-                  borderColor: hasValidationError ? '#ff4444' : 'transparent',
+                  borderColor:  'transparent',
                   borderWidth: hasValidationError ? 1 : 0,
                 }
               ]}
@@ -183,7 +188,7 @@ const SwipeableSetRow = ({
                 styles.kgRepsColumn, 
                 { 
                   color: colors.text,
-                  borderColor: hasValidationError ? '#ff4444' : 'transparent',
+                  borderColor: 'transparent',
                   borderWidth: hasValidationError ? 1 : 0,
                 }
               ]}
@@ -234,17 +239,20 @@ export default function LogWorkoutScreen() {
     updateLoggedExercises,
     pauseWorkout,
     saveWorkout,
+    startWorkout,
     workoutTime,
     lastCompletedWorkout,
     clearLastCompletedWorkout,
     updateWorkoutTime,
     loadWorkout,
+    isWorkoutActivelyLogging,
+    isWorkoutPaused,
+    resumeWorkout,
   } = useWorkout();
 
   const [showEmptySetsWarning, setShowEmptySetsWarning] = useState(false);
   const [emptySetsWarningMessage, setEmptySetsWarningMessage] = useState('');
   const [showEmptyWorkoutModal, setShowEmptyWorkoutModal] = useState(false);
-  const [showValidationIndicators, setShowValidationIndicators] = useState(false);
   const [isProcessingFinish, setIsProcessingFinish] = useState(false);
 
   // Get previous workout data for each exercise (mock function - you'll need to implement based on your data structure)
@@ -257,7 +265,7 @@ export default function LogWorkoutScreen() {
   const handleFinishWorkout = useCallback(() => {
     if (isProcessingFinish) return; // Prevent double-clicks
     
-    console.log('Finish workout clicked'); // Debug log
+   
     setIsProcessingFinish(true);
     
     // Check if workout is completely empty (no completed sets)
@@ -265,10 +273,10 @@ export default function LogWorkoutScreen() {
       exercise.loggedSets.some(set => set.completed)
     );
 
-    console.log('Has any completed sets:', hasAnyCompletedSets); // Debug log
+   
 
     if (!hasAnyCompletedSets) {
-      console.log('Showing empty workout modal'); // Debug log
+   
       setShowEmptyWorkoutModal(true);
       setIsProcessingFinish(false);
       return;
@@ -306,13 +314,10 @@ export default function LogWorkoutScreen() {
       }
     });
 
-    console.log('Has empty sets:', hasEmptySets); // Debug log
-    console.log('Has incomplete exercises:', hasIncompleteExercises); // Debug log
+    
 
     // Show validation indicators for empty sets
-    if (hasEmptySets) {
-      setShowValidationIndicators(true);
-    }
+    // Removed the global showValidationIndicators state
 
     // Determine if we need to show warning
     const needsWarning = hasEmptySets || hasIncompleteExercises;
@@ -330,19 +335,19 @@ export default function LogWorkoutScreen() {
 
       warningMessage += `Do you want to finish the workout anyway?`;
       
-      console.log('Showing warning modal with message:', warningMessage); // Debug log
+     
       setEmptySetsWarningMessage(warningMessage);
       setShowEmptySetsWarning(true);
       setIsProcessingFinish(false);
     } else {
-      console.log('All good, finishing workout'); // Debug log
+     
       // All validation passed, finish workout directly
       finishWorkout();
     }
   }, [loggedExercises, workoutTime, activeRoutine, router, saveWorkout, isProcessingFinish]);
 
   const finishWorkout = () => {
-    console.log('Actually finishing workout'); // Debug log
+   
     pauseWorkout();
     router.push({
       pathname: '/workout-summary',
@@ -357,29 +362,28 @@ export default function LogWorkoutScreen() {
   };
 
   const handleEmptyWorkoutDiscard = () => {
-    console.log('Discarding empty workout'); // Debug log
     setShowEmptyWorkoutModal(false);
     discardWorkout();
-    router.push('/(tabs)/workout');
+    router.push('/workout');
   };
 
   const handleEmptyWorkoutFinish = () => {
-    console.log('Finishing empty workout'); // Debug log
+   
     setShowEmptyWorkoutModal(false);
     finishWorkout();
   };
 
   const handleWarningConfirm = () => {
-    console.log('User confirmed to finish with warnings'); // Debug log
+   
     setShowEmptySetsWarning(false);
-    setShowValidationIndicators(false);
+    // Removed the global showValidationIndicators state
     finishWorkout();
   };
 
   const handleWarningCancel = () => {
-    console.log('User cancelled finish'); // Debug log
+   
     setShowEmptySetsWarning(false);
-    setShowValidationIndicators(false);
+    // Removed the global showValidationIndicators state
   };
 
   useFocusEffect(
@@ -403,13 +407,16 @@ export default function LogWorkoutScreen() {
     }, [navigation, handleFinishWorkout, colors.accent])
   );
 
+  // Pause workout when leaving this screen
   useFocusEffect(
     useCallback(() => {
       return () => {
-        // This will run when the screen blurs (loses focus)
-        pauseWorkout();
+        // When leaving the screen, pause the workout if it's active
+        if (isWorkoutActivelyLogging && !isWorkoutPaused) {
+          pauseWorkout();
+        }
       };
-    }, [pauseWorkout])
+    }, [isWorkoutActivelyLogging, isWorkoutPaused, pauseWorkout])
   );
 
   // --- New Metric Calculations ---
@@ -454,12 +461,13 @@ export default function LogWorkoutScreen() {
   const handleLoggedSetChange = (exIndex: number, setIndex: number, field: 'loggedWeight' | 'loggedReps', value: string) => {
     const newLoggedExercises = [...loggedExercises];
     newLoggedExercises[exIndex].loggedSets[setIndex][field] = value;
-    updateLoggedExercises(newLoggedExercises);
     
-    // Hide validation indicators when user starts typing
-    if (showValidationIndicators) {
-      setShowValidationIndicators(false);
+    // Clear validation error for this specific set when user starts typing
+    if (newLoggedExercises[exIndex].loggedSets[setIndex].hasValidationError) {
+      newLoggedExercises[exIndex].loggedSets[setIndex].hasValidationError = false;
     }
+    
+    updateLoggedExercises(newLoggedExercises);
   };
 
   const addLoggedSet = (exIndex: number) => {
@@ -470,7 +478,8 @@ export default function LogWorkoutScreen() {
       loggedWeight: '', 
       loggedReps: '', 
       completed: false,
-      id: `${Date.now()}-${Math.random()}` // Generate unique ID
+      hasValidationError: false,
+      id: `${Date.now()}-${exIndex}-${newLoggedExercises[exIndex].loggedSets.length}-${Math.random()}`
     };
     newLoggedExercises[exIndex].loggedSets.push(newSet);
     updateLoggedExercises(newLoggedExercises);
@@ -488,13 +497,13 @@ export default function LogWorkoutScreen() {
       }
     } else {
       // If it's the last set, show some feedback that it can't be deleted
-      console.log('Cannot delete the last set');
+     
     }
   };
 
   const addLoggedExercise = () => {
     router.push({
-      pathname: '/(tabs)/select-exercise',
+      pathname: '/select-exercise',
       params: { currentLoggedExercises: JSON.stringify(loggedExercises), callingPage: 'log-workout' },
     });
   };
@@ -512,31 +521,29 @@ export default function LogWorkoutScreen() {
         // Try to get previous set data
         const previousSet = getPreviousSetData(exIndex, setIndex);
         
-        if (previousSet && (previousSet.loggedWeight || previousSet.loggedReps)) {
+        if (previousSet && (previousSet.loggedWeight || previousSet.reps)) {
           // Use previous values
           currentSet.loggedWeight = previousSet.loggedWeight || previousSet.weight || '';
-          currentSet.loggedReps = previousSet.loggedReps || previousSet.reps || '';
+          currentSet.reps = previousSet.reps || previousSet.reps || '';
           currentSet.completed = true;
         } else {
-          // Show validation indicator and don't complete the set
-          setShowValidationIndicators(true);
-          
-          // Show a brief alert to guide the user
-          Alert.alert(
-            "Missing Values", 
-            "Please enter weight and reps before completing the set.", 
-            [{ text: "OK" }],
-            { cancelable: true }
-          );
-          return;
+          // Show validation indicator only for this specific set
+          // Set a validation error flag on the specific set instead of global state
+          currentSet.hasValidationError = true;
+          updateLoggedExercises(newLoggedExercises);
+          return; // Don't complete the set
         }
       } else {
         // Set has values, complete it normally
         currentSet.completed = true;
+        // Clear any validation errors when completing successfully
+        currentSet.hasValidationError = false;
       }
     } else {
       // Uncompleting a set
       currentSet.completed = false;
+      // Clear validation errors when uncompleting
+      currentSet.hasValidationError = false;
     }
 
     updateLoggedExercises(newLoggedExercises);
@@ -559,7 +566,7 @@ export default function LogWorkoutScreen() {
       try {
         Vibration.vibrate([0, 200, 100, 200, 100, 200]); // Pattern: pause, vibrate, pause, vibrate, pause, vibrate
       } catch {
-        console.log('Vibration not supported on this device');
+        
       }
     }
   };
@@ -576,7 +583,7 @@ export default function LogWorkoutScreen() {
     
     restTimerIntervalRef.current = setInterval(() => {
       setRestTimerRemaining((prev) => {
-        if (prev <= 1) {
+        if (prev === 0) {
           if (restTimerIntervalRef.current) {
             clearInterval(restTimerIntervalRef.current);
             restTimerIntervalRef.current = null;
@@ -585,6 +592,9 @@ export default function LogWorkoutScreen() {
           triggerTimerEndFeedback();
           // Hide the timer after 1 second
           setTimeout(() => setRestTimerActive(false), 1000);
+          return 0;
+        }
+        if (prev < 0) { // Ensure it doesn't go negative
           return 0;
         }
         return prev - 1;
@@ -612,7 +622,7 @@ export default function LogWorkoutScreen() {
 
   const handleExercisePress = (exercise: Exercise) => {
     router.push({
-      pathname: '/(tabs)/exercise-details',
+      pathname: '/exercise-details',
       params: { exerciseId: exercise.id, exerciseName: exercise.name },
     });
   };
@@ -631,7 +641,7 @@ export default function LogWorkoutScreen() {
 
   const replaceExercise = (index: number) => {
     router.push({
-      pathname: '/(tabs)/select-exercise',
+      pathname: '/select-exercise',
       params: {
         currentLoggedExercises: JSON.stringify(loggedExercises),
         callingPage: 'log-workout',
@@ -652,20 +662,34 @@ export default function LogWorkoutScreen() {
   };
 
   useEffect(() => {
+    // 1. Prioritize resuming an actively paused workout
+    if (isWorkoutPaused && loggedExercises.length > 0) {
+      resumeWorkout();
+      return;
+    }
+
+    // 2. Load a workout that was "finished" but not yet saved (from workout-summary)
     if (lastCompletedWorkout) {
       loadWorkout(lastCompletedWorkout);
       clearLastCompletedWorkout();
-    } else if (params.selectedExercises) {
+    } 
+    // 3. Start a new workout from selected exercises
+    else if (params.selectedExercises) {
       const newSelectedExercises = JSON.parse(params.selectedExercises as string);
       const exercisesToAdd = newSelectedExercises.map((ex: Exercise) => ({
         ...ex,
-        loggedSets: [{ 
+        loggedSets: ex.loggedSets ? ex.loggedSets.map((set, index) => ({
+          ...set,
+          id: set.id || `${Date.now()}-${ex.id}-${index}-${Math.random()}`,
+          hasValidationError: false,
+        })) : [{ 
           weight: '', 
           reps: '', 
           loggedWeight: '', 
           loggedReps: '', 
           completed: false,
-          id: `${Date.now()}-${Math.random()}`
+          hasValidationError: false,
+          id: `${Date.now()}-${ex.id}-0-${Math.random()}`
         }],
       }));
 
@@ -679,18 +703,18 @@ export default function LogWorkoutScreen() {
       }
       router.setParams({ selectedExercises: undefined, replaceIndex: undefined });
     }
-  }, [params.selectedExercises, params.replaceIndex, loggedExercises, router, updateLoggedExercises, lastCompletedWorkout, clearLastCompletedWorkout, loadWorkout]);
+  }, [params.selectedExercises, params.replaceIndex, loggedExercises, router, updateLoggedExercises, lastCompletedWorkout, clearLastCompletedWorkout, loadWorkout, startWorkout, isWorkoutPaused, resumeWorkout]);
 
-  // Clean up rest timer and pause workout on unmount
+  // Clean up rest timer on unmount
   useEffect(() => {
     return () => {
       if (restTimerIntervalRef.current) {
         clearInterval(restTimerIntervalRef.current);
       }
-      // Pause the workout when leaving the log-workout page
-      // pauseWorkout(); // This line should remain commented out
+      // Note: We removed the automatic workout pausing to fix the timer issue
+      // The workout will continue running when navigating between screens
     };
-  }, [pauseWorkout]);
+  }, []);
 
   return (
     <>
@@ -802,7 +826,6 @@ export default function LogWorkoutScreen() {
                         totalSets={exercise.loggedSets.length}
                         setId={setId}
                         previousSet={previousSet}
-                        showValidationIndicator={showValidationIndicators}
                       />
                     );
                   })}

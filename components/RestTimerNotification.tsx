@@ -70,7 +70,7 @@ export default function RestTimerNotification({
     <Animated.View
       style={{
         position: 'absolute',
-        bottom: keyboardHeight > 0 ? keyboardHeight + 40 : 80,
+        bottom: keyboardHeight > 0 ? keyboardHeight  : 7,
         left: 16,
         right: 16,
         zIndex: 1000,

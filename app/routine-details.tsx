@@ -23,6 +23,7 @@ interface Set {
   weight: string;
   reps: string;
   completed: boolean; // Make completed property required to match WorkoutContext's Set interface
+  id?: string; // Add optional id property
 }
 
 interface Exercise {
@@ -70,33 +71,45 @@ export default function RoutineDetailsScreen() {
   };
 
   const startWorkout = () => {
-    const exercisesWithImages = routine.exercises.map(ex => {
+    const exercisesWithImages = routine.exercises.map((ex, exIndex) => {
       const details = getExerciseDetails(ex.name);
       console.log(`Exercise Name: ${ex.name}, Details Found: ${!!details}, Images: ${details?.images}`);
       return {
         ...ex,
         images: details?.images || [],
-        loggedSets: ex.sets.map(set => ({ ...set, loggedWeight: '', loggedReps: '', completed: false })), // Initialize loggedSets
+        loggedSets: ex.sets.map((set, index) => ({ 
+          ...set, 
+          loggedWeight: '', 
+          loggedReps: '', 
+          completed: false,
+          id: set.id || `${Date.now()}-${ex.id || exIndex}-${index}-${Math.random()}`
+        })), // Initialize loggedSets
       };
     });
-    startWorkoutContext({ ...routine, exercises: exercisesWithImages });
-    router.push('/(tabs)/log-workout');
+    startWorkoutContext({ routine: { ...routine, exercises: exercisesWithImages } });
+    router.push('/log-workout');
   };
 
-  const editRoutine = () => {
+    const editRoutine = () => {
     const routineWithDetails = {
       ...routine,
-      exercises: routine.exercises.map(ex => {
+      exercises: routine.exercises.map((ex, exIndex) => {
         const details = getExerciseDetails(ex.name);
         return {
           ...ex,
           id: details?.id, // Include id
           images: details?.images || [], // Include images
-          loggedSets: ex.sets.map(set => ({ ...set, loggedWeight: '', loggedReps: '', completed: false })), // Initialize loggedSets
+          loggedSets: ex.sets.map((set, index) => ({ 
+            ...set, 
+            loggedWeight: '', 
+            loggedReps: '', 
+            completed: false,
+            id: set.id || `${Date.now()}-${exIndex}-${index}-${Math.random()}`
+          })), // Initialize loggedSets
         };
       }),
     };
-    router.push({ pathname: '/(tabs)/create-routine', params: { routine: JSON.stringify(routineWithDetails) } });
+    router.push({ pathname: '/create-routine', params: { routine: JSON.stringify(routineWithDetails) } });
   };
 
   return (
@@ -131,7 +144,7 @@ export default function RoutineDetailsScreen() {
           <ThemedView key={exIndex} style={[styles.exerciseContainer, { borderColor: colors.tabIconDefault }]}>
             <TouchableOpacity
               style={styles.exerciseHeader}
-              onPress={() => router.push({ pathname: '/(tabs)/exercise-details', params: { exerciseId: details?.id, exerciseName: exercise.name } })}
+              onPress={() => router.push({ pathname: '/exercise-details', params: { exerciseId: details?.id, exerciseName: exercise.name } })}
             >
               <Image
                                 source={imageUrl.startsWith('http') ? { uri: imageUrl } : require('../assets/images/exersiseplaceholder.png')}

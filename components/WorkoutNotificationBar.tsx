@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 10,
     position: 'absolute',
-    bottom: 60,
+    bottom: 60, // Increased from 60 to ensure visibility above tab bar
     left: 0,
     right: 0,
     zIndex: 1000,

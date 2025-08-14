@@ -6,8 +6,8 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Image } from 'expo-image';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, Button, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { Alert, Animated, Button, PanResponder, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 // Helper function to truncate text
 const truncateText = (text: string, maxLength: number = 20) => {
@@ -20,6 +20,7 @@ const truncateText = (text: string, maxLength: number = 20) => {
 interface Set {
   weight: string;
   reps: string;
+  id?: string;
 }
 
 interface Exercise {
@@ -42,6 +43,145 @@ interface Routine {
   name: string;
   exercises: Exercise[];
 }
+
+// SwipeableSetRow component for individual set rows with swipe functionality
+const SwipeableSetRow = ({ 
+  set, 
+  setIndex, 
+  exerciseId, 
+  colors, 
+  handleSetChange, 
+  removeSet,
+  totalSets
+}: {
+  set: Set;
+  setIndex: number;
+  exerciseId: string;
+  colors: any;
+  handleSetChange: (exId: string, setIndex: number, field: keyof Set, value: string) => void;
+  removeSet: (exId: string, setIndex: number) => void;
+  totalSets: number;
+}) => {
+  const translateX = useRef(new Animated.Value(0)).current;
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isSwipeOpen, setIsSwipeOpen] = useState(false);
+
+  const panResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      // Only respond to horizontal swipes and only if there's more than one set
+      return totalSets > 1 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 5;
+    },
+    onPanResponderGrant: () => {
+      // Set the initial value for the animation
+      translateX.setOffset(translateX._value);
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      // Only allow left swipes (negative dx) and limit the maximum swipe distance
+      if (gestureState.dx < 0) {
+        const limitedDx = Math.max(gestureState.dx, -100); // Limit to 100px
+        translateX.setValue(limitedDx);
+      }
+    },
+    onPanResponderRelease: (evt, gestureState) => {
+      translateX.flattenOffset();
+      
+      if (gestureState.dx < -60) {
+        // Swipe threshold reached - show delete button
+        setIsSwipeOpen(true);
+        Animated.spring(translateX, {
+          toValue: -80,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+        }).start();
+      } else {
+        // Return to original position
+        setIsSwipeOpen(false);
+        Animated.spring(translateX, {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+        }).start();
+      }
+    },
+  });
+
+  const handleDelete = () => {
+    setIsDeleting(true);
+    Animated.timing(translateX, {
+      toValue: -300,
+      duration: 250,
+      useNativeDriver: true,
+    }).start((finished) => {
+      if (finished) {
+        removeSet(exerciseId, set.id!);
+      }
+    });
+  };
+
+  const resetPosition = () => {
+    setIsSwipeOpen(false);
+    Animated.spring(translateX, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 8,
+    }).start();
+  };
+
+  return (
+    <View style={styles.swipeableContainer}>
+      {/* Delete button behind the row */}
+      <View style={[styles.deleteButtonContainer, { backgroundColor: '#ff4444' }]}>
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+          <IconSymbol name="trash" size={20} color="white" />
+          <ThemedText style={styles.deleteButtonText}>Delete</ThemedText>
+        </TouchableOpacity>
+      </View>
+
+      {/* Main set row */}
+      <Animated.View
+        style={[
+          styles.setRow,
+          {
+            backgroundColor: colors.background,
+            borderColor: colors.tabIconDefault,
+            borderWidth: 1,
+            transform: [{ translateX }],
+          },
+        ]}
+        {...panResponder.panHandlers}
+      >
+        <TouchableOpacity 
+          style={styles.resetTouchArea}
+          onPress={resetPosition}
+          activeOpacity={1}
+        >
+          <View style={styles.setRowContent}>
+            <ThemedText style={[styles.setLabel, { color: colors.text }]}>Set {setIndex + 1}</ThemedText>
+            <TextInput
+              style={[styles.setInput, { backgroundColor: colors.background, borderColor: colors.tabIconDefault, color: colors.text }]}
+              placeholder="Weight (kg)"
+              placeholderTextColor={colors.secondary}
+              keyboardType="numeric"
+              value={set.weight}
+              onChangeText={(val) => handleSetChange(exerciseId, setIndex, 'weight', val)}
+            />
+            <TextInput
+              style={[styles.setInput, { backgroundColor: colors.background, borderColor: colors.tabIconDefault, color: colors.text }]}
+              placeholder="Reps"
+              placeholderTextColor={colors.secondary}
+              value={set.reps}
+              onChangeText={(val) => handleSetChange(exerciseId, setIndex, 'reps', val)}
+            />
+            
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
+  );
+};
 
 export default function CreateRoutineScreen() {
   const colorScheme = useColorScheme();
@@ -66,7 +206,7 @@ export default function CreateRoutineScreen() {
 
   const replaceExercise = (index: number) => {
     router.push({
-      pathname: '/(tabs)/select-exercise',
+      pathname: '/select-exercise',
       params: {
         currentRoutineExercises: JSON.stringify(exercises),
         callingPage: 'create-routine',
@@ -92,12 +232,21 @@ export default function CreateRoutineScreen() {
         setExercises((prevExercises) => {
           const updatedExercises = [...prevExercises];
           if (replaceIndex !== undefined && newSelectedExercises.length > 0) {
-            updatedExercises[replaceIndex] = { ...newSelectedExercises[0], sets: [{ weight: '', reps: '' }, { weight: '', reps: '' }] };
+            updatedExercises[replaceIndex] = { 
+              ...newSelectedExercises[0], 
+              sets: [
+                { weight: '', reps: '', id: `${Date.now()}-${newSelectedExercises[0].id}-0-${Math.random()}` }, 
+                { weight: '', reps: '', id: `${Date.now()}-${newSelectedExercises[0].id}-1-${Math.random()}` }
+              ] 
+            };
           } else {
             updatedExercises.push(
               ...newSelectedExercises.map((ex) => ({
                 ...ex,
-                sets: [{ weight: '', reps: '' }, { weight: '', reps: '' }], // Initialize with two empty sets
+                sets: [
+                  { weight: '', reps: '', id: `${Date.now()}-${ex.id}-0-${Math.random()}` }, 
+                  { weight: '', reps: '', id: `${Date.now()}-${ex.id}-1-${Math.random()}` }
+                ], // Initialize with two empty sets
                 images: ex.images, // Preserve images property
               }))
             );
@@ -136,20 +285,24 @@ export default function CreateRoutineScreen() {
         ex.id === exId
           ? {
               ...ex,
-              sets: [...ex.sets, { weight: '', reps: '' }],
+              sets: [...ex.sets, { 
+                weight: '', 
+                reps: '', 
+                id: `${Date.now()}-${exId}-${ex.sets.length}-${Math.random()}`
+              }],
             }
           : ex
       )
     );
   };
 
-  const removeSet = (exId: string, setIndex: number) => {
+  const removeSet = (exId: string, setId: string) => {
     setExercises((prevExercises) =>
       prevExercises.map((ex) =>
         ex.id === exId
           ? {
               ...ex,
-              sets: ex.sets.filter((_, sIdx) => sIdx !== setIndex),
+              sets: ex.sets.filter((set) => set.id !== setId),
             }
           : ex
       )
@@ -175,7 +328,7 @@ export default function CreateRoutineScreen() {
 
     const newRoutine = { id: currentRoutineId || Date.now().toString(), name: routineName.trim(), exercises };
     router.push({
-      pathname: '/(tabs)/workout',
+      pathname: '/workout',
       params: { newRoutine: JSON.stringify(newRoutine) },
     });
   };
@@ -188,7 +341,7 @@ export default function CreateRoutineScreen() {
 
   const handleExercisePress = (exercise: Exercise) => {
     router.push({
-      pathname: '/(tabs)/exercise-details',
+      pathname: '/exercise-details',
       params: { exerciseId: exercise.id, exerciseName: exercise.name },
     });
   };
@@ -248,28 +401,16 @@ export default function CreateRoutineScreen() {
             </View>
 
             {exercise.sets.map((set, setIndex) => (
-              <View key={setIndex} style={styles.setContainer}>
-                <ThemedText style={{ color: colors.text, marginRight: 8 }}>Set {setIndex + 1}</ThemedText>
-                <TextInput
-                  style={[styles.setInput, { backgroundColor: colors.background, borderColor: colors.tabIconDefault, color: colors.text }]}
-                  placeholder="Weight (kg)"
-                  placeholderTextColor={colors.secondary}
-                  keyboardType="numeric"
-                  value={set.weight}
-                  onChangeText={(val) => handleSetChange(exercise.id!, setIndex, 'weight', val)}
-                />
-                <TextInput
-                  style={[styles.setInput, { backgroundColor: colors.background, borderColor: colors.tabIconDefault, color: colors.text }]}
-                  placeholder="Reps"
-                  placeholderTextColor={colors.secondary}
-                  keyboardType="numeric"
-                  value={set.reps}
-                  onChangeText={(val) => handleSetChange(exercise.id!, setIndex, 'reps', val)}
-                />
-                <TouchableOpacity onPress={() => removeSet(exercise.id!, setIndex)} style={styles.removeSetButton}>
-                  <IconSymbol name="xmark.circle" size={20} color={colors.text} />
-                </TouchableOpacity>
-              </View>
+              <SwipeableSetRow
+                key={set.id || setIndex} // Use set.id if available, otherwise index
+                set={set}
+                setIndex={setIndex}
+                exerciseId={exercise.id!}
+                colors={colors}
+                handleSetChange={handleSetChange}
+                removeSet={removeSet}
+                totalSets={exercise.sets.length}
+              />
             ))}
             <Button title="Add Set" onPress={() => addSet(exercise.id!)} />
           </ThemedView>
@@ -278,7 +419,7 @@ export default function CreateRoutineScreen() {
         <TouchableOpacity
           style={[styles.addExerciseButton, { backgroundColor: colors.tint, marginTop: 12, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 15, alignItems: 'center' }]}
           onPress={() => router.push({
-            pathname: '/(tabs)/select-exercise',
+            pathname: '/select-exercise',
             params: { currentRoutineExercises: JSON.stringify(exercises) },
           })}
         >
@@ -412,5 +553,53 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 15,
     alignItems: 'center',
+  },
+  swipeableContainer: {
+    position: 'relative',
+    marginBottom: 8,
+  },
+  deleteButtonContainer: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+    marginBottom: 8,
+    
+  },
+  deleteButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100%',
+    width: '100%',
+  },
+  deleteButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  setRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  setRowContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  setLabel: {
+    fontSize: 16,
+    marginRight: 10,
+    width: 60,
+  },
+  resetTouchArea: {
+    flex: 1,
   },
 });

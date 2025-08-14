@@ -111,7 +111,7 @@ const History = ({ onWorkoutDeleted }: HistoryProps) => {
       return (
         <ThemedView key={session.id} style={[styles.item, { backgroundColor: colors.background, borderColor: colors.tabIconDefault }]}>
           <TouchableOpacity 
-            onPress={() => router.push({ pathname: '/(tabs)/workout-details-page', params: { workoutId: session.id } })}
+            onPress={() => router.push({ pathname: '/workout-details-page', params: { workoutId: session.id } })}
           >
             <View style={styles.itemHeader}>
               <ThemedText style={styles.itemTitle}>{session.routine_name || 'Freestyle Workout'}</ThemedText>

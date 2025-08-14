@@ -107,15 +107,21 @@ export default function RoutineScreen() {
   }, [router]);
 
   const startWorkout = useCallback((routine: RoutinesRoutine) => {
-    const exercisesWithImagesAndLoggedSets: WorkoutExercise[] = routine.exercises.map(ex => {
+    const exercisesWithImagesAndLoggedSets: WorkoutExercise[] = routine.exercises.map((ex, exIndex) => {
       const details = getExerciseDetails(ex.name);
       return {
         ...ex,
         images: details?.images || [],
-        loggedSets: ex.sets.map(set => ({ ...set, loggedWeight: '', loggedReps: '', completed: false })),
+        loggedSets: ex.sets.map((set, index) => ({ 
+          ...set, 
+          loggedWeight: '', 
+          loggedReps: '', 
+          completed: false,
+          id: set.id || `${Date.now()}-${ex.id || exIndex}-${index}-${Math.random()}`
+        })),
       };
     });
-    startWorkoutContext({ ...routine, exercises: exercisesWithImagesAndLoggedSets });
+    startWorkoutContext({ routine: { ...routine, exercises: exercisesWithImagesAndLoggedSets } });
     router.push('/log-workout');
   }, [getExerciseDetails, startWorkoutContext, router]);
 
