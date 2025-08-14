@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { Dimensions, Platform, TouchableOpacity, View } from 'react-native';
 import 'react-native-reanimated';
+import * as SplashScreen from 'expo-splash-screen';
 
 import { ThemedText } from '@/components/ThemedText';
 import WorkoutNotificationBar from '@/components/WorkoutNotificationBar';
@@ -17,6 +18,8 @@ import { RoutinesProvider } from '@/context/RoutinesContext';
 import { useWorkout, WorkoutProvider } from '@/context/WorkoutContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
+// Prevent the splash screen from auto-hiding before asset loading is complete.
+SplashScreen.preventAutoHideAsync();
 
 // Helper function to format time
 const formatTime = (totalSeconds: number) => {
@@ -370,6 +373,12 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+
+  useEffect(() => {
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded]);
 
   if (!loaded) {
     return null;
