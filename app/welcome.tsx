@@ -6,6 +6,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { ActivityLevel, calculateTDEE } from '@/utils/calorieCalculator';
 import { supabase } from '@/utils/supabase';
 import { Ionicons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -13,8 +14,6 @@ import {
   Alert,
   Animated,
   Dimensions,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -33,6 +32,7 @@ const WelcomeScreen = () => {
   const [height, setHeight] = useState<string>(''); // in cm
   const [weight, setWeight] = useState<string>(''); // in kg
   const [activityLevel, setActivityLevel] = useState<ActivityLevel | null>(null);
+  const [goal, setGoal] = useState<string>('maintain');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const colorScheme = useColorScheme();
@@ -93,15 +93,43 @@ const WelcomeScreen = () => {
 
     setIsLoading(true);
 
-    let calorieGoal = 0;
+    let maintenanceCalories = 0;
     try {
-      calorieGoal = calculateTDEE(gender, ageNum, heightNum, weightNum, activityLevel);
+      maintenanceCalories = calculateTDEE(gender, ageNum, heightNum, weightNum, activityLevel);
     } catch (error) {
       console.error('Error calculating TDEE:', error);
       Alert.alert('Calculation Error', 'Could not calculate calorie goal. Please check your inputs.');
       setIsLoading(false);
       return;
     }
+
+    let calorieGoal = maintenanceCalories;
+    switch (goal) {
+      case 'lose1kg':
+        calorieGoal -= 1100;
+        break;
+      case 'lose0.75kg':
+        calorieGoal -= 825;
+        break;
+      case 'lose0.5kg':
+        calorieGoal -= 550;
+        break;
+      case 'lose0.25kg':
+        calorieGoal -= 275;
+        break;
+      case 'maintain':
+        // No change
+        break;
+      case 'gain0.25kg':
+        calorieGoal += 275;
+        break;
+      case 'gain0.5kg':
+        calorieGoal += 550;
+        break;
+    }
+
+
+    const activityLevelForDb = activityLevel.toLowerCase().replace(/ /g, '_');
 
     if (user) {
       const { error } = await supabase
@@ -112,7 +140,7 @@ const WelcomeScreen = () => {
           age: ageNum,
           height: heightNum,
           weight: weightNum,
-          activity_level: activityLevel,
+          activity_level: activityLevelForDb,
           calorie_goal: calorieGoal,
         })
         .eq('id', user.id);
@@ -133,17 +161,13 @@ const WelcomeScreen = () => {
     : ['#667eea', '#764ba2', '#f093fb'];
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <>
       <StatusBar 
         barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} 
         backgroundColor="transparent" 
         translucent 
       />
 
-      <LinearGradient colors={gradientColors} style={styles.gradient}>
         <ScrollView 
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -305,13 +329,31 @@ const WelcomeScreen = () => {
                 ))}
               </View>
 
+              {/* Goal Option */}
+              <ThemedText style={[styles.label, { color: colors.text }]}>Goal</ThemedText>
+              <ThemedView style={[styles.pickerContainer, { backgroundColor: colors.cardBackground, borderColor: colors.tabIconDefault, borderWidth: 1 }]}>
+                <Picker
+                  selectedValue={goal}
+                  style={[styles.picker, { color: colors.text, width: '100%' }]}
+                  onValueChange={(itemValue) => setGoal(itemValue)}
+                >
+                  <Picker.Item label="Lose 1 kg per week" value="lose1kg" />
+                  <Picker.Item label="Lose 0.75 kg per week" value="lose0.75kg" />
+                  <Picker.Item label="Lose 0.5 kg per week" value="lose0.5kg" />
+                  <Picker.Item label="Lose 0.25 kg per week" value="lose0.25kg" />
+                  <Picker.Item label="Maintain current weight" value="maintain" />
+                  <Picker.Item label="Gain 0.25 kg per week" value="gain0.25kg" />
+                  <Picker.Item label="Gain 0.5 kg per week" value="gain0.5kg" />
+                </Picker>
+              </ThemedView>
+
               {/* Continue Button */}
               <TouchableOpacity
                 style={[
                   styles.continueButton,
-                  { 
+                  {
                     backgroundColor: colors.tint,
-                    opacity: fullName.trim() && gender && age && height && weight && activityLevel ? 1 : 0.6 
+                    opacity: fullName.trim() && gender && age && height && weight && activityLevel ? 1 : 0.6
                   }
                 ]}
                 onPress={handleContinue}
@@ -344,8 +386,7 @@ const WelcomeScreen = () => {
             </Animated.View>
           </Animated.View>
         </ScrollView>
-      </LinearGradient>
-    </KeyboardAvoidingView>
+    </>
   );
 };
 
@@ -359,10 +400,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    minHeight: height,
   },
   content: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
@@ -516,6 +555,22 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  pickerContainer: {
+    borderRadius: 12,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    overflow: 'hidden',
+  },
+  picker: {
+    height: 50,
+    width: '100%',
   },
 });
 

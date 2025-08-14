@@ -7,7 +7,7 @@ export enum ActivityLevel {
 }
 
 export function calculateTDEE(
-  gender: 'Male' | 'Female',
+  gender: 'Male' | 'Female' | 'Other',
   age: number,
   height: number, // in cm
   weight: number, // in kg
@@ -17,7 +17,7 @@ export function calculateTDEE(
   let bmr: number;
   if (gender === 'Male') {
     bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
-  } else { // Female
+  } else { // Female or Other
     bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
   }
 

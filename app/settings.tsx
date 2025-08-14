@@ -3,6 +3,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { ActivityLevel, calculateTDEE } from '@/utils/calorieCalculator';
 import { supabase } from '@/utils/supabase';
 import { Picker } from '@react-native-picker/picker';
 import Constants from 'expo-constants';
@@ -18,24 +19,28 @@ export default function SettingsScreen() {
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
 
   useEffect(() => {
-    if (profile?.calorie_goal) {
-      const currentCalorieGoal = profile.calorie_goal;
-      // This mapping is simplified and assumes a base calorie goal for 'maintain'
-      // You might need a more robust way to determine the initial goal based on user's actual BMR/TDEE
-      // For now, we'll try to infer based on deviations from a hypothetical 'maintain' value (e.g., 2000 kcal)
-      const maintainCalorieGoal = 2000; // This should ideally come from a more accurate calculation
+    if (profile?.calorie_goal && profile.gender && profile.age && profile.height && profile.weight && profile.activity_level) {
+      const maintenanceCalories = calculateTDEE(
+        profile.gender,
+        profile.age,
+        profile.height,
+        profile.weight,
+        profile.activity_level as ActivityLevel
+      );
 
-      if (currentCalorieGoal <= maintainCalorieGoal - 1100) {
+      const diff = profile.calorie_goal - maintenanceCalories;
+
+      if (diff <= -1100) {
         setSelectedGoal('lose1kg');
-      } else if (currentCalorieGoal <= maintainCalorieGoal - 825) {
+      } else if (diff <= -825) {
         setSelectedGoal('lose0.75kg');
-      } else if (currentCalorieGoal <= maintainCalorieGoal - 550) {
+      } else if (diff <= -550) {
         setSelectedGoal('lose0.5kg');
-      } else if (currentCalorieGoal <= maintainCalorieGoal - 275) {
+      } else if (diff <= -275) {
         setSelectedGoal('lose0.25kg');
-      } else if (currentCalorieGoal >= maintainCalorieGoal + 550) {
+      } else if (diff >= 550) {
         setSelectedGoal('gain0.5kg');
-      } else if (currentCalorieGoal >= maintainCalorieGoal + 275) {
+      } else if (diff >= 275) {
         setSelectedGoal('gain0.25kg');
       } else {
         setSelectedGoal('maintain');
@@ -43,7 +48,7 @@ export default function SettingsScreen() {
     } else {
       setSelectedGoal('maintain'); // Default to maintain if no calorie goal is set
     }
-  }, [profile?.calorie_goal]);
+  }, [profile]);
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]} showsVerticalScrollIndicator={false}>
@@ -58,33 +63,46 @@ export default function SettingsScreen() {
             style={[styles.picker, { color: colors.text, width: '100%' }]}
             onValueChange={async (itemValue) => {
               setSelectedGoal(itemValue);
-              let newCalorieGoal = profile?.calorie_goal || 2000; // Default if not set
-              const baseCalorieGoal = profile?.calorie_goal || 2000; // Use current or default as base
+
+              if (!profile?.gender || !profile?.age || !profile?.height || !profile?.weight || !profile?.activity_level) {
+                Alert.alert('Error', 'Please complete your personal details before setting a goal.');
+                return;
+              }
+
+              const maintenanceCalories = calculateTDEE(
+                profile.gender,
+                profile.age,
+                profile.height,
+                profile.weight,
+                profile.activity_level as ActivityLevel
+              );
+
+              let newCalorieGoal = maintenanceCalories;
 
               switch (itemValue) {
                 case 'lose1kg':
-                  newCalorieGoal = baseCalorieGoal - 1100;
+                  newCalorieGoal = maintenanceCalories - 1100;
                   break;
                 case 'lose0.75kg':
-                  newCalorieGoal = baseCalorieGoal - 825;
+                  newCalorieGoal = maintenanceCalories - 825;
                   break;
                 case 'lose0.5kg':
-                  newCalorieGoal = baseCalorieGoal - 550;
+                  newCalorieGoal = maintenanceCalories - 550;
                   break;
                 case 'lose0.25kg':
-                  newCalorieGoal = baseCalorieGoal - 275;
+                  newCalorieGoal = maintenanceCalories - 275;
                   break;
                 case 'maintain':
-                  newCalorieGoal = baseCalorieGoal;
+                  newCalorieGoal = maintenanceCalories;
                   break;
                 case 'gain0.25kg':
-                  newCalorieGoal = baseCalorieGoal + 275;
+                  newCalorieGoal = maintenanceCalories + 275;
                   break;
                 case 'gain0.5kg':
-                  newCalorieGoal = baseCalorieGoal + 550;
+                  newCalorieGoal = maintenanceCalories + 550;
                   break;
                 default:
-                  newCalorieGoal = baseCalorieGoal; // Fallback
+                  newCalorieGoal = maintenanceCalories; // Fallback
                   break;
               }
 
@@ -121,7 +139,7 @@ export default function SettingsScreen() {
         {/* Account Option */}
         <TouchableOpacity
           style={[styles.button, { backgroundColor: colors.cardBackground, borderColor: colors.tabIconDefault, borderWidth: 1 }]} // Use a distinct color for account
-          onPress={() => router.push('/(tabs)/account-details')}
+          onPress={() => router.push('/account-details')}
         >
           <ThemedText style={[styles.buttonText, { color: colors.text }]}>Account</ThemedText>
         </TouchableOpacity>
@@ -129,7 +147,7 @@ export default function SettingsScreen() {
         {/* Personal Details Option */}
         <TouchableOpacity
           style={[styles.button, { backgroundColor: colors.cardBackground, borderColor: colors.tabIconDefault, borderWidth: 1 }]} // Use a distinct color for personal details
-          onPress={() => router.push('/(tabs)/personal-details')}
+          onPress={() => router.push('/personal-details')}
         >
           <ThemedText style={[styles.buttonText, { color: colors.text }]}>Personal Details</ThemedText>
         </TouchableOpacity>

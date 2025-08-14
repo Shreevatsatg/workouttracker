@@ -7,6 +7,12 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 interface Profile {
   full_name: string | null;
   avatar_url: string | null;
+  gender: 'Male' | 'Female' | 'Other' | null;
+  age: number | null;
+  height: number | null;
+  weight: number | null;
+  activity_level: string | null;
+  calorie_goal: number | null;
 }
 
 interface AuthContextType {
@@ -17,6 +23,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   updateProfile: (newProfile: Partial<Profile>) => Promise<void>;
+  deleteUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -105,8 +112,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user]);
 
+  const deleteUser = async () => {
+    if (!session) {
+      throw new Error('User not authenticated.');
+    }
+
+    const { error } = await supabase.functions.invoke('delete-user', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (error) {
+      throw error;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile, updateProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile, updateProfile, deleteUser }}>
       {children}
     </AuthContext.Provider>
   );

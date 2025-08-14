@@ -3,15 +3,15 @@ import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function AccountDetailsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { user } = useAuth();
-
-  
+  const { user, deleteUser, signOut, profile } = useAuth();
+  const router = useRouter();
 
   const handleDeleteAccount = async () => {
     Alert.alert(
@@ -23,12 +23,14 @@ export default function AccountDetailsScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            // Implement actual deletion logic here
-            // This typically involves a Supabase Edge Function or a secure backend call
-            Alert.alert('Delete Account', 'Account deletion functionality not yet implemented.');
-            // After successful deletion, log out the user and navigate to login screen
-            // await supabase.auth.signOut();
-            // router.replace('/login');
+            try {
+              await deleteUser();
+              await signOut();
+              router.replace('/login');
+              Alert.alert('Success', 'Your account has been deleted.');
+            } catch (error: any) {
+              Alert.alert('Error', `Failed to delete account: ${error.message}`);
+            }
           },
         },
       ],
@@ -37,13 +39,26 @@ export default function AccountDetailsScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.appBackgroundbackground }]}>
-      <ThemedText type="title" style={{ color: colors.text, marginBottom: 20 }}>Account Details</ThemedText>
+    <View style={styles.container}>
+      <ScrollView>
+        <ThemedText type="title" style={{ color: colors.text, marginBottom: 20 }}>Account Details</ThemedText>
 
-      
+        {/* Personal Information Section */}
+        <ThemedView lightColor="transparent" darkColor="transparent" style={styles.personalDetailsContainer}>
+          <ThemedText type="subtitle" style={[styles.sectionTitle, { color: colors.text }]}>Personal Information</ThemedText>
+          <ThemedView style={[styles.infoRow,{backgroundColor:'transparent'}]}>
+            <ThemedText style={styles.infoLabel}>Full Name:</ThemedText>
+            <ThemedText style={styles.infoValue}>{profile?.full_name || 'N/A'}</ThemedText>
+          </ThemedView>
+          <ThemedView style={[styles.infoRow,{backgroundColor:'transparent'}]}>
+            <ThemedText style={styles.infoLabel}>Email:</ThemedText>
+            <ThemedText style={styles.infoValue}>{user?.email || 'N/A'}</ThemedText>
+          </ThemedView>
+        </ThemedView>
+      </ScrollView>
 
       {/* Delete Account Section */}
-      <ThemedView lightColor="transparent" darkColor="transparent" style={[styles.personalDetailsContainer, { marginTop: 20 }]}>
+      <ThemedView lightColor="transparent" darkColor="transparent" style={styles.deleteContainer}>
         <ThemedText type="subtitle" style={[styles.sectionTitle, { color: colors.text }]}>Danger Zone</ThemedText>
         <TouchableOpacity
           style={[styles.deleteButton, { backgroundColor: colors.error }]} // Use a red color for delete
@@ -52,8 +67,7 @@ export default function AccountDetailsScreen() {
           <ThemedText style={[styles.editButtonText, { color: colors.background }]}>Delete Account</ThemedText>
         </TouchableOpacity>
       </ThemedView>
-
-    </ScrollView>
+    </View>
   );
 }
 
@@ -62,6 +76,26 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
+  personalDetailsContainer: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+  },
+  infoLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  infoValue: {
+    fontSize: 16,
+  },
   deleteButton: {
     paddingVertical: 10,
     paddingHorizontal: 15,
@@ -69,5 +103,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 10,
+  },
+  editButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  deleteContainer: {
+    paddingVertical: 20,
   },
 });

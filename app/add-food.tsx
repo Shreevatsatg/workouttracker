@@ -321,7 +321,7 @@ export default function AddFoodScreen() {
       setTimeout(() => {
         setShowSuccessMessage(false);
         router.push('/food-log');
-      }, 1500); // Show success message for 1.5 seconds
+      }, 50); // Show success message for 0.5 seconds
     } catch (error) {
       console.error('Failed to add food:', error);
       Alert.alert('Error', 'Failed to add food entry. Please try again.');
