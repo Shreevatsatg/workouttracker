@@ -113,7 +113,6 @@ export const WorkoutProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const pauseWorkout = () => {
-    setIsWorkoutActivelyLogging(false);
     setIsWorkoutPaused(true);
   };
 

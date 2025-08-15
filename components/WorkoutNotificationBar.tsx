@@ -14,7 +14,7 @@ export default function WorkoutNotificationBar() {
 
   const router = useRouter();
 
-  if (!activeRoutine || pathname === '/log-workout' || !isWorkoutPaused) {
+  if (!activeRoutine || pathname === '/log-workout') {
     return null;
   }
 
@@ -44,7 +44,7 @@ export default function WorkoutNotificationBar() {
     <View style={[styles.container, { backgroundColor: colors.tint }]}>
       <View style={styles.textContainer}>
         <Text style={[styles.routineName, { color: colors.background }]}>{activeRoutine.name}</Text>
-        <Text style={[styles.timer, { color: colors.background }]}>{formatTime(workoutTime)}</Text>
+        
       </View>
       <View style={styles.buttonContainer}>
         <TouchableOpacity onPress={handleDiscard} style={styles.button}>

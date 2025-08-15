@@ -409,16 +409,7 @@ export default function LogWorkoutScreen() {
   );
 
   // Pause workout when leaving this screen
-  useFocusEffect(
-    useCallback(() => {
-      return () => {
-        // When leaving the screen, pause the workout if it's active
-        if (isWorkoutActivelyLogging && !isWorkoutPaused) {
-          pauseWorkout();
-        }
-      };
-    }, [isWorkoutActivelyLogging, isWorkoutPaused, pauseWorkout])
-  );
+  
 
   // --- New Metric Calculations ---
   const totalVolume = useMemo(() => {
