@@ -41,9 +41,9 @@ export default function WorkoutNotificationBar() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.tint }]}>
+    <View style={[styles.container, { backgroundColor: colors.surfaceSecondary }]}>
       <View style={styles.textContainer}>
-        <Text style={[styles.routineName, { color: colors.background }]}>{activeRoutine.name}</Text>
+        <Text style={[styles.routineName, { color: colors.text }]}>{activeRoutine.name}</Text>
         
       </View>
       <View style={styles.buttonContainer}>

@@ -12,10 +12,10 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
+import * as Notifications from 'expo-notifications';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, PanResponder, ScrollView, StyleSheet, TextInput, TouchableOpacity, Vibration, View } from 'react-native';
-import * as Notifications from 'expo-notifications';
 
 interface Set {
   weight: string;
@@ -251,9 +251,9 @@ export default function LogWorkoutScreen() {
     resumeWorkout,
   } = useWorkout();
 
-  const [showEmptySetsWarning, setShowEmptySetsWarning] = useState(false);
-  const [emptySetsWarningMessage, setEmptySetsWarningMessage] = useState('');
-  const [showEmptyWorkoutModal, setShowEmptyWorkoutModal] = useState(false);
+  const [showSimpleInfoModal, setShowSimpleInfoModal] = useState(false);
+  const [simpleInfoMessage, setSimpleInfoMessage] = useState('');
+  const [simpleInfoOnConfirm, setSimpleInfoOnConfirm] = useState<() => void>(() => () => {});
   const [isProcessingFinish, setIsProcessingFinish] = useState(false);
 
   // Get previous workout data for each exercise (mock function - you'll need to implement based on your data structure)
@@ -264,21 +264,31 @@ export default function LogWorkoutScreen() {
   };
 
   const handleFinishWorkout = useCallback(() => {
-    if (isProcessingFinish) return; // Prevent double-clicks
+    if (isProcessingFinish) {
+      return; // Prevent double-clicks
+    }
     
-   
     setIsProcessingFinish(true);
-    
+
     // Check if workout is completely empty (no completed sets)
     const hasAnyCompletedSets = loggedExercises.some(exercise => 
       exercise.loggedSets.some(set => set.completed)
     );
 
-   
+    // Scenario 1: No exercises at all
+    if (loggedExercises.length === 0) {
+      setSimpleInfoMessage("Add an exercise");
+      setSimpleInfoOnConfirm(() => () => setShowSimpleInfoModal(false)); // Just close the modal
+      setShowSimpleInfoModal(true);
+      setIsProcessingFinish(false);
+      return;
+    }
 
+    // Scenario 2: Exercises exist, but no sets completed
     if (!hasAnyCompletedSets) {
-   
-      setShowEmptyWorkoutModal(true);
+      setSimpleInfoMessage("Workout has no sets performed");
+      setSimpleInfoOnConfirm(() => () => setShowSimpleInfoModal(false)); // Just close the modal
+      setShowSimpleInfoModal(true);
       setIsProcessingFinish(false);
       return;
     }
@@ -315,77 +325,37 @@ export default function LogWorkoutScreen() {
       }
     });
 
-    
-
-    // Show validation indicators for empty sets
-    // Removed the global showValidationIndicators state
-
     // Determine if we need to show warning
     const needsWarning = hasEmptySets || hasIncompleteExercises;
 
-    if (needsWarning) {
-      let warningMessage = '';
-      
-      if (hasEmptySets) {
-        warningMessage += `You have completed sets with missing weight or reps in: ${exercisesWithEmptySets.join(', ')}.\n\n`;
-      }
-
-      if (hasIncompleteExercises) {
-        warningMessage += `The following exercises have no completed sets: ${exercisesWithNoCompletedSets.join(', ')}.\n\n`;
-      }
-
-      warningMessage += `Do you want to finish the workout anyway?`;
-      
-     
-      setEmptySetsWarningMessage(warningMessage);
-      setShowEmptySetsWarning(true);
-      setIsProcessingFinish(false);
-    } else {
-     
-      // All validation passed, finish workout directly
-      finishWorkout();
-    }
+    // If there are any incomplete sets or exercises, just proceed to finish workout
+    // as finishWorkout() already filters for completed exercises/sets.
+    finishWorkout();
   }, [loggedExercises, workoutTime, activeRoutine, router, saveWorkout, isProcessingFinish]);
 
   const finishWorkout = () => {
-   
     pauseWorkout();
+
+    const filteredExercises = loggedExercises.map(exercise => {
+      const completedSets = exercise.loggedSets.filter(set => set.completed);
+      return { ...exercise, loggedSets: completedSets };
+    }).filter(exercise => exercise.loggedSets.length > 0);
+
     router.push({
       pathname: '/workout-summary',
       params: {
         workoutData: JSON.stringify({
           name: activeRoutine?.name || 'Custom Workout',
-          exercises: loggedExercises,
+          exercises: filteredExercises,
         }),
         workoutDuration: workoutTime,
       },
     });
   };
 
-  const handleEmptyWorkoutDiscard = () => {
-    setShowEmptyWorkoutModal(false);
-    discardWorkout();
-    router.push('/workout');
-  };
+  
 
-  const handleEmptyWorkoutFinish = () => {
-   
-    setShowEmptyWorkoutModal(false);
-    finishWorkout();
-  };
-
-  const handleWarningConfirm = () => {
-   
-    setShowEmptySetsWarning(false);
-    // Removed the global showValidationIndicators state
-    finishWorkout();
-  };
-
-  const handleWarningCancel = () => {
-   
-    setShowEmptySetsWarning(false);
-    // Removed the global showValidationIndicators state
-  };
+  
 
   useFocusEffect(
     useCallback(() => {
@@ -903,25 +873,18 @@ export default function LogWorkoutScreen() {
         onClose={() => setRestTimerSelectorVisible(false)}
       />
 
-      {/* Confirmation Modal for Empty Sets */}
+      
+
+      {/* Simple Info Modal */}
       <ConfirmationModal
-        visible={showEmptySetsWarning}
-        message={emptySetsWarningMessage}
-        onConfirm={handleWarningConfirm}
-        onCancel={handleWarningCancel}
-        confirmText="Finish Anyway"
-        cancelText="Cancel"
+        isVisible={showSimpleInfoModal}
+        message={simpleInfoMessage}
+        onConfirm={simpleInfoOnConfirm}
+        confirmText="Okay"
+        hideCancelButton={true}
       />
 
-      {/* Empty Workout Modal */}
-      <ConfirmationModal
-        isVisible={showEmptyWorkoutModal}
-        message="You haven't completed any sets in this workout. Would you like to discard this empty workout or finish it anyway?"
-        onConfirm={handleEmptyWorkoutFinish}
-        onCancel={handleEmptyWorkoutDiscard}
-        confirmText="Finish Empty Workout"
-        cancelText="Discard Workout"
-      />
+      
     </>
   );
 }

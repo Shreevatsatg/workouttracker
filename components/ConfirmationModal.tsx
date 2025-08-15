@@ -52,11 +52,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isVisible, title,
         <ThemedText type="subtitle" style={[styles.modalTitle, { color: colors.tint }]}>{title}</ThemedText>
         <ThemedText style={[styles.modalMessage, { color: colors.text }]}>{message}</ThemedText>
         <ThemedView style={styles.buttonContainer}>
-          <TouchableOpacity style={[styles.button, styles.cancelButton, { borderColor: colors.secondary }]} onPress={onCancel}>
-            <ThemedText style={[styles.buttonText, { color: colors.secondary }]}>{cancelButtonText || 'Cancel'}</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.button, styles.confirmButton, { backgroundColor: colors.error }]} onPress={onConfirm}>
-            <ThemedText style={[styles.buttonText, { color: colors.background }]}>{confirmButtonText || 'Delete'}</ThemedText>
+          <TouchableOpacity style={[styles.button, styles.confirmButton, { backgroundColor: colors.accent }]} onPress={onConfirm}>
+            <ThemedText style={[styles.buttonText, { color: colors.background }]}>{confirmButtonText || 'okkay'}</ThemedText>
           </TouchableOpacity>
         </ThemedView>
       </Animated.View>

@@ -148,7 +148,7 @@ export const WorkoutProvider = ({ children }: { children: ReactNode }) => {
         .from('workout_sessions')
         .insert({
           user_id: user.id,
-          routine_id: activeRoutine.id || null, // Assuming routine might have an ID if from DB
+          routine_id: (typeof activeRoutine.id === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(activeRoutine.id)) ? activeRoutine.id : null, // Ensure routine_id is a valid UUID or null
           routine_name: activeRoutine.name,
           started_at: new Date(), // Or use a stored start time if available
           ended_at: new Date(), // Or use a stored end time if available
