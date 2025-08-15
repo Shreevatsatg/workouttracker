@@ -351,6 +351,7 @@ export default function LogWorkoutScreen() {
         workoutDuration: workoutTime,
       },
     });
+    setIsProcessingFinish(false); // Reset processing state after navigation
   };
 
   
