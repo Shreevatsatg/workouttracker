@@ -48,6 +48,9 @@ export default function RoutineScreen() {
   const [notificationVisible, setNotificationVisible] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
 
+
+  const styles = getStyles(colors);
+
   const showNotification = useCallback((message: string) => {
     setNotificationMessage(message);
     setNotificationVisible(true);
@@ -235,10 +238,10 @@ export default function RoutineScreen() {
           style={{ flex: 1 }}
           accessibilityLabel={`View exercises in ${routine.name}`}
         >
-          <ThemedText style={[styles.categorySubtitle, { color: colors.secondary }]}>
+          <ThemedText style={[styles.categorySubtitle, { color: colors.textSecondary }]}>
             {routine.exercises.length} exercise{routine.exercises.length !== 1 ? 's' : ''}
           </ThemedText>
-          <ThemedText numberOfLines={2} style={[styles.exerciseList, { color: colors.secondary }]}>
+          <ThemedText numberOfLines={2} style={[styles.exerciseList, { color: colors.textSecondary }]}>
             {routine.exercises.map(e => e.name).join(', ')}
           </ThemedText>
           <TouchableOpacity
@@ -327,7 +330,7 @@ export default function RoutineScreen() {
   return (
     <Pressable onPress={() => setMenuVisible(null)} style={{ flex: 1 }} accessible={false}>
       <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]} showsVerticalScrollIndicator={false}>
-        <ThemedView style={[styles.section, { marginTop: 24 },{ backgroundColor: 'transparent' }]}>
+        <ThemedView style={[styles.section, { marginTop: 24 }, { backgroundColor: 'transparent' }]}>
           <TouchableOpacity
             style={[styles.button, { backgroundColor: colors.tint }]}
             onPress={startEmptyWorkout}
@@ -336,14 +339,24 @@ export default function RoutineScreen() {
             <IconSymbol name="play.circle" size={20} color={colors.background} />
             <ThemedText style={[styles.buttonText, { color: colors.background }]}>Start Empty Workout</ThemedText>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: colors.tint, marginTop: 12 }]}
-            onPress={() => router.push('/explore-routine')}
-            accessibilityLabel="Explore routines"
-          >
-            <IconSymbol name="magnifyingglass" size={20} color={colors.background} />
-            <ThemedText style={[styles.buttonText, { color: colors.background }]}>Explore Routines</ThemedText>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: colors.tint, flex: 1 }]}
+              onPress={() => router.push('/explore-routine')}
+              accessibilityLabel="Explore routines"
+            >
+              <IconSymbol name="magnifyingglass" size={20} color={colors.background} />
+              <ThemedText style={[styles.buttonText, { color: colors.background }]}>Explore Routines</ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: colors.tint, flex: 1 }]}
+              onPress={() => router.push('/create-routine')}
+              accessibilityLabel="Create new routine"
+            >
+              <IconSymbol name="plus" size={20} color={colors.background} />
+              <ThemedText style={[styles.buttonText, { color: colors.background }]}>Create Routine</ThemedText>
+            </TouchableOpacity>
+          </View>
         </ThemedView>
 
         {isCreatingFolder && (
@@ -403,13 +416,6 @@ export default function RoutineScreen() {
                 style={styles.headerButton}
               >
                 <IconSymbol name="folder.badge.plus" size={28} color={colors.tint} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => router.push('/create-routine')}
-                accessibilityLabel="Create new routine"
-                style={styles.headerButton}
-              >
-                <IconSymbol name="plus.circle" size={28} color={colors.tint} />
               </TouchableOpacity>
             </View>
           </View>
@@ -553,197 +559,222 @@ export default function RoutineScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  section: {
-    marginHorizontal: 16,
-    marginBottom: 24,
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 16,
-  },
-  errorText: {
-    fontSize: 14,
-    marginTop: 4,
-    marginLeft: 8,
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  headerButton: {
-    padding: 4,
-  },
-  categoryCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    backgroundColor: 'transparent',
-  },
-  folderCard: {
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    backgroundColor: 'transparent',
-  },
-  folderContentBorder: {
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 12,
-    backgroundColor: 'transparent',
-    padding: 12,
-  },
-  folderHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  folderIconContainer: {
-    marginRight: 12,
-  },
-  folderTitleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  folderTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  folderSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
-  },
-  folderNameBorder: {
-    borderBottomWidth: 1,
-    marginHorizontal: 8,
-    marginBottom: 12,
-    marginTop: 8,
-  },
-  folderContent: {
-    paddingHorizontal: 8,
-  },
-  folderRoutineContainer: {
-    // Removed - no longer needed
-  },
-  folderRoutineCard: {
-    borderRadius: 12,
-    borderWidth: 1,
-    backgroundColor: 'transparent',
-    marginVertical: 8,
-    padding: 12,
-  },
-  emptyFolderText: {
-    marginVertical: 16,
-    fontStyle: 'italic',
-  },
-  addRoutineButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginTop: 8,
-    marginHorizontal: 16,
-  },
-  categoryTitle: {
-    fontSize: 18,
-    marginBottom: 8,
-  },
-  categorySubtitle: {
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  exerciseList: {
-    fontSize: 14,
-    marginBottom: 12,
-    lineHeight: 20,
-  },
-  menu: {
-    position: 'absolute',
-    right: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
-    zIndex: 10,
-  },
-  menuItem: {
-    padding: 12,
-    borderRadius: 8,
-  },
-  menuButton: {
-    padding: 8,
-  },
-  startButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-  },
-  startButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  modalContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 20,
-  },
-  modalContent: {
-    borderRadius: 20,
-    padding: 24,
-    width: '85%',
-    maxWidth: 400,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  folderSelectItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 8,
-  },
-});
+
+const getStyles = (colors: any) => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    section: {
+      marginHorizontal: 16,
+      marginBottom: 24,
+    },
+    button: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 16,
+      padding: 16,
+      shadowColor: '#000',
+      shadowOpacity: 0.1,
+      shadowRadius: 5,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 3,
+    },
+    buttonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      marginLeft: 8,
+    },
+    input: {
+      borderWidth: 1,
+      borderRadius: 12,
+      padding: 12,
+      fontSize: 16,
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      color: colors.text,
+    },
+    errorText: {
+      fontSize: 14,
+      marginTop: 4,
+      marginLeft: 8,
+      color: colors.error,
+    },
+    headerContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    headerButton: {
+      padding: 4,
+    },
+    categoryCard: {
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+    },
+    folderCard: {
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+    },
+    folderContentBorder: {
+      borderRadius: 16,
+      borderWidth: 1,
+      marginBottom: 12,
+      padding: 16,
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+    },
+    folderHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    folderIconContainer: {
+      marginRight: 12,
+    },
+    folderTitleContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    folderTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    folderSubtitle: {
+      fontSize: 14,
+      marginTop: 4,
+      color: colors.textSecondary,
+    },
+    folderNameBorder: {
+      borderBottomWidth: 1,
+      marginHorizontal: 8,
+      marginBottom: 12,
+      marginTop: 8,
+      borderColor: colors.border,
+    },
+    folderContent: {
+      paddingHorizontal: 8,
+    },
+    folderRoutineCard: {
+      borderRadius: 12,
+      borderWidth: 1,
+      marginVertical: 8,
+      padding: 12,
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+    },
+    emptyFolderText: {
+      marginVertical: 16,
+      fontStyle: 'italic',
+      textAlign: 'center',
+      color: colors.textSecondary,
+    },
+    addRoutineButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 10,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      marginTop: 8,
+      marginHorizontal: 16,
+      backgroundColor: colors.tint,
+    },
+    categoryTitle: {
+      fontSize: 18,
+      marginBottom: 8,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    categorySubtitle: {
+      fontSize: 14,
+      marginBottom: 8,
+      color: colors.textSecondary,
+    },
+    exerciseList: {
+      fontSize: 14,
+      marginBottom: 12,
+      lineHeight: 20,
+      color: colors.textSecondary,
+    },
+    menu: {
+      position: 'absolute',
+      right: 16,
+      borderRadius: 12,
+      borderWidth: 1,
+      padding: 8,
+      shadowColor: '#000',
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 5,
+      zIndex: 10,
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+    },
+    menuItem: {
+      padding: 12,
+      borderRadius: 8,
+    },
+    menuButton: {
+      padding: 8,
+    },
+    startButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 10,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      backgroundColor: colors.tint,
+    },
+    startButtonText: {
+      fontSize: 14,
+      fontWeight: '600',
+      marginLeft: 8,
+      color: colors.background,
+    },
+    modalContainer: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 20,
+    },
+    modalContent: {
+      borderRadius: 20,
+      padding: 24,
+      width: '85%',
+      maxWidth: 400,
+      borderWidth: 1,
+      shadowColor: '#000',
+      shadowOpacity: 0.2,
+      shadowRadius: 12,
+      elevation: 6,
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+    },
+    folderSelectItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 16,
+      borderRadius: 12,
+      borderWidth: 1,
+      marginBottom: 8,
+      borderColor: colors.border,
+    },
+  });

@@ -1,3 +1,4 @@
+import BodyWeightHistory from '@/components/BodyWeightHistory';
 import History from '@/components/History';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -8,18 +9,13 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { supabase } from '@/utils/supabase';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 interface WorkoutStreakProps {
   workoutDates: string[];
   colors: any;
-  displayYear: number;
-  onYearChange: (year: number) => void;
-  availableYears: number[];
-  canGoToPreviousYear: boolean;
-  canGoToNextYear: boolean;
   currentStreak: number;
   longestStreak: number;
   totalWorkouts: number;
@@ -28,16 +24,12 @@ interface WorkoutStreakProps {
 const WorkoutStreak: React.FC<WorkoutStreakProps> = ({ 
   workoutDates, 
   colors, 
-  displayYear, 
-  onYearChange, 
-  availableYears, 
-  canGoToPreviousYear, 
-  canGoToNextYear,
   currentStreak,
   longestStreak,
   totalWorkouts
 }) => {
   const today = new Date();
+  const displayYear = new Date().getFullYear();
   const startDate = new Date(displayYear, 0, 1);
   const endDate = new Date(displayYear, 11, 31);
 
@@ -69,7 +61,6 @@ const WorkoutStreak: React.FC<WorkoutStreakProps> = ({
 
   const getWorkoutIntensity = (date: Date) => {
     const dateStr = formatDate(date);
-    // You could extend this to have different intensities based on workout data
     if (workoutDateSet.has(dateStr)) return 'high';
     return 'none';
   };
@@ -135,39 +126,17 @@ const WorkoutStreak: React.FC<WorkoutStreakProps> = ({
   const { yearWorkouts, percentage } = getActivityStats();
 
   return (
-    <ThemedView style={[styles.streakContainer, { borderColor: colors.text + '10' }]}>
+    <ThemedView style={[styles.streakContainer, { borderColor: colors.text + '10', backgroundColor: colors.surface }]}>
       {/* Header with Year Navigation */}
       <View style={styles.streakHeader}>
-        <TouchableOpacity 
-          onPress={() => onYearChange(displayYear - 1)}
-          disabled={!canGoToPreviousYear}
-          style={[styles.yearButton, { 
-            opacity: canGoToPreviousYear ? 1 : 0.3,
-            backgroundColor: colors.text + '05'
-          }]}
-        >
-          <IconSymbol name="chevron.left" size={18} color={colors.text} />
-        </TouchableOpacity>
-        
         <View style={styles.yearInfo}>
           <ThemedText type="subtitle" style={[styles.streakTitle, { color: colors.text }]}>
-            {displayYear}
+            Workout Activity {displayYear}
           </ThemedText>
           <ThemedText style={[styles.yearSubtitle, { color: colors.text + 'AA' }]}>
             {yearWorkouts} workouts • {percentage}% active
           </ThemedText>
         </View>
-        
-        <TouchableOpacity 
-          onPress={() => onYearChange(displayYear + 1)}
-          disabled={!canGoToNextYear}
-          style={[styles.yearButton, { 
-            opacity: canGoToNextYear ? 1 : 0.3,
-            backgroundColor: colors.text + '05'
-          }]}
-        >
-          <IconSymbol name="chevron.right" size={18} color={colors.text} />
-        </TouchableOpacity>
       </View>
 
       {/* Activity Stats */}
@@ -248,11 +217,10 @@ const WorkoutStreak: React.FC<WorkoutStreakProps> = ({
                   const status = getDateStatus(date);
                   const intensity = getWorkoutIntensity(date);
                   
-                  let backgroundColor = colors.text + '08'; // Very light for empty days
+                  let backgroundColor = colors.text + '08';
                   let borderColor = 'transparent';
                   
                   if (status === 'workout') {
-                    // Different shades of green based on intensity
                     backgroundColor = intensity === 'high' ? '#16a34a' : '#22c55e';
                   } else if (status === 'today') {
                     backgroundColor = colors.text + '15';
@@ -303,7 +271,8 @@ export default function ProfileScreen() {
   const [allWorkoutDates, setAllWorkoutDates] = useState<string[]>([]);
   const [currentStreak, setCurrentStreak] = useState<number>(0);
   const [longestStreak, setLongestStreak] = useState<number>(0);
-  const [displayYear, setDisplayYear] = useState(new Date().getFullYear());
+  const [activeTab, setActiveTab] = useState('Workouts');
+  const [bodyWeightHistory, setBodyWeightHistory] = useState<any[]>([]);
 
   const calculateStreaks = useCallback((dates: string[]) => {
     if (dates.length === 0) return { current: 0, longest: 0 };
@@ -325,7 +294,6 @@ export default function ProfileScreen() {
       if (dateSet.has(dateStr)) {
         currentStreak++;
       } else if (i === 0) {
-        // If no workout today, check yesterday
         continue;
       } else {
         break;
@@ -387,36 +355,33 @@ export default function ProfileScreen() {
     }
   }, [user, calculateStreaks]);
 
+  const fetchBodyWeightHistory = useCallback(async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('measurements')
+      .select('id, value, created_at')
+      .eq('user_id', user.id)
+      .eq('type', 'weight')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching body weight history:', error);
+    } else {
+      setBodyWeightHistory(data || []);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (user) {
       fetchWorkoutData();
+      fetchBodyWeightHistory();
     }
-  }, [user, fetchWorkoutData]);
-
-  const availableYears = useMemo(() => {
-    const years = new Set<number>();
-    allWorkoutDates.forEach(dateString => {
-      years.add(new Date(dateString).getFullYear());
-    });
-    // Always include current year
-    years.add(new Date().getFullYear());
-    return Array.from(years).sort((a, b) => b - a);
-  }, [allWorkoutDates]);
-
-  const handleYearChange = useCallback((year: number) => {
-    setDisplayYear(year);
-  }, []);
+  }, [user, fetchWorkoutData, fetchBodyWeightHistory]);
 
   const filteredWorkoutDates = useMemo(() => {
+    const displayYear = new Date().getFullYear();
     return allWorkoutDates.filter(dateString => new Date(dateString).getFullYear() === displayYear);
-  }, [allWorkoutDates, displayYear]);
-
-  const currentYearIndex = useMemo(() => {
-    return availableYears.indexOf(displayYear);
-  }, [availableYears, displayYear]);
-
-  const canGoToPreviousYear = currentYearIndex < availableYears.length - 1;
-  const canGoToNextYear = currentYearIndex > 0;
+  }, [allWorkoutDates]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -426,75 +391,99 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView 
-      style={[styles.container, { backgroundColor: colors.background }]} 
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.contentContainer}
-    >
-      {/* Enhanced Profile Header */}
-      <ThemedView style={[styles.modernHeader, { backgroundColor: 'transparent' }]}>
-        <View style={styles.profileSection}>
-          <View style={[styles.modernAvatar, { borderColor: colors.tint + '30', backgroundColor: colors.tint + '08' }]}>
-            <IconSymbol name="person.crop.circle.fill" size={64} color={colors.tint} />
-          </View>
-          
-          <View style={styles.profileInfo}>
-            <ThemedText style={[styles.greeting, { color: colors.text + 'AA' }]}>
-              {getGreeting()}
-            </ThemedText>
-            <ThemedText type="title" style={[styles.modernName, { color: colors.text }]}>
-              {profile?.full_name || 'User'}
-            </ThemedText>
-          </View>
-        </View>
-      </ThemedView>
+    <View style={styles.container}>
+      <FlatList
+        ListHeaderComponent={
+          <>
+            {/* Enhanced Profile Header */}
+            <ThemedView style={[styles.modernHeader, { backgroundColor: 'transparent' }]}>
+              <View style={styles.profileSection}>
+                <View style={[styles.modernAvatar, { borderColor: colors.tint + '30', backgroundColor: colors.tint + '08' }]}>
+                  <IconSymbol name="person.crop.circle.fill" size={64} color={colors.tint} />
+                </View>
+                <View style={styles.profileInfo}>
+                  <ThemedText style={[styles.greeting, { color: colors.text + 'AA' }]}>
+                    {getGreeting()}
+                  </ThemedText>
+                  <ThemedText type="title" style={[styles.modernName, { color: colors.text }]}>
+                    {profile?.full_name || 'User'}
+                  </ThemedText>
+                </View>
+              </View>
+            </ThemedView>
 
-      
+            {/* Enhanced Activity Tracker - Fixed Layout */}
+            <View style={styles.cardsContainer}>
+              {/* Workout Streak Card */}
+              <View style={styles.cardWrapper}>
+                <WorkoutStreak 
+                  workoutDates={filteredWorkoutDates} 
+                  colors={colors} 
+                  currentStreak={currentStreak}
+                  longestStreak={longestStreak}
+                  totalWorkouts={workoutCount || 0}
+                />
+              </View>
+            </View>
 
-      {/* Enhanced Activity Tracker */}
-      <WorkoutStreak 
-        workoutDates={filteredWorkoutDates} 
-        colors={colors} 
-        displayYear={displayYear}
-        onYearChange={handleYearChange}
-        availableYears={availableYears}
-        canGoToPreviousYear={canGoToPreviousYear}
-        canGoToNextYear={canGoToNextYear}
-        currentStreak={currentStreak}
-        longestStreak={longestStreak}
-        totalWorkouts={workoutCount || 0}
+            {/* Enhanced Action Buttons */}
+            <View style={styles.actionButtonsContainer}>
+              <TouchableOpacity
+                style={[styles.modernActionButton, { backgroundColor: colors.tint }]}
+                onPress={() => router.push('/measurements')}
+              >
+                <IconSymbol name="ruler" size={20} color={colors.background} />
+                <ThemedText style={[styles.modernActionText, { color: colors.background }]}>
+                  Measurements
+                </ThemedText>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.modernActionButton, { backgroundColor: colors.tint }]}
+                onPress={() => router.push('/calendar')}
+              >
+                <IconSymbol name="calendar" size={20} color={colors.background} />
+                <ThemedText style={[styles.modernActionText, { color: colors.background }]}>
+                  Calendar
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+
+            {/* Enhanced History Section */}
+            <ThemedView style={[styles.modernHistorySection, { backgroundColor: 'transparent' }]}>
+              <View style={styles.historyHeader}>
+                <View style={styles.historyTitleContainer}>
+                  <ThemedText type="subtitle" style={[styles.modernHistoryTitle, { color: colors.text }]}>
+                    History
+                  </ThemedText>
+                  <ThemedText style={[styles.historySubtitle, { color: colors.text + 'AA' }]}>
+                    Your latest sessions and measurements
+                  </ThemedText>
+                </View>
+              </View>
+              <View style={styles.tabContainer}>
+                <TouchableOpacity
+                  style={[styles.tabButton, activeTab === 'Workouts' && styles.activeTabButton, { borderBottomColor: activeTab === 'Workouts' ? colors.tint : colors.surface }]}
+                  onPress={() => setActiveTab('Workouts')}
+                >
+                  <ThemedText style={[styles.tabButtonText, { color: activeTab === 'Workouts' ? colors.text : colors.text + 'AA' }]}>Workouts</ThemedText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.tabButton, activeTab === 'Weight' && styles.activeTabButton, { borderBottomColor: activeTab === 'Weight' ? colors.tint : colors.surface }]}
+                  onPress={() => setActiveTab('Weight')}
+                >
+                  <ThemedText style={[styles.tabButtonText, { color: activeTab === 'Weight' ? colors.text : colors.text + 'AA' }]}>Weight</ThemedText>
+                </TouchableOpacity>
+              </View>
+            </ThemedView>
+          </>
+        }
+        data={[{ key: 'content' }]}
+        renderItem={() => activeTab === 'Workouts' ? <History onWorkoutDeleted={fetchWorkoutData} /> : <BodyWeightHistory data={bodyWeightHistory} />}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.contentContainer}
       />
-
-      {/* Enhanced Action Buttons */}
-      <View style={styles.actionButtonsContainer}>
-        <TouchableOpacity
-          style={[styles.modernActionButton, { backgroundColor: colors.tint }]}
-          onPress={() => router.push('/measurements')}
-        >
-          <IconSymbol name="ruler" size={20} color={colors.background} />
-          <ThemedText style={[styles.modernActionText, { color: colors.background }]}>
-            Measurements
-          </ThemedText>
-        </TouchableOpacity>
-        
-        
-      </View>
-
-      {/* Enhanced History Section */}
-      <ThemedView style={[styles.modernHistorySection, { backgroundColor: 'transparent' }]}>
-        <View style={styles.historyHeader}>
-          <View>
-            <ThemedText type="subtitle" style={[styles.modernHistoryTitle, { color: colors.text }]}>
-              Recent Activity
-            </ThemedText>
-            <ThemedText style={[styles.historySubtitle, { color: colors.text + 'AA' }]}>
-              Your latest workout sessions
-            </ThemedText>
-          </View>
-        </View>
-        <History onWorkoutDeleted={fetchWorkoutData} />
-      </ThemedView>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -536,57 +525,35 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: -0.5,
   },
-  statsGrid: {
-    flexDirection: 'row',
+  
+  // Fixed Cards Container
+  cardsContainer: {
     paddingHorizontal: 24,
     marginBottom: 24,
-    gap: 12,
   },
-  statCard: {
-    flex: 1,
-    padding: 20,
-    borderRadius: 20,
-    borderWidth: 1,
-    alignItems: 'center',
-    gap: 8,
+  cardWrapper: {
+    marginBottom: 16,
   },
-  statIconContainer: {
-    marginBottom: 4,
-  },
-  statNumber: {
-    fontSize: 28,
-    fontWeight: '800',
-    lineHeight: 32,
-  },
-  statLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
+  
+  // Enhanced Streak Container
   streakContainer: {
-    marginHorizontal: 24,
-    marginBottom: 24,
+    width: '100%',
     padding: 24,
     borderRadius: 20,
     borderWidth: 1,
-    backgroundColor: 'transparent',
   },
   streakHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
-  },
-  yearButton: {
-    padding: 8,
-    borderRadius: 12,
   },
   yearInfo: {
     alignItems: 'center',
     gap: 4,
   },
   streakTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
   },
   yearSubtitle: {
@@ -609,6 +576,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     lineHeight: 26,
   },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  
+  // Calendar styles
   calendarWrapper: {
     marginBottom: 20,
   },
@@ -679,6 +653,223 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 2,
   },
+
+  // Enhanced Chart Card
+  chartCard: {
+    width: '100%',
+    padding: 24,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  chartHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  chartTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  chartSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginTop: 4,
+  },
+  weightBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  weightStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 24,
+  },
+  weightStatItem: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  weightValue: {
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  weightChangeValue: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  weightLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  chartContainer: {
+    height: 120,
+    marginTop: 16,
+  },
+  emptyChartState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    gap: 12,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+
+  // Enhanced Nutrition Card
+  nutritionCard: {
+    marginHorizontal: 24,
+    marginBottom: 24,
+    padding: 24,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  nutritionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  nutritionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  nutritionSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginTop: 4,
+  },
+  nutritionBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  calorieStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  calorieStatItem: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  calorieValue: {
+    fontSize: 32,
+    fontWeight: '800',
+    lineHeight: 38,
+  },
+  calorieLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  calorieDivider: {
+    marginHorizontal: 24,
+    alignItems: 'center',
+  },
+  calorieSlash: {
+    fontSize: 32,
+    fontWeight: '300',
+  },
+  progressSection: {
+    gap: 8,
+  },
+  progressBar: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  progressText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  progressPercent: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  // Enhanced Metrics Container
+  metricsContainer: {
+    marginHorizontal: 24,
+    marginBottom: 24,
+    padding: 24,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  metricsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  metricsTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  metricsSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginTop: 4,
+  },
+  addMeasurementButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  metricRow: {
+    gap: 16,
+  },
+  metricItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  metricIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  metricContent: {
+    flex: 1,
+  },
+  metricValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  metricLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  metricDate: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  // Action Buttons
   actionButtonsContainer: {
     flexDirection: 'row',
     paddingHorizontal: 24,
@@ -699,6 +890,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+
+  // History Section
   modernHistorySection: {
     paddingHorizontal: 24,
   },
@@ -708,6 +901,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 20,
   },
+
+  historyTitleContainer: {
+    flex: 1,
+    alignItems: 'center',
+  },
   modernHistoryTitle: {
     fontSize: 22,
     fontWeight: '700',
@@ -716,5 +914,21 @@ const styles = StyleSheet.create({
   historySubtitle: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    gap: 8,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 12,
+    borderBottomWidth:5
+  },
+  tabButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

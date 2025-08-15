@@ -2,13 +2,14 @@ import AppBackground from '@/components/AppBackground';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { router, Stack, useSegments } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { Dimensions, Platform, TouchableOpacity, View } from 'react-native';
 import 'react-native-reanimated';
-import * as SplashScreen from 'expo-splash-screen';
 
 import { ThemedText } from '@/components/ThemedText';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 import WorkoutNotificationBar from '@/components/WorkoutNotificationBar';
 import { Colors } from '@/constants/Colors';
 import { modernColors } from '@/constants/ModernColors';
@@ -92,6 +93,7 @@ function useProtectedRoute() {
       'account-details',
       'add-food',
       'barcode-scanner',
+      'calendar',
       'create-custom-exercise',
       'create-routine',
       'exercise-details',
@@ -360,6 +362,7 @@ function RootLayoutNav() {
         <Stack.Screen name="settings" />
         <Stack.Screen name="workout-details-page" />
         <Stack.Screen name="workout-summary" />
+        <Stack.Screen name="calendar" options={{ headerLeft: () => <TouchableOpacity onPress={() => router.back()}><IconSymbol name="chevron.left" size={24} color={colors.text} /></TouchableOpacity>, title: "Calendar" }} />
       </Stack>
       <StatusBar style="auto" />
       {/* Conditionally render WorkoutNotificationBar */}

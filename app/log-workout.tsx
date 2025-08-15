@@ -15,6 +15,7 @@ import { Image } from 'expo-image';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, PanResponder, ScrollView, StyleSheet, TextInput, TouchableOpacity, Vibration, View } from 'react-native';
+import * as Notifications from 'expo-notifications';
 
 interface Set {
   weight: string;
@@ -457,6 +458,16 @@ export default function LogWorkoutScreen() {
   const [restTimerActive, setRestTimerActive] = useState(false);
   const [restTimerRemaining, setRestTimerRemaining] = useState(0);
   const restTimerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const liveNotificationIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Permission to send notifications was denied!');
+      }
+    })();
+  }, []);
 
   const handleLoggedSetChange = (exIndex: number, setIndex: number, field: 'loggedWeight' | 'loggedReps', value: string) => {
     const newLoggedExercises = [...loggedExercises];
@@ -571,33 +582,75 @@ export default function LogWorkoutScreen() {
     }
   };
 
-  const startRestTimer = (seconds: number) => {
+  const startRestTimer = async (seconds: number) => {
     // Clear any existing timer first
     if (restTimerIntervalRef.current) {
       clearInterval(restTimerIntervalRef.current);
       restTimerIntervalRef.current = null;
     }
+    // Cancel any previously scheduled notifications
+    await Notifications.cancelAllScheduledNotificationsAsync();
     
     setRestTimerActive(true);
     setRestTimerRemaining(seconds);
+
+    // 1. Schedule the initial "live" rest timer notification
+    liveNotificationIdRef.current = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Rest Timer Active",
+        body: `Time remaining: ${seconds} seconds`,
+        sound: false, // No sound for the live update
+        data: { type: 'rest_timer_live' },
+      },
+      trigger: {
+        seconds: 1, // Show immediately
+      },
+    });
+
+    // 2. Schedule the "Rest Time Complete" notification
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Rest Time Complete!",
+        body: "Time to get back to work!",
+        sound: true, // Play a sound when rest is complete
+        data: { type: 'rest_timer_complete' },
+      },
+      trigger: {
+        seconds: seconds, // Trigger when the rest time is over
+      },
+    });
     
-    restTimerIntervalRef.current = setInterval(() => {
-      setRestTimerRemaining((prev) => {
-        if (prev === 0) {
+    restTimerIntervalRef.current = setInterval(async () => {
+      setRestTimerRemaining(async (prev) => {
+        const newRemaining = prev - 1;
+        if (newRemaining < 0) {
           if (restTimerIntervalRef.current) {
             clearInterval(restTimerIntervalRef.current);
             restTimerIntervalRef.current = null;
           }
           // Trigger vibration/haptic feedback when timer ends
           triggerTimerEndFeedback();
-          // Hide the timer after 1 second
+          // Hide the in-app timer after 1 second
           setTimeout(() => setRestTimerActive(false), 1000);
+          // Cancel all notifications (including the live one, as the complete one will have fired)
+          await Notifications.cancelAllScheduledNotificationsAsync();
           return 0;
         }
-        if (prev < 0) { // Ensure it doesn't go negative
-          return 0;
+
+        // Update the "live" notification
+        if (liveNotificationIdRef.current) {
+          await Notifications.presentNotificationAsync({
+            identifier: liveNotificationIdRef.current,
+            content: {
+              title: "Rest Timer Active",
+              body: `Time remaining: ${newRemaining} seconds`,
+              sound: false,
+              data: { type: 'rest_timer_live' },
+            },
+            trigger: null, // Present immediately
+          });
         }
-        return prev - 1;
+        return newRemaining;
       });
     }, 1000);
   };
@@ -606,12 +659,18 @@ export default function LogWorkoutScreen() {
     setRestTimerRemaining((prev) => Math.max(0, prev + adjustment));
   };
 
-  const skipRestTimer = () => {
+  const skipRestTimer = async () => {
     setRestTimerActive(false);
     setRestTimerRemaining(0);
     if (restTimerIntervalRef.current) {
       clearInterval(restTimerIntervalRef.current);
       restTimerIntervalRef.current = null;
+    }
+    // Cancel any scheduled notifications and dismiss presented ones
+    await Notifications.cancelAllScheduledNotificationsAsync();
+    if (liveNotificationIdRef.current) {
+      await Notifications.dismissNotificationAsync(liveNotificationIdRef.current);
+      liveNotificationIdRef.current = null;
     }
   };
 

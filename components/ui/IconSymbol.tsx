@@ -43,6 +43,7 @@ const MAPPING = {
   'plus': 'add',
   'xmark': 'close',
   'xmark.circle.fill': 'close',
+  'chart.bar.xaxis': 'bar-chart',
 } as IconMapping;
 
 /**

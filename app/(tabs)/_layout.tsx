@@ -130,6 +130,39 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="progress"
+        options={{
+          tabBarLabel: ({ color, focused }) => (
+            <ThemedText style={{ color, fontSize: 11, fontWeight: '600' }}>
+              Progress
+            </ThemedText>
+          ),
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{
+              padding: 4,
+              borderRadius: 10,
+              backgroundColor: focused ? `${colors.accent}15` : 'transparent',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: 32,
+              minWidth: 32,
+            }}>
+              <IconSymbol 
+                size={26} 
+                name="chart.bar.xaxis"
+                color={color} 
+              />
+            </View>
+          ),
+          headerShown: true,
+          headerTitle: ({ children, tintColor }) => (
+            <ThemedText style={{ color: colors.text, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 }}>
+              Progress
+            </ThemedText>
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="food-log"
         options={{
           tabBarLabel: ({ color, focused }) => (
