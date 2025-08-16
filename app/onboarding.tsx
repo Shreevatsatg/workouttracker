@@ -24,7 +24,7 @@ import {
 
 const { width, height } = Dimensions.get('window');
 
-const WelcomeScreen = () => {
+const OnboardingScreen = () => {
   const { user, refreshProfile } = useAuth();
   const [fullName, setFullName] = useState('');
   const [gender, setGender] = useState<'Male' | 'Female' | 'Other' | null>(null);
@@ -195,10 +195,10 @@ const WelcomeScreen = () => {
               </LinearGradient>
             </Animated.View>
 
-            {/* Welcome Text */}
+            {/* Onboarding Text */}
             <Animated.View style={{ opacity: fadeAnim }}>
               <ThemedText style={[styles.title, { color: 'white' }]}>
-                Welcome to FitTracker!
+                Set up your Profile!
               </ThemedText>
               <ThemedText style={[styles.subtitle, { color: 'rgba(255,255,255,0.8)' }]}>
                 Let&apos;s start your fitness journey together.{'\n'}
@@ -574,4 +574,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default WelcomeScreen;
+export default OnboardingScreen;

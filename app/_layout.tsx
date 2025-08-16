@@ -88,7 +88,7 @@ function useProtectedRoute() {
   useEffect(() => {
     if (loading) return;
 
-    const inAuthGroup = segments[0] === 'login' || segments[0] === 'welcome';
+    const inAuthGroup = segments[0] === 'login' || segments[0] === 'onboarding';
     const inAppGroup = segments[0] === '(tabs)' || [
       'account-details',
       'add-food',
@@ -113,8 +113,8 @@ function useProtectedRoute() {
 
     if (session) {
       if (!profile?.full_name) {
-        if (segments[0] !== 'welcome') {
-          router.replace('/welcome');
+        if (segments[0] !== 'onboarding') {
+          router.replace('/onboarding');
         }
       } else {
         if (!inAppGroup) {
@@ -337,7 +337,7 @@ function RootLayoutNav() {
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="welcome" options={{ headerShown: false }} />
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="account-details" />
         <Stack.Screen name="add-food" />
         <Stack.Screen name="barcode-scanner" options={{ headerShown: false }} />
@@ -346,7 +346,7 @@ function RootLayoutNav() {
         <Stack.Screen name="exercise-details" />
         <Stack.Screen name="explore-routine" />
         <Stack.Screen name="food-details" />
-        <Stack.Screen name="index" />
+        <Stack.Screen name="index" options={{ headerShown: false }}/>
         <Stack.Screen 
           name="log-workout" 
           options={{
