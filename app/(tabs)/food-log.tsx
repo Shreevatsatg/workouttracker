@@ -737,7 +737,7 @@ export default function FoodLogScreen() {
       <TouchableWithoutFeedback onPress={() => setOpenDropdownEntryId(null)} disabled={!openDropdownEntryId}>
         <View style={{ flex: 1 }}>
           <SectionList
-            contentContainerStyle={{ paddingHorizontal: 17, paddingVertical: 20 }}
+            contentContainerStyle={{ paddingHorizontal: 17, paddingVertical: 5 }}
             sections={sections}
             keyExtractor={(item) => item.id}
             ListHeaderComponent={
@@ -750,7 +750,20 @@ export default function FoodLogScreen() {
                   colors={colors}
                 />
 
-                {/* Modern Header with Gradient Background */}
+                <PagerView
+                  style={styles.pagerView}
+                  initialPage={0}
+                  onPageSelected={(e) => setActivePagerPage(e.nativeEvent.position)}
+                >
+                  <View key="goal" style={styles.modernPage}>
+                    <View style={[styles.modernGoalContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                      <View style={styles.goalHeader}>
+                        <ThemedText style={[styles.goalTitle, { color: colors.text }]}>
+                          Calorie Breakdown
+                        </ThemedText>
+                      </View>
+
+                      {/* Modern Header with Gradient Background */}
                 <View style={[styles.modernHeader, { backgroundColor: colors.surfaceSecondary,borderColor: colors.border }]}>
                     <ThemedText style={[styles.modernTitle, { color: colors.text }]}>
                       {formatDateForDisplay(selectedDate)}&apos;s Progress
@@ -766,46 +779,6 @@ export default function FoodLogScreen() {
                       </View>
                     </View>
                 </View>
-
-                <PagerView
-                  style={styles.pagerView}
-                  initialPage={0}
-                  onPageSelected={(e) => setActivePagerPage(e.nativeEvent.position)}
-                >
-                  <View key="goal" style={styles.modernPage}>
-                    <View style={[styles.modernGoalContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                      <View style={styles.goalHeader}>
-                        <ThemedText style={[styles.goalTitle, { color: colors.text }]}>
-                          Calorie Breakdown
-                        </ThemedText>
-                      </View>
-
-                      {/* Modern Breakdown Cards */}
-                      <View style={styles.breakdownGrid}>
-                        <View style={[styles.breakdownCard, { backgroundColor: colors.background }]}>
-                          <View style={styles.cardHeader}>
-                            <View style={[styles.cardIcon, { backgroundColor: colors.accent + '20' }]}>
-                              <Feather name="target" size={16} color={colors.accent} />
-                            </View>
-                            <ThemedText style={[styles.cardValue, { color: colors.text }]}>
-                              {calorieGoal.toFixed(0)}
-                            </ThemedText>
-                          </View>
-                          <ThemedText style={[styles.cardLabel, { color: colors.textSecondary }]}>Goal</ThemedText>
-                        </View>
-
-                        <View style={[styles.breakdownCard, { backgroundColor: colors.background }]}>
-                          <View style={styles.cardHeader}>
-                            <View style={[styles.cardIcon, { backgroundColor: remainingCalories >= 0 ? '#4CAF50' + '20' : '#FF5722' + '20' }]}>
-                              <Feather name="trending-down" size={16} color={remainingCalories >= 0 ? '#4CAF50' : '#FF5722'} />
-                            </View>
-                            <ThemedText style={[styles.cardValue, { color: remainingCalories >= 0 ? '#4CAF50' : '#FF5722' }]}>
-                              {Math.abs(remainingCalories).toFixed(0)}
-                            </ThemedText>
-                          </View>
-                          <ThemedText style={[styles.cardLabel, { color: colors.textSecondary }]}>Remaining</ThemedText>
-                        </View>
-                      </View>
 
                       <View style={styles.formulaContainer}>
                         <View style={styles.formulaItem}>
@@ -1097,7 +1070,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: 10,
     marginTop: 10,
   },
   addFoodButtonText: {

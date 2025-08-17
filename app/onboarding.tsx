@@ -10,6 +10,7 @@ import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Alert,
   Animated,
@@ -142,6 +143,7 @@ const OnboardingScreen = () => {
           weight: weightNum,
           activity_level: activityLevelForDb,
           calorie_goal: calorieGoal,
+          onboarding_complete: true,
         })
         .eq('id', user.id);
 
@@ -149,6 +151,7 @@ const OnboardingScreen = () => {
         Alert.alert('Error', 'Unable to update your profile. Please try again.');
         console.error('Supabase update error:', error);
       } else {
+        await AsyncStorage.setItem('onboardingComplete', 'true');
         await refreshProfile();
         router.replace('/(tabs)/food-log'); // Navigate to main app screen
       }

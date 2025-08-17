@@ -332,16 +332,17 @@ export default function RoutineScreen() {
       <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]} showsVerticalScrollIndicator={false}>
         <ThemedView style={[styles.section, { marginTop: 24 }, { backgroundColor: 'transparent' }]}>
           <TouchableOpacity
-            style={[styles.button, { backgroundColor: colors.tint }]}
+            style={[styles.button, { backgroundColor: colors.tint },{marginBottom: 12}]}
             onPress={startEmptyWorkout}
             accessibilityLabel="Start an empty workout"
           >
             <IconSymbol name="play.circle" size={20} color={colors.background} />
             <ThemedText style={[styles.buttonText, { color: colors.background }]}>Start Empty Workout</ThemedText>
           </TouchableOpacity>
+
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
             <TouchableOpacity
-              style={[styles.button, { backgroundColor: colors.tint, flex: 1 }]}
+              style={[styles.startButton, { backgroundColor: colors.tint, flex: 1 }]}
               onPress={() => router.push('/explore-routine')}
               accessibilityLabel="Explore routines"
             >
@@ -349,7 +350,7 @@ export default function RoutineScreen() {
               <ThemedText style={[styles.buttonText, { color: colors.background }]}>Explore Routines</ThemedText>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, { backgroundColor: colors.tint, flex: 1 }]}
+              style={[styles.startButton, { backgroundColor: colors.tint, flex: 1 }]}
               onPress={() => router.push('/create-routine')}
               accessibilityLabel="Create new routine"
             >
@@ -408,7 +409,7 @@ export default function RoutineScreen() {
 
         <ThemedView style={[styles.section, { backgroundColor: 'transparent' }]}>
           <View style={styles.headerContainer}>
-            <ThemedText type="title" style={{ color: colors.tint }}>Your Routines</ThemedText>
+            <ThemedText type="title" style={{ color: colors.tint }}>My Routines</ThemedText>
             <View style={{ flexDirection: 'row', gap: 16 }}>
               <TouchableOpacity
                 onPress={() => setIsCreatingFolder(true)}
@@ -492,16 +493,6 @@ export default function RoutineScreen() {
                             </ThemedView>
                           ))
                         )}
-                        <TouchableOpacity
-                          style={[styles.addRoutineButton, { backgroundColor: colors.tint }]}
-                          onPress={() => router.push({ pathname: '/create-routine', params: { folderId: item.id } })}
-                          accessibilityLabel={'Add new routine to folder'}
-                        >
-                          <IconSymbol name="plus" size={20} color={colors.background} />
-                          <ThemedText style={[styles.startButtonText, { color: colors.background }]}>
-                            Add Routine to Folder
-                          </ThemedText>
-                        </TouchableOpacity>
                       </View>
                     )}
                     {renderMenu(item, false)}
@@ -605,7 +596,7 @@ const getStyles = (colors: any) => StyleSheet.create({
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 16,
+      margin: 10,
     },
     headerButton: {
       padding: 4,
@@ -619,20 +610,16 @@ const getStyles = (colors: any) => StyleSheet.create({
       borderColor: colors.border,
     },
     folderCard: {
-      borderRadius: 16,
-      padding: 16,
+      borderRadius: 11,
+      padding: 3,
       marginBottom: 12,
-      borderWidth: 1,
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
+      backgroundColor: colors.surfaceSecondary,
     },
     folderContentBorder: {
-      borderRadius: 16,
-      borderWidth: 1,
+      borderRadius: 11,
       marginBottom: 12,
-      padding: 16,
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
+      padding: 3,
+      backgroundColor: colors.surfaceSecondary,
     },
     folderHeader: {
       flexDirection: 'row',

@@ -4,9 +4,10 @@ import { useFonts } from 'expo-font';
 import { router, Stack, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Dimensions, Platform, TouchableOpacity, View } from 'react-native';
 import 'react-native-reanimated';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -84,48 +85,53 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 function useProtectedRoute() {
   const { session, loading, profile } = useAuth();
   const segments = useSegments();
+  const [cachedOnboardingComplete, setCachedOnboardingComplete] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (loading) return;
+    const checkOnboarding = async () => {
+      if (loading) return;
 
-    const inAuthGroup = segments[0] === 'login' || segments[0] === 'onboarding';
-    const inAppGroup = segments[0] === '(tabs)' || [
-      'account-details',
-      'add-food',
-      'barcode-scanner',
-      'calendar',
-      'create-custom-exercise',
-      'create-routine',
-      'exercise-details',
-      'explore-routine',
-      'food-details',
-      'index',
-      'log-workout',
-      'manual-food-entry',
-      'measurements',
-      'personal-details',
-      'routine-details',
-      'select-exercise',
-      'settings',
-      'workout-details-page',
-      'workout-summary',
-    ].includes(segments[0]);
+      const inAuthGroup = segments[0] === 'login' || segments[0] === 'onboarding';
 
-    if (session) {
-      if (!profile?.full_name) {
-        if (segments[0] !== 'onboarding') {
-          router.replace('/onboarding');
+      if (session) {
+        // Server value is the source of truth
+        if (profile?.onboarding_complete) {
+          if (inAuthGroup || segments[0] === 'index') {
+            router.replace('/(tabs)/workout');
+          }
+          return;
         }
+
+        // If profile is loaded but onboarding is not complete
+        if (profile && !profile.onboarding_complete) {
+          if (segments[0] !== 'onboarding') {
+            router.replace('/onboarding');
+          }
+          return;
+        }
+
+        // Offline fallback
+        if (!profile) {
+          const cachedStatus = await AsyncStorage.getItem('onboardingComplete');
+          if (cachedStatus === 'true') {
+            if (inAuthGroup || segments[0] === 'index') {
+              router.replace('/(tabs)/workout');
+            }
+          } else {
+            if (segments[0] !== 'onboarding') {
+              router.replace('/onboarding');
+            }
+          }
+        }
+
       } else {
-        if (!inAppGroup) {
-          router.replace('/(tabs)/workout');
+        if (!inAuthGroup) {
+          router.replace('/login');
         }
       }
-    } else {
-      if (!inAuthGroup) {
-        router.replace('/login');
-      }
-    }
+    };
+
+    checkOnboarding();
   }, [session, profile, loading, segments]);
 }
 

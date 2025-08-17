@@ -1,8 +1,9 @@
 
 
 import { supabase } from '@/utils/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Session, User } from '@supabase/supabase-js';
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 interface Profile {
   full_name: string | null;
@@ -13,6 +14,7 @@ interface Profile {
   weight: number | null;
   activity_level: string | null;
   calorie_goal: number | null;
+  onboarding_complete: boolean | null;
 }
 
 interface AuthContextType {
@@ -45,6 +47,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error('Error fetching profile:', error.message);
     } else {
       setProfile(data);
+      if (data?.onboarding_complete) {
+        await AsyncStorage.setItem('onboardingComplete', 'true');
+      }
     }
   }, []);
 
