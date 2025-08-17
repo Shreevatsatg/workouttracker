@@ -53,7 +53,6 @@ export default function SettingsScreen() {
   return (
     <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]} showsVerticalScrollIndicator={false}>
       <ThemedView lightColor="transparent" darkColor="transparent" style={styles.section}>
-        <ThemedText type="title" style={{ color: colors.tint, marginBottom: 24 }}>Settings</ThemedText>
 
         {/* Goal Option */}
         <ThemedView style={[styles.button, { backgroundColor: colors.cardBackground, borderColor: colors.tabIconDefault, borderWidth: 1, flexDirection: 'column', alignItems: 'flex-start' }]}>

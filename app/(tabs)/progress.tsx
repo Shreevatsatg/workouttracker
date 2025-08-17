@@ -561,7 +561,8 @@ export default function ProgressScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colorScheme === 'dark' ? '#0a0a0b' : '#f8fafc',
+      backgroundColor: 'transparent',
+      paddingTop:10,
     },
     header: {
       padding: 24,
@@ -963,11 +964,6 @@ export default function ProgressScreen() {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <ThemedView style={[styles.header,{backgroundColor:'transparent'}]}>
-        <ThemedText style={styles.headerTitle}>Progress</ThemedText>
-        <ThemedText style={styles.headerSubtitle}>Track your fitness journey</ThemedText>
-      </ThemedView>
-
       <TabSelector />
       {renderContent()}
     </ScrollView>

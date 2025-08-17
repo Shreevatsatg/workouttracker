@@ -421,14 +421,10 @@ export default function AddFoodScreen() {
         <View style={styles.headerTop}>
           
           <View style={styles.headerCenter}>
-            <ThemedText type="title" style={[styles.title, { color: colors.text }]}>
-              Add Food
-            </ThemedText>
             <ThemedText style={[styles.subtitle, { color: colors.textSecondary }]}>
               {params.mealType || 'Search and log your food'}
             </ThemedText>
           </View>
-          <View style={{ width: 44 }} />
         </View>
       </View>
 
