@@ -218,7 +218,7 @@ export default function WorkoutSummaryScreen() {
             <ThemedText type="defaultSemiBold" style={{ color: colors.text, marginBottom: 4 }}>{exercise.name}</ThemedText>
             {Array.isArray(exercise.loggedSets) && exercise.loggedSets.map((set: any, setIndex: number) => (
               <ThemedText key={setIndex} style={{ color: colors.secondary }}>
-                Set {setIndex + 1}: {set.loggedWeight || set.weight}kg x {set.loggedReps || set.reps} reps {set.completed ? '(Completed)' : ''}
+                Set {setIndex + 1}: {set.loggedWeight || set.weight}kg x {set.loggedReps || set.reps} reps
               </ThemedText>
             ))}
           </View>
