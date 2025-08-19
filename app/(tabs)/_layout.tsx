@@ -108,7 +108,7 @@ export default function TabLayout() {
             <View style={{
               padding: 4,
               borderRadius: 10,
-              backgroundColor: focused ? `${colors.accent}15` : 'transparent',
+              backgroundColor: 'transparent',
               alignItems: 'center',
               justifyContent: 'center',
               minHeight: 32,
@@ -142,7 +142,7 @@ export default function TabLayout() {
             <View style={{
               padding: 4,
               borderRadius: 10,
-              backgroundColor: focused ? `${colors.accent}15` : 'transparent',
+              backgroundColor: 'transparent',
               alignItems: 'center',
               justifyContent: 'center',
               minHeight: 32,
@@ -175,7 +175,7 @@ export default function TabLayout() {
             <View style={{
               padding: 4,
               borderRadius: 10,
-              backgroundColor: focused ? `${colors.accent}15` : 'transparent',
+              backgroundColor: 'transparent',
               alignItems: 'center',
               justifyContent: 'center',
               minHeight: 32,
@@ -209,7 +209,7 @@ export default function TabLayout() {
             <View style={{
               padding: 4,
               borderRadius: 10,
-              backgroundColor: focused ? `${colors.accent}15` : 'transparent',
+              backgroundColor: 'transparent',
               alignItems: 'center',
               justifyContent: 'center',
               minHeight: 32,
