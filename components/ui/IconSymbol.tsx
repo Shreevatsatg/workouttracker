@@ -44,6 +44,8 @@ const MAPPING = {
   'xmark': 'close',
   'xmark.circle.fill': 'close',
   'chart.bar.xaxis': 'bar-chart',
+  'figure.strengthtraining.traditional': 'fitness-center',
+  'flame.fill': 'local-fire-department',
 } as IconMapping;
 
 /**
