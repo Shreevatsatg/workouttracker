@@ -427,7 +427,14 @@ export default function RoutineScreen() {
             </ThemedText>
           ) : (
             items.map((item, idx) => (
-              <Animated.View entering={FadeIn} key={`${item.type}-${item.id}`} style={{ position: 'relative' }}>
+              <Animated.View 
+                entering={FadeIn} 
+                key={`${item.type}-${item.id}`} 
+                style={{ 
+                  position: 'relative',
+                  zIndex: menuVisible === `${item.type}-${item.id}` || menuVisible === `folder-${item.id}` ? 1 : 0 
+                }}
+              >
                 {item.type === 'routine' ? (
                   <ThemedView style={[styles.categoryCard, { borderColor: colors.tabIconDefault }]}>
                     {renderRoutineCard(item as RoutinesRoutine, false)}
@@ -705,7 +712,6 @@ const getStyles = (colors: any) => StyleSheet.create({
       shadowOpacity: 0.2,
       shadowRadius: 8,
       elevation: 5,
-      zIndex: 10,
       backgroundColor: colors.surface,
       borderColor: colors.border,
     },
