@@ -36,7 +36,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchProfile = useCallback(async (user: User) => {
     try {
-      console.log(`📋 Fetching profile for user: ${user.id}`);
       
       const profilePromise = supabase
         .from('profiles')

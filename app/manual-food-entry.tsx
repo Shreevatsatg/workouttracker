@@ -5,7 +5,7 @@ import { useFood } from '@/context/FoodContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Button, StyleSheet, TextInput, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Alert, Button, StyleSheet, TextInput, ScrollView, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 

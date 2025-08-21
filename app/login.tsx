@@ -16,20 +16,16 @@ const StartPage = () => {
       setNavigationAttempted(true);
       
       if (user && session) {
-        console.log('🚀 Auth complete - attempting navigation...');
         
         // Check if user has completed onboarding
         if (profile?.onboarding_complete) {
-          console.log('✅ Onboarding complete - navigating to main app');
           // Replace with your main app route
           router.replace('/(tabs)' as any); // or whatever your main route is
         } else {
-          console.log('📝 Onboarding incomplete - navigating to onboarding');
           // Replace with your onboarding route
           router.replace('/onboarding' as any);
         }
       } else {
-        console.log('🔓 No authenticated user - navigating to auth');
         // Replace with your auth/login route
         router.replace('/login' as any); // or '/auth' or whatever your login route is
       }
@@ -101,7 +97,6 @@ Profile: ${profile ? JSON.stringify(profile, null, 2) : 'null'}
 
   // Manual navigation buttons for debugging
   const handleManualNavigation = (route: string) => {
-    console.log(`🔧 Manual navigation to: ${route}`);
     router.replace(route as any);
   };
 

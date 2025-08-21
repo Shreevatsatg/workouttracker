@@ -73,7 +73,6 @@ export default function RoutineDetailsScreen() {
   const startWorkout = () => {
     const exercisesWithImages = routine.exercises.map((ex, exIndex) => {
       const details = getExerciseDetails(ex.name);
-      console.log(`Exercise Name: ${ex.name}, Details Found: ${!!details}, Images: ${details?.images}`);
       return {
         ...ex,
         images: details?.images || [],

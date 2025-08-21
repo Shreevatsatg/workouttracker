@@ -1,13 +1,13 @@
 import AppBackground from '@/components/AppBackground';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { router, Stack, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Dimensions, Platform, TouchableOpacity, View } from 'react-native';
+import { Dimensions, TouchableOpacity, View } from 'react-native';
 import 'react-native-reanimated';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -91,13 +91,27 @@ function useProtectedRoute() {
     const checkOnboarding = async () => {
       if (loading) return;
 
+      // Don't interfere with stack screen navigation
+      const isStackScreen = [
+        'account-details', 'add-food', 'barcode-scanner', 'create-custom-exercise',
+        'create-routine', 'exercise-details', 'explore-routine', 'food-details',
+        'log-workout', 'manual-food-entry', 'measurements', 'personal-details',
+        'routine-details', 'select-exercise', 'settings', 'workout-details-page',
+        'workout-summary', 'calendar'
+      ].includes(segments[0]);
+
+      if (isStackScreen) {
+        // Let stack screens render normally
+        return;
+      }
+
       const inAuthGroup = segments[0] === 'login' || segments[0] === 'onboarding';
 
       if (session) {
         // Server value is the source of truth
         if (profile?.onboarding_complete) {
           const inMainApp = segments[0] === '(tabs)';
-          if (!inMainApp) {
+          if (!inMainApp && segments[0] !== 'index') {
             router.replace('/(tabs)/workout');
           }
           return;
@@ -126,7 +140,7 @@ function useProtectedRoute() {
         }
 
       } else {
-        if (!inAuthGroup) {
+        if (!inAuthGroup && segments[0] !== 'index') {
           router.replace('/login');
         }
       }
@@ -137,192 +151,33 @@ function useProtectedRoute() {
 }
 
 function RootLayoutNav() {
+  // 🔥 CRITICAL: This was missing!
   useProtectedRoute();
+  
   const colorScheme = useColorScheme();
   const colors = modernColors[colorScheme ?? 'light'];
   const segments = useSegments();
-
-  // 🔥 ZERO-GLITCH SOLUTION: Pre-render approach
-  const zeroGlitchTransition = ({ current, next, inverted, layouts, insets }) => {
-    const isAndroid = Platform.OS === 'android';
-    
-    return {
-      cardStyle: {
-        // Pre-fill the screen immediately
-        backgroundColor: colors.surface || (colorScheme === 'dark' ? '#000000' : '#FFFFFF'),
-        
-        transform: [
-          {
-            translateX: current.progress.interpolate({
-              inputRange: [0, 1],
-              outputRange: [layouts.screen.width, 0],
-              extrapolate: 'clamp',
-            }),
-          },
-        ],
-        
-        // Shadow for depth (iOS-style)
-        ...(!isAndroid && {
-          shadowColor: '#000',
-          shadowOffset: {
-            width: -2,
-            height: 0,
-          },
-          shadowOpacity: current.progress.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, 0.1],
-            extrapolate: 'clamp',
-          }),
-          shadowRadius: 8,
-        }),
-      },
-      
-      // Previous screen scaling (iOS-style)
-      overlayStyle: {
-        backgroundColor: 'transparent',
-      },
-    };
-  };
-
-  // 🎨 MODERN MATERIAL 3 STYLE (Google's Latest)
-  const material3Transition = ({ current, next, inverted, layouts }) => {
-    return {
-      cardStyle: {
-        backgroundColor: colors.surface || (colorScheme === 'dark' ? '#000000' : '#FFFFFF'),
-        
-        transform: [
-          {
-            translateX: current.progress.interpolate({
-              inputRange: [0, 1],
-              outputRange: [layouts.screen.width * 0.3, 0],
-              extrapolate: 'clamp',
-            }),
-          },
-          {
-            scale: current.progress.interpolate({
-              inputRange: [0, 0.7, 1],
-              outputRange: [0.95, 0.99, 1],
-              extrapolate: 'clamp',
-            }),
-          },
-        ],
-        
-        opacity: current.progress.interpolate({
-          inputRange: [0, 0.1, 1],
-          outputRange: [0, 1, 1],
-          extrapolate: 'clamp',
-        }),
-        
-        // Modern shadow
-        shadowColor: colorScheme === 'dark' ? '#FFFFFF' : '#000000',
-        shadowOffset: {
-          width: 0,
-          height: 4,
-        },
-        shadowOpacity: current.progress.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, colorScheme === 'dark' ? 0.1 : 0.05],
-          extrapolate: 'clamp',
-        }),
-        shadowRadius: 12,
-        elevation: current.progress.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, 8],
-          extrapolate: 'clamp',
-        }),
-      },
-    };
-  };
-
-  // 💫 DISCORD-STYLE SMOOTH (Gaming App Standard)
-  const discordStyleTransition = ({ current, next, inverted, layouts }) => {
-    return {
-      cardStyle: {
-        backgroundColor: colors.surface || (colorScheme === 'dark' ? '#36393f' : '#FFFFFF'),
-        
-        transform: [
-          {
-            translateX: current.progress.interpolate({
-              inputRange: [0, 1],
-              outputRange: [layouts.screen.width * 0.2, 0],
-              extrapolate: 'clamp',
-            }),
-          },
-        ],
-        
-        opacity: current.progress.interpolate({
-          inputRange: [0, 0.15, 1],
-          outputRange: [0, 0.95, 1],
-          extrapolate: 'clamp',
-        }),
-      },
-    };
-  };
-
-  // 🚀 NATIVE iOS PUSH (Apple's Standard)
-  const nativeIOSTransition = ({ current, next, inverted, layouts }) => {
-    return {
-      cardStyle: {
-        backgroundColor: colors.surface || (colorScheme === 'dark' ? '#000000' : '#FFFFFF'),
-        
-        transform: [
-          {
-            translateX: current.progress.interpolate({
-              inputRange: [0, 1],
-              outputRange: [layouts.screen.width, 0],
-              extrapolate: 'clamp',
-            }),
-          },
-        ],
-        
-        // iOS-style shadow
-        shadowColor: '#000',
-        shadowOffset: {
-          width: -1,
-          height: 0,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
-      },
-    };
-  };
 
   return (
     <>
       <Stack
         screenOptions={{
           headerShown: true,
-          
-          // 🎯 CRITICAL: Set background immediately
           contentStyle: { 
             backgroundColor: colors.surface || (colorScheme === 'dark' ? '#000000' : '#FFFFFF')
           },
-          
-          // 🔥 Choose your glitch-free animation:
-          cardStyleInterpolator: zeroGlitchTransition, // Current: Zero-glitch
-          // cardStyleInterpolator: material3Transition, // Google Material 3
-          // cardStyleInterpolator: discordStyleTransition, // Discord-style
-          // cardStyleInterpolator: nativeIOSTransition, // Native iOS
-          
-          // ⚡ Performance settings
-          animationDuration: 200, // Faster = less glitch opportunity
+          animationDuration: 200,
           animationTypeForReplace: 'push',
-          
-          // 🎨 Gestures
           gestureEnabled: true,
           gestureDirection: 'horizontal',
           gestureResponseDistance: 35,
-          
-          // 📱 Presentation
-          presentation: 'card', // Ensures proper layering
+          presentation: 'card',
           animationEnabled: true,
-          
-          // 🎨 Header styling
           headerStyle: {
             backgroundColor: colors.surface || (colorScheme === 'dark' ? '#000000' : '#FFFFFF'),
             borderBottomWidth: 0,
             elevation: 0,
-            shadowColor: 'transparent', // Remove header shadow to prevent glitch
+            shadowColor: 'transparent',
           },
           headerTitleStyle: {
             color: colors.text,
@@ -331,15 +186,6 @@ function RootLayoutNav() {
             letterSpacing: -0.2,
           },
           headerTitleAlign: 'center',
-          
-          // 🔥 Instant header appearance (no animation)
-          headerStyleInterpolator: ({ current }) => ({
-            opacity: current.progress.interpolate({
-              inputRange: [0, 0.05, 1],
-              outputRange: [0, 1, 1],
-              extrapolate: 'clamp',
-            }),
-          }),
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -358,7 +204,7 @@ function RootLayoutNav() {
           name="log-workout" 
           options={{
             headerTitle: () => <WorkoutTimerHeader />,
-            headerRight: () => <FinishButton onPress={() => {}} /> // Placeholder onPress
+            headerRight: () => <FinishButton onPress={() => {}} />
           }}
         />
         <Stack.Screen name="manual-food-entry" />
@@ -369,10 +215,19 @@ function RootLayoutNav() {
         <Stack.Screen name="settings" />
         <Stack.Screen name="workout-details-page" />
         <Stack.Screen name="workout-summary" />
-        <Stack.Screen name="calendar" options={{ headerLeft: () => <TouchableOpacity onPress={() => router.back()}><IconSymbol name="chevron.left" size={24} color={colors.text} /></TouchableOpacity>, title: "Calendar" }} />
+        <Stack.Screen 
+          name="calendar" 
+          options={{ 
+            headerLeft: () => (
+              <TouchableOpacity onPress={() => router.back()}>
+                <IconSymbol name="chevron.left" size={24} color={colors.text} />
+              </TouchableOpacity>
+            ), 
+            title: "Calendar" 
+          }} 
+        />
       </Stack>
       <StatusBar style="auto" />
-      {/* Conditionally render WorkoutNotificationBar */}
       {!segments.includes('workout-summary') && <WorkoutNotificationBar />}
     </>
   );
@@ -402,14 +257,14 @@ export default function RootLayout() {
               ...DarkTheme, 
               colors: { 
                 ...DarkTheme.colors, 
-                background: Colors.dark?.surface || '#000000' // Solid background
+                background: Colors.dark?.surface || '#000000'
               } 
             }
           : { 
               ...DefaultTheme, 
               colors: { 
                 ...DefaultTheme.colors, 
-                background: Colors.light?.surface || '#FFFFFF' // Solid background
+                background: Colors.light?.surface || '#FFFFFF'
               } 
             }
         }

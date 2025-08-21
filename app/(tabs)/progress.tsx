@@ -352,7 +352,7 @@ export default function ProgressScreen() {
       <View style={styles.gridContainer}>
         <ThemedView style={styles.gridItem}>
           <View style={styles.gridItemHeader}>
-            <ThemedText style={styles.gridItemTitle}>Today's Macros</ThemedText>
+            <ThemedText style={styles.gridItemTitle}>Today&apos;s Macros</ThemedText>
           </View>
           <View style={styles.gridItemContent}>
             <PieChart
