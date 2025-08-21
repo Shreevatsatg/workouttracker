@@ -6,21 +6,21 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { ActivityLevel, calculateTDEE } from '@/utils/calorieCalculator';
 import { supabase } from '@/utils/supabase';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
-  Alert,
-  Animated,
-  Dimensions,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  View
+    Alert,
+    Animated,
+    Dimensions,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -135,7 +135,8 @@ const OnboardingScreen = () => {
     if (user) {
       const { error } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          id: user.id,
           full_name: fullName.trim(),
           gender: gender,
           age: ageNum,
@@ -144,8 +145,8 @@ const OnboardingScreen = () => {
           activity_level: activityLevelForDb,
           calorie_goal: calorieGoal,
           onboarding_complete: true,
-        })
-        .eq('id', user.id);
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
 
       if (error) {
         Alert.alert('Error', 'Unable to update your profile. Please try again.');

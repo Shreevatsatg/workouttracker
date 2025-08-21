@@ -2,10 +2,10 @@ import AppBackground from '@/components/AppBackground';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { router, Stack, useSegments } from 'expo-router';
+import { Stack, useRootNavigationState, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Dimensions, TouchableOpacity, View } from 'react-native';
 import 'react-native-reanimated';
 
@@ -85,69 +85,54 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 function useProtectedRoute() {
   const { session, loading, profile } = useAuth();
   const segments = useSegments();
-  const [cachedOnboardingComplete, setCachedOnboardingComplete] = useState<boolean | null>(null);
+  const router = useRouter();
+  const navigationState = useRootNavigationState();
 
   useEffect(() => {
     const checkOnboarding = async () => {
-      if (loading) return;
+      if (loading || !navigationState?.key) return;
 
-      // Don't interfere with stack screen navigation
-      const isStackScreen = [
-        'account-details', 'add-food', 'barcode-scanner', 'create-custom-exercise',
-        'create-routine', 'exercise-details', 'explore-routine', 'food-details',
-        'log-workout', 'manual-food-entry', 'measurements', 'personal-details',
-        'routine-details', 'select-exercise', 'settings', 'workout-details-page',
-        'workout-summary', 'calendar'
-      ].includes(segments[0]);
-
-      if (isStackScreen) {
-        // Let stack screens render normally
-        return;
-      }
-
-      const inAuthGroup = segments[0] === 'login' || segments[0] === 'onboarding';
+      const first = segments[0] as string | undefined;
+      const inAuthGroup = first === 'login' || first === 'onboarding' || !first;
+      const inTabsGroup = first === '(tabs)';
 
       if (session) {
-        // Server value is the source of truth
         if (profile?.onboarding_complete) {
-          const inMainApp = segments[0] === '(tabs)';
-          if (!inMainApp && segments[0] !== 'index') {
-            router.replace('/(tabs)/workout');
-          }
+          // Only redirect to tabs from auth/index routes; allow stack screens
+          if (inAuthGroup && !inTabsGroup) router.replace('/(tabs)/workout');
           return;
         }
 
-        // If profile is loaded but onboarding is not complete
         if (profile && !profile.onboarding_complete) {
-          if (segments[0] !== 'onboarding') {
+          // Only redirect to onboarding from auth/index routes; allow stack screens
+          if (inAuthGroup && segments[0] !== 'onboarding') {
             router.replace('/onboarding');
           }
           return;
         }
 
-        // Offline fallback
         if (!profile) {
           const cachedStatus = await AsyncStorage.getItem('onboardingComplete');
           if (cachedStatus === 'true') {
-            if (inAuthGroup || segments[0] === 'index') {
+            if (inAuthGroup) {
               router.replace('/(tabs)/workout');
             }
           } else {
-            if (segments[0] !== 'onboarding') {
+            if (inAuthGroup && segments[0] !== 'onboarding') {
               router.replace('/onboarding');
             }
           }
         }
 
       } else {
-        if (!inAuthGroup && segments[0] !== 'index') {
+        if (!inAuthGroup) {
           router.replace('/login');
         }
       }
     };
 
     checkOnboarding();
-  }, [session, profile, loading, segments]);
+  }, [session, profile, loading, segments, navigationState?.key]);
 }
 
 function RootLayoutNav() {
@@ -157,6 +142,7 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const colors = modernColors[colorScheme ?? 'light'];
   const segments = useSegments();
+  const router = useRouter();
 
   return (
     <>
@@ -170,20 +156,15 @@ function RootLayoutNav() {
           animationTypeForReplace: 'push',
           gestureEnabled: true,
           gestureDirection: 'horizontal',
-          gestureResponseDistance: 35,
+          // gestureResponseDistance removed to satisfy types
           presentation: 'card',
-          animationEnabled: true,
           headerStyle: {
             backgroundColor: colors.surface || (colorScheme === 'dark' ? '#000000' : '#FFFFFF'),
-            borderBottomWidth: 0,
-            elevation: 0,
-            shadowColor: 'transparent',
           },
           headerTitleStyle: {
             color: colors.text,
             fontSize: 18,
             fontWeight: '700',
-            letterSpacing: -0.2,
           },
           headerTitleAlign: 'center',
         }}
@@ -228,7 +209,7 @@ function RootLayoutNav() {
         />
       </Stack>
       <StatusBar style="auto" />
-      {!segments.includes('workout-summary') && <WorkoutNotificationBar />}
+      {segments[0] !== 'workout-summary' && <WorkoutNotificationBar />}
     </>
   );
 }
