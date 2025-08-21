@@ -1,14 +1,42 @@
 import { useAuth } from '@/context/AuthContext';
+import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 const StartPage = () => {
   const { loading, user, session, profile } = useAuth();
   const [timeoutReached, setTimeoutReached] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string>('');
   const [errorLogs, setErrorLogs] = useState<string[]>([]);
+  const [navigationAttempted, setNavigationAttempted] = useState(false);
 
-  // Capture any errors from the auth context
+  // Auto-navigate when auth is complete
+  useEffect(() => {
+    if (!loading && !navigationAttempted) {
+      setNavigationAttempted(true);
+      
+      if (user && session) {
+        console.log('🚀 Auth complete - attempting navigation...');
+        
+        // Check if user has completed onboarding
+        if (profile?.onboarding_complete) {
+          console.log('✅ Onboarding complete - navigating to main app');
+          // Replace with your main app route
+          router.replace('/(tabs)/workout' as any); // or whatever your main route is
+        } else {
+          console.log('📝 Onboarding incomplete - navigating to onboarding');
+          // Replace with your onboarding route
+          router.replace('/onboarding' as any);
+        }
+      } else {
+        console.log('🔓 No authenticated user - navigating to auth');
+        // Replace with your auth/login route
+        router.replace('/login' as any); // or '/auth' or whatever your login route is
+      }
+    }
+  }, [loading, user, session, profile, navigationAttempted]);
+
+  // Capture any errors from the auth context (keep this for debugging)
   useEffect(() => {
     const originalConsoleError = console.error;
     const originalConsoleLog = console.log;
@@ -59,38 +87,66 @@ const StartPage = () => {
 === AUTH DEBUG INFO ===
 Time: ${new Date().toLocaleString()}
 Loading: ${loading}
+Navigation Attempted: ${navigationAttempted}
 User: ${JSON.stringify(userInfo, null, 2)}
 Session: ${JSON.stringify(sessionInfo, null, 2)}
 Profile: ${profile ? JSON.stringify(profile, null, 2) : 'null'}
 ======================
       `;
       setDebugInfo(info);
-    }, 5000); // Show after 5 seconds
+    }, 3000); // Show after 3 seconds
 
     return () => clearTimeout(timer);
-  }, [loading, user, session, profile]);
+  }, [loading, user, session, profile, navigationAttempted]);
 
-  // Force stop loading after 20 seconds to prevent infinite loading
-  useEffect(() => {
-    const forceStopTimer = setTimeout(() => {
-      if (loading) {
-        setErrorLogs(prev => [...prev, 'CRITICAL: Loading has been stuck for 20 seconds - this indicates a serious issue with auth initialization']);
-        setTimeoutReached(true);
-      }
-    }, 20000);
+  // Manual navigation buttons for debugging
+  const handleManualNavigation = (route: string) => {
+    console.log(`🔧 Manual navigation to: ${route}`);
+    router.replace(route as any);
+  };
 
-    return () => clearTimeout(forceStopTimer);
-  }, [loading]);
-
-  if (timeoutReached || errorLogs.length > 0) {
+  // Show debug info immediately if auth is complete but navigation hasn't worked
+  if ((!loading && user && session) || timeoutReached || errorLogs.length > 0) {
     return (
       <ScrollView style={{ flex: 1, padding: 20 }} contentContainerStyle={{ paddingBottom: 50 }}>
         <View style={{ alignItems: 'center', marginBottom: 20 }}>
           <ActivityIndicator size="large" />
           <Text style={{ marginTop: 20, textAlign: 'center', fontSize: 16, fontWeight: 'bold' }}>
-            {loading ? 'Loading Debug Information' : 'App Initialization Complete'}
+            {loading ? 'Still Loading...' : '🎉 Auth Complete - Navigation Issue'}
           </Text>
         </View>
+
+        {!loading && user && (
+          <View style={{ marginBottom: 20, padding: 15, backgroundColor: '#e8f5e8', borderRadius: 8, borderWidth: 1, borderColor: '#4caf50' }}>
+            <Text style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 10, color: '#2e7d32' }}>
+              🎯 MANUAL NAVIGATION (Tap to test):
+            </Text>
+            <TouchableOpacity 
+              style={{ padding: 10, backgroundColor: '#4caf50', borderRadius: 5, marginBottom: 10 }}
+              onPress={() => handleManualNavigation('/(tabs)')}
+            >
+              <Text style={{ color: 'white', textAlign: 'center', fontWeight: 'bold' }}>
+                Go to Main App (/(tabs))
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={{ padding: 10, backgroundColor: '#2196F3', borderRadius: 5, marginBottom: 10 }}
+              onPress={() => handleManualNavigation('/onboarding')}
+            >
+              <Text style={{ color: 'white', textAlign: 'center', fontWeight: 'bold' }}>
+                Go to Onboarding (/onboarding)
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={{ padding: 10, backgroundColor: '#ff9800', borderRadius: 5 }}
+              onPress={() => handleManualNavigation('/login')}
+            >
+              <Text style={{ color: 'white', textAlign: 'center', fontWeight: 'bold' }}>
+                Go to Login (/login)
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {debugInfo && (
           <View style={{ marginBottom: 20, padding: 15, backgroundColor: '#e8f4f8', borderRadius: 8, borderWidth: 1, borderColor: '#2196F3' }}>
@@ -126,14 +182,6 @@ Profile: ${profile ? JSON.stringify(profile, null, 2) : 'null'}
                 ... and {errorLogs.length - 10} more entries
               </Text>
             )}
-          </View>
-        )}
-
-        {errorLogs.length === 0 && !debugInfo && (
-          <View style={{ padding: 20, alignItems: 'center' }}>
-            <Text style={{ color: '#666', textAlign: 'center' }}>
-              No errors detected. If loading continues, there might be a network issue or Supabase configuration problem.
-            </Text>
           </View>
         )}
       </ScrollView>

@@ -96,7 +96,8 @@ function useProtectedRoute() {
       if (session) {
         // Server value is the source of truth
         if (profile?.onboarding_complete) {
-          if (inAuthGroup || segments[0] === 'index') {
+          const inMainApp = segments[0] === '(tabs)';
+          if (!inMainApp) {
             router.replace('/(tabs)/workout');
           }
           return;
