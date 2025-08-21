@@ -8,6 +8,7 @@ export const modernColors = {
     textSecondary: '#64748B',
     accent: '#3B82F6',
     accentSecondary: '#6366F1',
+    danger: '#EF4444',
   },
   dark: {
     background: '#0F172A',
@@ -18,5 +19,6 @@ export const modernColors = {
     textSecondary: '#94A3B8',
     accent: '#60A5FA',
     accentSecondary: '#818CF8',
+    danger: '#F87171',
   }
 };
