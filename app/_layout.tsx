@@ -193,8 +193,9 @@ function useProtectedRoute() {
         }
 
       } else {
-        if (!inAuthGroup) {
-          console.log('🔓 No session, redirecting to login');
+        // Explicitly redirect unauthenticated users to login from index or any non-login route
+        if (first !== 'login') {
+          console.log(`🔓 No session, redirecting to login from: ${first ?? 'index'}`);
           router.replace('/login');
         }
       }
