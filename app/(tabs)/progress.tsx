@@ -228,7 +228,7 @@ export default function ProgressScreen() {
 
       {/* Main Stats Grid */}
       <View style={styles.statsGrid}>
-        <StatCard title="WORKOUT STREAK" value={summaryStats.currentStreak} subtitle="Days active" icon="🔥" trend={8} highlight />
+        <StatCard title="WORKOUT STREAK" value={summaryStats.currentStreak} subtitle="Days active" icon="🔥" trend={8} />
         <StatCard title="THIS WEEK" value={summaryStats.weeklyWorkouts} subtitle="Workouts completed" icon="💪" trend={12} />
       </View>
 
