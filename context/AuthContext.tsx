@@ -64,7 +64,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (data?.onboarding_complete) {
         await AsyncStorage.setItem('onboardingComplete', 'true');
-        console.log('✅ Onboarding complete flag saved to storage');
+        await AsyncStorage.setItem(`onboardingComplete:${user.id}`, 'true');
+        console.log('✅ Onboarding complete flag saved to storage (global and per-user)');
       }
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error fetching profile';
@@ -226,8 +227,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     console.log('Signing out...');
     try {
       await supabase.auth.signOut();
-      // Clear AsyncStorage on sign out
-      await AsyncStorage.removeItem('onboardingComplete');
+      // Do not clear onboarding cache; it's per-user and used for fast redirects
       console.log('Sign out successful');
     } catch (error) {
       console.error('Error signing out:', error);

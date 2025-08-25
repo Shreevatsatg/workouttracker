@@ -179,9 +179,11 @@ function useProtectedRoute() {
 
         if (!profile) {
           const cachedStatus = await AsyncStorage.getItem('onboardingComplete');
-          if (cachedStatus === 'true') {
+          const userIdKey = session?.user?.id ? `onboardingComplete:${session.user.id}` : null;
+          const cachedPerUser = userIdKey ? await AsyncStorage.getItem(userIdKey) : null;
+          if (cachedPerUser === 'true' || cachedStatus === 'true') {
             if (inAuthGroup) {
-              console.log('✅ Using cached onboarding status, redirecting to workout');
+              console.log('✅ Using cached onboarding status (per-user/global), redirecting to workout');
               router.replace('/(tabs)/workout');
             }
           } else {

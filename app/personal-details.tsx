@@ -122,7 +122,7 @@ export default function PersonalDetailsScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.appBackground }]}>
+    <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <ThemedText type="title" style={{ color: colors.text, marginBottom: 20 }}>Personal Details</ThemedText>
 
       {/* Personal Details Section */}
