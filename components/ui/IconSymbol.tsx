@@ -46,6 +46,7 @@ const MAPPING = {
   'chart.bar.xaxis': 'bar-chart',
   'figure.strengthtraining.traditional': 'fitness-center',
   'flame.fill': 'local-fire-department',
+  'play.circle': 'play-circle-outline',
 } as IconMapping;
 
 /**

@@ -1,13 +1,12 @@
 import AppBackground from '@/components/AppBackground';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import Constants from 'expo-constants';
 import { useFonts } from 'expo-font';
 import { Stack, useRootNavigationState, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Alert, Dimensions, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Text, TouchableOpacity, View } from 'react-native';
 import 'react-native-reanimated';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -80,49 +79,8 @@ const FinishButton = ({ onPress }: { onPress: () => void }) => {
   );
 };
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Debug component for troubleshooting production issues
-const DebugOverlay = () => {
-  const { session, loading, profile } = useAuth();
-  const segments = useSegments();
-  const navigationState = useRootNavigationState();
-  const colorScheme = useColorScheme();
-  const colors = modernColors[colorScheme ?? 'light'];
 
-  // Only show in development or when there are issues
-  if (Constants.expoConfig?.extra?.eas?.projectId && !__DEV__) {
-    return null;
-  }
-
-  return (
-    <View style={{
-      position: 'absolute',
-      top: 50,
-      right: 10,
-      backgroundColor: 'rgba(0,0,0,0.8)',
-      padding: 8,
-      borderRadius: 8,
-      zIndex: 9999,
-    }}>
-      <Text style={{ color: 'white', fontSize: 10 }}>
-        {__DEV__ ? 'DEV' : 'PROD'} Build
-      </Text>
-      <Text style={{ color: 'white', fontSize: 10 }}>
-        Auth: {loading ? 'Loading' : session ? 'Logged In' : 'Not Logged In'}
-      </Text>
-      <Text style={{ color: 'white', fontSize: 10 }}>
-        Route: {segments[0] || 'index'}
-      </Text>
-      <Text style={{ color: 'white', fontSize: 10 }}>
-        Nav: {navigationState?.key ? 'Ready' : 'Not Ready'}
-      </Text>
-      <Text style={{ color: 'white', fontSize: 10 }}>
-        Profile: {profile ? 'Loaded' : 'Not Loaded'}
-      </Text>
-    </View>
-  );
-};
 
 // Error boundary component
 const ErrorBoundary = ({ children }: { children: React.ReactNode }) => {
@@ -388,7 +346,6 @@ export default function RootLayout() {
                 <ErrorBoundary>
                   <RootLayoutNav />
                 </ErrorBoundary>
-                <DebugOverlay />
               </AppBackground>
             </WorkoutProvider>
           </RoutinesProvider>

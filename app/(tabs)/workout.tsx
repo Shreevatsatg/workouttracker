@@ -245,15 +245,15 @@ export default function RoutineScreen() {
             {routine.exercises.map(e => e.name).join(', ')}
           </ThemedText>
           <TouchableOpacity
-            style={[styles.startButton, { backgroundColor: colors.tint }]}
+            style={[styles.startButton, { backgroundColor: colors.accent }]}
             onPress={(e) => {
               e.stopPropagation();
               startWorkout(routine)
             }}
             accessibilityLabel={`Start workout for ${routine.name}`}
           >
-            <IconSymbol name="play.circle" size={20} color={colors.background} />
-            <ThemedText style={[styles.startButtonText, { color: colors.background }]}>Start Workout</ThemedText>
+            <IconSymbol name="play.circle" size={20} color={colors.text} />
+            <ThemedText style={[styles.startButtonText, { color: colors.text }]}>Start Workout</ThemedText>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -332,43 +332,44 @@ export default function RoutineScreen() {
       <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]} showsVerticalScrollIndicator={false}>
         <ThemedView style={[styles.section, { marginTop: 24 }, { backgroundColor: 'transparent' }]}>
           <TouchableOpacity
-            style={[styles.button, { backgroundColor: colors.tint },{marginBottom: 12}]}
+            style={[styles.button, { backgroundColor: colors.accent },{marginBottom: 12}]}
             onPress={startEmptyWorkout}
             accessibilityLabel="Start an empty workout"
           >
-            <IconSymbol name="play.circle" size={20} color={colors.background} />
-            <ThemedText style={[styles.buttonText, { color: colors.background }]}>Start Empty Workout</ThemedText>
+            <IconSymbol name="play.circle" size={20} color={colors.text} />
+            <ThemedText style={[styles.buttonText, { color: colors.text }]}>Start Empty Workout</ThemedText>
           </TouchableOpacity>
 
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
             <TouchableOpacity
-              style={[styles.startButton, { backgroundColor: colors.tint, flex: 1 }]}
+              style={[styles.startButton, { backgroundColor: colors.accent, flex: 1 }]}
               onPress={() => router.push('/explore-routine')}
               accessibilityLabel="Explore routines"
             >
-              <IconSymbol name="magnifyingglass" size={20} color={colors.background} />
-              <ThemedText style={[styles.buttonText, { color: colors.background }]}>Explore Routines</ThemedText>
+              <IconSymbol name="magnifyingglass" size={20} color={colors.text} />
+              <ThemedText style={[styles.buttonText, { color: colors.text }]}>Explore Routines</ThemedText>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.startButton, { backgroundColor: colors.tint, flex: 1 }]}
+              style={[styles.startButton, { backgroundColor: colors.accent, flex: 1 }]}
               onPress={() => router.push('/create-routine')}
               accessibilityLabel="Create new routine"
             >
-              <IconSymbol name="plus" size={20} color={colors.background} />
-              <ThemedText style={[styles.buttonText, { color: colors.background }]}>Create Routine</ThemedText>
+              <IconSymbol name="plus" size={20} color={colors.text} />
+              <ThemedText style={[styles.buttonText, { color: colors.text }]}>Create Routine</ThemedText>
             </TouchableOpacity>
           </View>
         </ThemedView>
 
         {isCreatingFolder && (
-          <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.section}>
+          <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.createfoldersection}>
             <TextInput
               style={[
                 styles.input,
                 { 
                   color: colors.text, 
                   borderColor: folderNameError ? colors.error : colors.tabIconDefault,
-                  backgroundColor: colors.background 
+                  backgroundColor: colors.background ,
+                  marginBottom:8,
                 },
               ]}
               placeholder="Folder Name"
@@ -386,14 +387,14 @@ export default function RoutineScreen() {
             )}
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
               <TouchableOpacity
-                style={[styles.button, { backgroundColor: colors.tint, flex: 1 }]}
+                style={[styles.startButton, { backgroundColor: colors.accent, flex: 1 }]}
                 onPress={handleCreateFolder}
                 accessibilityLabel="Create folder"
               >
-                <ThemedText style={[styles.buttonText, { color: colors.background }]}>Create</ThemedText>
+                <ThemedText style={[styles.buttonText, { color: colors.text }]}>Create</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.button, { backgroundColor: colors.tabIconDefault, flex: 1 }]}
+                style={[styles.startButton, { backgroundColor: colors.accent, flex: 1 }]}
                 onPress={() => {
                   setIsCreatingFolder(false);
                   setNewFolderName('');
@@ -416,7 +417,7 @@ export default function RoutineScreen() {
                 accessibilityLabel="Create new folder"
                 style={styles.headerButton}
               >
-                <IconSymbol name="folder.badge.plus" size={28} color={colors.tint} />
+                <IconSymbol name="folder.badge.plus" size={28} color={colors.accent} />
               </TouchableOpacity>
             </View>
           </View>
@@ -566,6 +567,14 @@ const getStyles = (colors: any) => StyleSheet.create({
     section: {
       marginHorizontal: 16,
       marginBottom: 24,
+    },
+    createfoldersection: {
+      marginHorizontal: 16,
+      marginBottom: 24,
+      borderWidth:1,
+      padding:10,
+      borderColor:colors.text,
+      borderRadius:8,
     },
     button: {
       flexDirection: 'row',
