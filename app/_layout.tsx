@@ -1,12 +1,13 @@
 import AppBackground from '@/components/AppBackground';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import Constants from 'expo-constants';
 import { useFonts } from 'expo-font';
 import { Stack, useRootNavigationState, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import { Dimensions, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Dimensions, Text, TouchableOpacity, View } from 'react-native';
 import 'react-native-reanimated';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -81,6 +82,94 @@ const FinishButton = ({ onPress }: { onPress: () => void }) => {
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+// Debug component for troubleshooting production issues
+const DebugOverlay = () => {
+  const { session, loading, profile } = useAuth();
+  const segments = useSegments();
+  const navigationState = useRootNavigationState();
+  const colorScheme = useColorScheme();
+  const colors = modernColors[colorScheme ?? 'light'];
+
+  // Only show in development or when there are issues
+  if (Constants.expoConfig?.extra?.eas?.projectId && !__DEV__) {
+    return null;
+  }
+
+  return (
+    <View style={{
+      position: 'absolute',
+      top: 50,
+      right: 10,
+      backgroundColor: 'rgba(0,0,0,0.8)',
+      padding: 8,
+      borderRadius: 8,
+      zIndex: 9999,
+    }}>
+      <Text style={{ color: 'white', fontSize: 10 }}>
+        {__DEV__ ? 'DEV' : 'PROD'} Build
+      </Text>
+      <Text style={{ color: 'white', fontSize: 10 }}>
+        Auth: {loading ? 'Loading' : session ? 'Logged In' : 'Not Logged In'}
+      </Text>
+      <Text style={{ color: 'white', fontSize: 10 }}>
+        Route: {segments[0] || 'index'}
+      </Text>
+      <Text style={{ color: 'white', fontSize: 10 }}>
+        Nav: {navigationState?.key ? 'Ready' : 'Not Ready'}
+      </Text>
+      <Text style={{ color: 'white', fontSize: 10 }}>
+        Profile: {profile ? 'Loaded' : 'Not Loaded'}
+      </Text>
+    </View>
+  );
+};
+
+// Error boundary component
+const ErrorBoundary = ({ children }: { children: React.ReactNode }) => {
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    const handleError = (error: Error) => {
+      console.error('🚨 App Error:', error);
+      setHasError(true);
+      
+      // Show error alert in development
+      if (__DEV__) {
+        Alert.alert('App Error', error.message);
+      }
+    };
+
+    // Add global error handler
+    const originalErrorHandler = (globalThis as any).ErrorUtils?.setGlobalHandler;
+    if (originalErrorHandler) {
+      (globalThis as any).ErrorUtils.setGlobalHandler = (callback: any) => {
+        return originalErrorHandler((error: Error, isFatal: boolean) => {
+          handleError(error);
+          if (callback) callback(error, isFatal);
+        });
+      };
+    }
+
+    return () => {
+      if (originalErrorHandler) {
+        (globalThis as any).ErrorUtils.setGlobalHandler = originalErrorHandler;
+      }
+    };
+  }, []);
+
+  if (hasError) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
+        <Text style={{ color: 'white', fontSize: 18, textAlign: 'center', padding: 20 }}>
+          Something went wrong. Please restart the app.
+        </Text>
+      </View>
+    );
+  }
+
+  return <>{children}</>;
+};
+
 // This hook protects the routes and handles redirection
 function useProtectedRoute() {
   const { session, loading, profile } = useAuth();
@@ -90,22 +179,41 @@ function useProtectedRoute() {
 
   useEffect(() => {
     const checkOnboarding = async () => {
-      if (loading || !navigationState?.key) return;
+      // Add a small delay to ensure navigation state is ready in production
+      if (loading) {
+        console.log('🔄 Auth still loading, waiting...');
+        return;
+      }
+
+      // In production builds, navigationState might take longer to initialize
+      // Add a fallback timeout to prevent infinite loading
+      if (!navigationState?.key) {
+        console.log('⚠️ Navigation state not ready, using fallback logic');
+        // Fallback: proceed with auth check even without navigation state
+        // This prevents infinite loading in production builds
+      }
 
       const first = segments[0] as string | undefined;
       const inAuthGroup = first === 'login' || first === 'onboarding' || !first;
       const inTabsGroup = first === '(tabs)';
 
+      console.log(`📍 Current route: ${first}, inAuthGroup: ${inAuthGroup}, inTabsGroup: ${inTabsGroup}`);
+      console.log(`🔐 Session: ${!!session}, Profile: ${!!profile}, Loading: ${loading}`);
+
       if (session) {
         if (profile?.onboarding_complete) {
           // Only redirect to tabs from auth/index routes; allow stack screens
-          if (inAuthGroup && !inTabsGroup) router.replace('/(tabs)/workout');
+          if (inAuthGroup && !inTabsGroup) {
+            console.log('✅ User authenticated and onboarded, redirecting to workout');
+            router.replace('/(tabs)/workout');
+          }
           return;
         }
 
         if (profile && !profile.onboarding_complete) {
           // Only redirect to onboarding from auth/index routes; allow stack screens
           if (inAuthGroup && segments[0] !== 'onboarding') {
+            console.log('📋 User authenticated but not onboarded, redirecting to onboarding');
             router.replace('/onboarding');
           }
           return;
@@ -115,10 +223,12 @@ function useProtectedRoute() {
           const cachedStatus = await AsyncStorage.getItem('onboardingComplete');
           if (cachedStatus === 'true') {
             if (inAuthGroup) {
+              console.log('✅ Using cached onboarding status, redirecting to workout');
               router.replace('/(tabs)/workout');
             }
           } else {
             if (inAuthGroup && segments[0] !== 'onboarding') {
+              console.log('📋 No profile and no cached status, redirecting to onboarding');
               router.replace('/onboarding');
             }
           }
@@ -126,12 +236,16 @@ function useProtectedRoute() {
 
       } else {
         if (!inAuthGroup) {
+          console.log('🔓 No session, redirecting to login');
           router.replace('/login');
         }
       }
     };
 
-    checkOnboarding();
+    // Add a small delay to ensure everything is properly initialized
+    const timeoutId = setTimeout(checkOnboarding, 100);
+    
+    return () => clearTimeout(timeoutId);
   }, [session, profile, loading, segments, navigationState?.key]);
 }
 
@@ -221,14 +335,31 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    console.log('🎨 Font loading status:', loaded);
     if (loaded) {
+      console.log('✅ Fonts loaded, hiding splash screen');
       SplashScreen.hideAsync();
     }
   }, [loaded]);
 
+  // Add a fallback timeout to prevent infinite loading
+  useEffect(() => {
+    const fallbackTimeout = setTimeout(() => {
+      console.log('⚠️ Font loading timeout - proceeding anyway');
+      SplashScreen.hideAsync();
+    }, 5000); // 5 second timeout
+
+    return () => clearTimeout(fallbackTimeout);
+  }, []);
+
+  console.log('🏗️ RootLayout rendering, fonts loaded:', loaded);
+
   if (!loaded) {
+    console.log('⏳ Fonts not loaded yet, showing loading state');
     return null;
   }
+
+  console.log('✅ RootLayout ready, rendering app');
 
   return (
     <AuthProvider>
@@ -254,7 +385,10 @@ export default function RootLayout() {
           <RoutinesProvider>
             <WorkoutProvider>
               <AppBackground>
-                <RootLayoutNav />
+                <ErrorBoundary>
+                  <RootLayoutNav />
+                </ErrorBoundary>
+                <DebugOverlay />
               </AppBackground>
             </WorkoutProvider>
           </RoutinesProvider>

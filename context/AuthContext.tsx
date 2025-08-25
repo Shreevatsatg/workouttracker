@@ -85,6 +85,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           throw new Error('Supabase client is not initialized');
         }
         
+        // Test network connectivity
+        console.log('🌐 Testing network connectivity...');
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          
+          const testResponse = await fetch('https://yaupadcxrzfdktuouilv.supabase.co/rest/v1/', {
+            method: 'HEAD',
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          console.log('✅ Network connectivity test passed');
+        } catch (networkError) {
+          console.warn('⚠️ Network connectivity test failed:', networkError);
+          // Continue anyway, as the auth call might still work
+        }
+        
         console.log('📡 Attempting to get session from Supabase...');
         
         // Add timeout to prevent infinite loading
@@ -150,7 +168,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    initializeAuth();
+    // Add a small delay to ensure proper initialization in production builds
+    const timeoutId = setTimeout(initializeAuth, 100);
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -179,6 +198,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => {
       mounted = false;
+      clearTimeout(timeoutId);
       authListener.subscription.unsubscribe();
     };
   }, [fetchProfile]);
