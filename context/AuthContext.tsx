@@ -1,6 +1,7 @@
 import { supabase } from '@/utils/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Session, User } from '@supabase/supabase-js';
+import * as Constants from 'expo-constants';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 interface Profile {
@@ -78,12 +79,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const initializeAuth = async () => {
       try {
         console.log('🚀 Starting auth initialization...');
+        console.log('📱 Platform:', Constants.platform);
+        console.log('🔧 Build type:', __DEV__ ? 'Development' : 'Production');
+        console.log('📦 App version:', Constants.expoConfig?.version);
         setLoading(true);
         
         // Check if Supabase is properly configured
         if (!supabase) {
           throw new Error('Supabase client is not initialized');
         }
+        
+        console.log('✅ Supabase client exists');
         
         // Test network connectivity
         console.log('🌐 Testing network connectivity...');
@@ -104,6 +110,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         console.log('📡 Attempting to get session from Supabase...');
+        console.log('⏰ Starting session fetch at:', new Date().toISOString());
         
         // Add timeout to prevent infinite loading
         const timeoutPromise = new Promise((_, reject) => {
@@ -112,7 +119,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         const authPromise = supabase.auth.getSession();
         
+        console.log('⏳ Waiting for auth response...');
         const result = await Promise.race([authPromise, timeoutPromise]) as any;
+        console.log('⏰ Auth response received at:', new Date().toISOString());
         
         if (!mounted) {
           console.log('⚠️ Component unmounted during auth initialization');
@@ -143,16 +152,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (currentUser) {
           console.log('👤 User found, fetching profile...');
+          console.log('⏰ Starting profile fetch at:', new Date().toISOString());
           await fetchProfile(currentUser);
+          console.log('⏰ Profile fetch completed at:', new Date().toISOString());
         } else {
           console.log('🔓 No user found - user needs to login');
         }
         
         console.log('✨ Auth initialization completed successfully');
+        console.log('⏰ Final completion at:', new Date().toISOString());
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : 'Unknown error during auth initialization';
         console.error("❌ ERROR initializing auth:", errorMessage);
         console.error("Full error object:", e);
+        console.error("⏰ Error occurred at:", new Date().toISOString());
         
         // On error, still set loading to false to prevent infinite loading
         if (mounted) {
@@ -163,13 +176,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } finally {
         if (mounted) {
           console.log('🏁 Setting loading to false');
+          console.log('⏰ Loading set to false at:', new Date().toISOString());
           setLoading(false);
         }
       }
     };
 
     // Add a small delay to ensure proper initialization in production builds
-    const timeoutId = setTimeout(initializeAuth, 100);
+    console.log('⏰ Starting auth initialization delay at:', new Date().toISOString());
+    const timeoutId = setTimeout(() => {
+      console.log('⏰ Executing auth initialization at:', new Date().toISOString());
+      initializeAuth();
+    }, 100);
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -177,6 +195,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         console.log(`🔄 Auth state change detected: ${event}`);
         console.log(`📱 Session present: ${!!session}`);
+        console.log('⏰ Auth state change at:', new Date().toISOString());
         
         setSession(session);
         const currentUser = session?.user ?? null;
